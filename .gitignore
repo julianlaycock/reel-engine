@@ -1,0 +1,26 @@
+# deps / build
+node_modules/
+dist/
+out/
+build/
+.next/
+
+# transient
+tmp/
+*.log
+.wrangler/
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# heavy media (keep engine code + small assets; renders/media live with the consuming project)
+*.mp4
+*.mov
+*.wav
+*.mp3
+
+# os cruft
+.DS_Store
+Thumbs.db
