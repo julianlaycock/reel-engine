@@ -87,12 +87,18 @@ export const PersistentChrome: React.FC<{
   // Workbench section marker right — and a mono footer 56px from the bottom:
   // "vektor /// no. NNN" left, "NN / 06" progress right. Constant ink, no
   // dark-morph lerp; dark beats hide the whole set via hideRanges.
+  // FOOTER = INTRO-ONLY (founder 2026-07-07): the mono footer showed on every
+  // slide and read as messy over visualisations. It now renders ONLY during the
+  // first scene (the intro); scenes 2..N carry the top ink bar alone.
   if (skin === 'americana') {
     const beat = beats?.find((b) => frame >= b.from && frame < b.to);
     // FRAME-ZERO LAW + loop-seam law: the ink bar is part of the finished F0
     // thumbnail AND of a loop cut's hand-back frame — no fade-in, no end-of-video
     // fade. Dark beats hide it via hideRanges; nothing else does.
     const amOpacity = hide;
+    // Footer only lives in the intro: visible while the playhead is inside the
+    // first beat's range (falls back to "always" if no beats are supplied).
+    const inIntro = beats && beats.length ? frame < beats[0].to : true;
     return (
       <AbsoluteFill>
         <div className="frame" style={{background: 'transparent'}}>
@@ -100,7 +106,7 @@ export const PersistentChrome: React.FC<{
             <span className="am-chrome-wordmark">{chrome.topLeft ?? 'vektor'}</span>
             <span className="am-chrome-marker">{beat?.marker ?? chrome.topRight ?? ''}</span>
           </div>
-          <div className="am-footer" style={{opacity: amOpacity}}>
+          <div className="am-footer" style={{opacity: inIntro ? amOpacity : 0}}>
             <span>{chrome.footerLeft ?? ''}</span>
             <span>{beat?.no ?? chrome.footerRight ?? ''}</span>
           </div>
