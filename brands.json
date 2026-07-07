@@ -1,0 +1,7 @@
+{
+  "$comment": "Brand registry for the federated engine. Each key is a --brand name; the value is the brand repo root RELATIVE to reel-engine/. The engine loads code (scripts/, src/) from itself and data/config/public/canon/out from the brand root. Add brands here as their packs are stood up (Phase 2).",
+  "default": "vektor",
+  "brands": {
+    "vektor": "../vektor"
+  }
+}

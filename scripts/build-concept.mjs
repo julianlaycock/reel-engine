@@ -10,9 +10,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
+import {resolveBrand} from '../lib/brand.mjs';
 
 const execFileP = promisify(execFile);
-const root = process.cwd();
+// Brand-scoped roots, finalized in main() once the brand is resolved.
+// root = brand repo (holds data/config/public/out); scriptsDir = engine scripts.
+let root = process.cwd();
+let scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
@@ -21,6 +25,7 @@ const parseArgs = () => {
     const a = args[i];
     if (a === '--slug' || a === '-s') p.slug = args[++i];
     else if (a === '--voice' || a === '-v') p.voice = args[++i];
+    else if (a === '--brand' || a === '-b') p.brand = args[++i];
   }
   if (!p.slug) throw new Error('Usage: npm run build:concept -- --slug <slug> [--voice story|authority]');
   return p;
@@ -28,7 +33,7 @@ const parseArgs = () => {
 
 const run = async (label, file, scriptArgs) => {
   process.stdout.write(`\n▶ ${label}\n`);
-  const {stdout, stderr} = await execFileP('node', [path.join(root, 'scripts', file), ...scriptArgs], {
+  const {stdout, stderr} = await execFileP('node', [path.join(scriptsDir, file), ...scriptArgs], {
     cwd: root,
     maxBuffer: 1024 * 1024 * 64,
   });
@@ -39,6 +44,15 @@ const run = async (label, file, scriptArgs) => {
 const main = async () => {
   const args = parseArgs();
   const slug = args.slug;
+
+  // Federated engine: run against the chosen brand's repo. cwd becomes the brand
+  // root so every data/config/public/out path resolves into that brand, while
+  // engine code still runs from reel-engine (scriptsDir here; src/ via the alias).
+  const brand = resolveBrand(args.brand);
+  process.chdir(brand.brandRoot);
+  root = process.cwd();
+  scriptsDir = path.join(brand.engineRoot, 'scripts');
+  console.log(`Brand: ${brand.name} → ${brand.brandRoot}`);
 
   // Resolve voice: explicit arg → video.json.voice → concept.json → cluster default → default.
   const voicesCfg = JSON.parse(await fs.readFile(path.join(root, 'config/voices.json'), 'utf8'));
