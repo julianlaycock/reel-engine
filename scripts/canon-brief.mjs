@@ -35,7 +35,7 @@ L.push(`DURATION [${sev(canon.duration)}]: ${canon.duration.minSec}-${canon.dura
 if (canon.transcript) L.push(`TRANSCRIPT [${sev(canon.transcript)}]: if the concept is transcript-based (concept.json source_type:"transcript" or transcript_verbatim:true), the SOURCE TRANSCRIPT is the script — reproduce its content/claims/hook 1:1, NO trimming/paraphrase; EXEMPT from the duration cap. FACTS-POLICY is OVERRIDDEN (trust the source, no facts.json/check-facts). ALWAYS adapt the brand layer to Vektor: CTA/keyword+funnel, skin, voice, disclaimer. Footage-rights + safe-zone still apply.`);
 L.push(`SKIN [${sev(canon.skin)}]: ${canon.skin.required}.`);
 L.push(`CHROME [${sev(canon.chrome)}]: masthead/chrome on every slide; fields ${(canon.chrome.requireFields || []).join('+')}.`);
-L.push(`AUDIO [${sev(canon.audio)}]: voiceover required.`);
+L.push(`AUDIO [${sev(canon.audio)}]: voiceover required; NO transition SFX (music bed + VO only, sfx:false).`);
 L.push(`SAFE ZONE [${sev(canon.safeZone)}]: all on-screen elements inside top ${zone.topPx} / bottom ${zone.bottomPx} / sides ${zone.sidePx} / rail-right ${zone.railRightPx}px (rail band y ${zone.railBandY[0]}-${zone.railBandY[1]}). Mascot: xPct ~20-62, yPct ~25-66, size <= 160.`);
 L.push(`FRAME-0 [${sev(canon.frameZero)}]: scene[0] must have VO copy and instant payoff (no static hold).`);
 L.push('');

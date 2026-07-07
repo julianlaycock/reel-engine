@@ -129,6 +129,10 @@ const main = async () => {
     const a = canon.audio;
     const hasVo = Boolean(video.audio && video.audio.voSrc);
     results.push(R(hasVo, a.severity, 'audio.vo', hasVo ? video.audio.voSrc : 'no voSrc'));
+    if (a.noSfx) {
+      const sfxOff = !(video.audio && video.audio.sfx === true);
+      results.push(R(sfxOff, a.severity, 'audio.noSfx', sfxOff ? 'no transition SFX' : 'audio.sfx is true (transition SFX not allowed)'));
+    }
   }
 
   // safe zone (mascot placements)
