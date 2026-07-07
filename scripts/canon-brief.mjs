@@ -32,6 +32,7 @@ L.push('Follow every rule below. The canon gate BLOCKS the video on any BLOCKER 
 L.push('');
 L.push(`FORMAT [${sev(canon.format)}]: ${canon.format.width}x${canon.format.height} @ ${canon.format.fps}fps.`);
 L.push(`DURATION [${sev(canon.duration)}]: ${canon.duration.minSec}-${canon.duration.maxSec}s hard; target ${canon.duration.targetMinSec}-${canon.duration.targetMaxSec}s.`);
+if (canon.transcript) L.push(`TRANSCRIPT [${sev(canon.transcript)}]: if the concept is transcript-based (concept.json source_type:"transcript" or transcript_verbatim:true), the SOURCE TRANSCRIPT is the script — use it 1:1, NO trimming/paraphrase/restructuring; these are EXEMPT from the duration cap (numbers still pass check-facts).`);
 L.push(`SKIN [${sev(canon.skin)}]: ${canon.skin.required}.`);
 L.push(`CHROME [${sev(canon.chrome)}]: masthead/chrome on every slide; fields ${(canon.chrome.requireFields || []).join('+')}.`);
 L.push(`AUDIO [${sev(canon.audio)}]: voiceover required.`);

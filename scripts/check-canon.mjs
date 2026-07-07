@@ -74,6 +74,9 @@ const main = async () => {
   const video = JSON.parse(fs.readFileSync(path.join('data', args.slug, 'video.json'), 'utf8'));
   const tokens = JSON.parse(fs.readFileSync(path.join('canon', 'americana-tokens.json'), 'utf8'));
   const zone = tokens.layout.platformSafeZone;
+  let concept = null;
+  try { concept = JSON.parse(fs.readFileSync(path.join('data', args.slug, 'concept.json'), 'utf8')); } catch { /* concept.json optional */ }
+  const isTranscript = Boolean(concept && (concept.source_type === 'transcript' || concept.transcript_verbatim === true));
 
   const videoPath = args.video || path.join('out', `${args.slug}.mp4`);
   const hasMp4 = fs.existsSync(videoPath);
@@ -91,15 +94,20 @@ const main = async () => {
     }
   }
 
-  // duration
+  // duration — transcript-verbatim videos are exempt from the cap (canon.transcript)
   {
     const d = canon.duration;
     const frames = (video.scenes || []).reduce((s, sc) => s + (sc.durationInFrames || 0), 0);
     const sec = probe ? probe.duration : frames / (video.fps || 30);
-    const okHard = sec >= d.minSec && sec <= d.maxSec;
-    results.push(R(okHard, d.severity, 'duration', `${sec.toFixed(1)}s (allowed ${d.minSec}-${d.maxSec}s)${probe ? ' [mp4]' : ' [from frames]'}`));
-    const inTarget = sec >= d.targetMinSec && sec <= d.targetMaxSec;
-    results.push(R(inTarget, 'warn', 'duration.target', `${sec.toFixed(1)}s (target ${d.targetMinSec}-${d.targetMaxSec}s)`));
+    const from = probe ? ' [mp4]' : ' [from frames]';
+    if (isTranscript && canon.transcript?.exemptFromDurationCap) {
+      results.push(R(true, 'warn', 'duration', `${sec.toFixed(1)}s — transcript-verbatim, exempt from cap${from}`));
+    } else {
+      const okHard = sec >= d.minSec && sec <= d.maxSec;
+      results.push(R(okHard, d.severity, 'duration', `${sec.toFixed(1)}s (allowed ${d.minSec}-${d.maxSec}s)${from}`));
+      const inTarget = sec >= d.targetMinSec && sec <= d.targetMaxSec;
+      results.push(R(inTarget, 'warn', 'duration.target', `${sec.toFixed(1)}s (target ${d.targetMinSec}-${d.targetMaxSec}s)`));
+    }
   }
 
   // skin
