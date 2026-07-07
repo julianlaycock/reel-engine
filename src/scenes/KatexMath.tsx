@@ -35,8 +35,11 @@ const fontHandle = delayRender('Loading KaTeX fonts');
       await document.fonts.ready;
     }
     continueRender(fontHandle);
-  } catch (err) {
-    cancelRender(err as Error);
+  } catch {
+    // Fail OPEN: a KaTeX font-load hiccup (e.g. Studio browser can't fetch the
+    // woff2 faces) must not cancel the whole render — math would just fall back to
+    // a system face, and non-math compositions are unaffected. Never crash Studio.
+    continueRender(fontHandle);
   }
 })();
 

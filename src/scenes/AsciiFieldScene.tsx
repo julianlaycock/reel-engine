@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {AbsoluteFill, continueRender, delayRender, Img, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
+import {AbsoluteFill, continueRender, delayRender, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {AsciiFieldScene as AsciiFieldSceneType} from '../video-schema';
 import '../style.css';
 
@@ -139,29 +139,70 @@ const CELL_W = 15;
 const CELL_H = 18;
 const NOISE = '`.,:;!i1tfjLCG0Z8W%@#/\\|_';
 
-// Logo motion — option C "decode" (spec §02·B): the wordmark letters churn as
-// acid ascii noise, then resolve left→right in HARD steps. Plays ONCE (all
-// activity inside the first ~2.3s of the scene), then holds forever. No easing.
+// Smooth wordmark reveal (canon v2.5, 2026-07-06): staggered ease-in per letter,
+// replacing the old ASCII-noise "decode" churn that read as glitchy. No jitter,
+// no caret — the wordmark just settles in cleanly. Deterministic (frame-driven).
 const DecodeWordmark: React.FC<{text: string; frame: number; fps: number}> = ({text, frame, fps}) => {
-  const step = Math.floor(frame / Math.max(1, Math.round(fps / 12))); // hard 12fps steps
   const chars = text.split('');
-  const resolveSpan = Math.round(fps * 2.3); // all letters locked by 2.3s
+  const step = Math.max(1, Math.round(fps * 0.05));
   return (
     <div className="am-wordmark">
       {chars.map((ch, i) => {
-        const lockAt = Math.round(((i + 1) / chars.length) * resolveSpan * 0.8) + Math.round(fps * 0.3);
-        const locked = frame >= lockAt;
-        if (locked || ch === ' ') return <span key={i}>{ch}</span>;
-        const g = NOISE[Math.floor(hash01(i, step, 7, 13) * NOISE.length)];
+        const s = Math.round(fps * 0.18) + i * step;
+        const op = interpolate(frame, [s, s + 9], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+        const y = interpolate(frame, [s, s + 9], [22, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
         return (
-          <span key={i} className="am-wordmark-noise">
-            {g}
+          <span key={i} style={{display: 'inline-block', opacity: op, transform: `translateY(${y}px)`}}>
+            {ch === ' ' ? ' ' : ch}
           </span>
         );
       })}
-      {/* founder 2026-07-04: no caret on the americana end-card — the wordmark
-          stands fully alone (overrides the tokens' "solid caret" note). */}
     </div>
+  );
+};
+
+// Frame-accurate animated gamepad (Motion Lab option 09 · AnimateIcons pattern):
+// a highlight travels smoothly around the four face buttons. Deterministic —
+// driven only by useCurrentFrame (no Math.random; frames render out of order).
+const MotionGamepad: React.FC<{frame: number; fps: number}> = ({frame, fps}) => {
+  const acid = '#39FF35';
+  const period = Math.max(4, Math.round(fps * 1.4)); // one lap around the 4 buttons
+  const t = (frame % period) / period; // 0..1
+  const glow = (center: number) => {
+    let d = Math.abs(t - center);
+    d = Math.min(d, 1 - d); // circular distance
+    return Math.max(0, 1 - d / 0.16); // smooth falloff window
+  };
+  const btn = (i: number, cx: number, cy: number) => {
+    const g = glow(i / 4);
+    const fill = `rgb(${Math.round(20 + g * 37)}, ${Math.round(34 + g * 221)}, ${Math.round(20 + g * 33)})`;
+    return (
+      <circle
+        key={i}
+        cx={cx}
+        cy={cy}
+        r={7}
+        fill={fill}
+        style={{
+          transformBox: 'fill-box',
+          transformOrigin: 'center',
+          transform: `scale(${1 + g * 0.4})`,
+          filter: g > 0.02 ? `drop-shadow(0 0 ${g * 12}px ${acid})` : 'none',
+        }}
+      />
+    );
+  };
+  return (
+    <svg width={640} height={452} viewBox="0 0 170 120" style={{overflow: 'visible'}}>
+      <rect x={18} y={34} width={134} height={54} rx={27} fill="none" stroke={acid} strokeWidth={4} />
+      <circle cx={45} cy={61} r={24} fill="none" stroke={acid} strokeWidth={4} />
+      <rect x={39} y={52} width={12} height={18} rx={2} fill={acid} />
+      <rect x={36} y={55} width={18} height={12} rx={2} fill={acid} />
+      {btn(0, 124, 47)}
+      {btn(1, 140, 61)}
+      {btn(2, 124, 75)}
+      {btn(3, 108, 61)}
+    </svg>
   );
 };
 
@@ -243,10 +284,16 @@ export const AsciiFieldScene: React.FC<{scene: AsciiFieldSceneType; hideChrome?:
     }
   }, [cells, sampleKey, seed]);
 
-  // Hard-step reveals (motion law: chips cut in 1 frame, no easing).
-  const showHeadline = frame >= Math.round(fps * 0.27);
-  const showMeta = frame >= Math.round(fps * 0.67);
-  const showCredit = frame >= Math.round(fps * 0.5);
+  // Smooth reveals (canon v2.5, 2026-07-06): text eases in (fade + rise) so nothing
+  // pops or reads as glitchy — consistent with the editorial beats' spring reveals.
+  const rise = (startSec: number, dur = 9): React.CSSProperties => {
+    const s = Math.round(fps * startSec);
+    return {
+      opacity: interpolate(frame, [s, s + dur], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}),
+      transform: `translateY(${interpolate(frame, [s, s + dur], [16, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})}px)`,
+    };
+  };
+  const motionIcon = (scene as {motionIcon?: string}).motionIcon;
   const ec = scene.endCard;
   // ASCII/type separation law (canon v1.8-3, 2026-07-05): `"split": true` confines the
   // ascii art to the upper band so headline/meta in .am-dark-stage never sit on the art.
@@ -267,9 +314,8 @@ export const AsciiFieldScene: React.FC<{scene: AsciiFieldSceneType; hideChrome?:
   const pulse = reveal ? 0.5 + 0.5 * Math.sin((frame / Math.max(1, fps)) * Math.PI * 1.6) : 0;
   const preMotionStyle: React.CSSProperties = reveal
     ? {
-        clipPath: `inset(0 0 ${(1 - revealP) * 100}% 0)`,
-        WebkitClipPath: `inset(0 0 ${(1 - revealP) * 100}% 0)`,
-        opacity: 0.35 + revealP * 0.65,
+        opacity: 0.3 + revealP * 0.7,
+        transform: `scale(${0.96 + revealP * 0.04})`,
         filter: `drop-shadow(0 0 ${6 + pulse * 12}px rgba(57,255,53,${0.35 + pulse * 0.4}))`,
       }
     : {};
@@ -284,7 +330,11 @@ export const AsciiFieldScene: React.FC<{scene: AsciiFieldSceneType; hideChrome?:
         </AbsoluteFill>
       ) : null}
       <AbsoluteFill style={{background: 'rgba(10,26,70,0.45)'}} />
-      {pre ? (
+      {motionIcon === 'gamepad' ? (
+        <div style={{position: 'absolute', ...(scene.imgBox ?? {top: 300, left: 0, width: 1080, height: 700}), display: 'grid', placeItems: 'center', ...preMotionStyle}}>
+          <MotionGamepad frame={frame} fps={fps} />
+        </div>
+      ) : pre ? (
         // Remotion <Img> holds the frame until the asset is fully decoded — no
         // progressive top-down pop-in at the scene cut (canon v2.2b transition fix).
         <Img
@@ -304,16 +354,16 @@ export const AsciiFieldScene: React.FC<{scene: AsciiFieldSceneType; hideChrome?:
       {ec ? (
         <div className="am-endcard">
           {ec.wordmark ? <DecodeWordmark text={ec.wordmark} frame={frame} fps={fps} /> : null}
-          {ec.cta && frame >= Math.round(fps * 2.3) ? <div className="am-cta">{ec.cta}</div> : null}
+          {ec.cta ? <div className="am-cta" style={{opacity: interpolate(frame, [Math.round(fps * 0.9), Math.round(fps * 1.3)], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})}}>{ec.cta}</div> : null}
           {ec.issue ? <div className="am-credit">{ec.issue}</div> : null}
         </div>
       ) : (
         <div className="am-dark-stage">
-          {scene.headline && showHeadline ? <div className="am-dark-headline">{scene.headline}</div> : null}
-          {scene.meta && showMeta ? <div className="am-dark-meta">{scene.meta}</div> : null}
+          {scene.headline ? <div className="am-dark-headline" style={rise(0.27)}>{scene.headline}</div> : null}
+          {scene.meta ? <div className="am-dark-meta" style={rise(0.5)}>{scene.meta}</div> : null}
         </div>
       )}
-      {scene.credit && showCredit ? <div className="am-credit">{scene.credit}</div> : null}
+      {scene.credit ? <div className="am-credit" style={rise(0.62)}>{scene.credit}</div> : null}
     </AbsoluteFill>
   );
 };

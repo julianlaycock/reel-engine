@@ -95,7 +95,7 @@ const CHAINS = {
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
-  const parsed = {strength: 'warm'};
+  const parsed = {strength: 'clean'}; // factory default: denoised broadcast read for eleven_v3 (kills the v3 ambience/hum floor)
   for (let i = 0; i < args.length; i += 1) {
     const a = args[i];
     if (a === '--input' || a === '-i') parsed.input = args[++i];

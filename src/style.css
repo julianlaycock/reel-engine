@@ -1910,12 +1910,13 @@
   /* founder 2026-07-04: horizontal, top-left (was vertical-rl right rail) */
   position: absolute;
   left: 150px;
-  top: 240px; /* dark beats skip the chrome bar; clear the top overlay directly */
+  top: 372px; /* sits BELOW the black masthead (which now shows on every slide) */
   font-family: "Jacquard 24", serif;
-  font-size: 118px;
-  line-height: 1;
+  font-size: 166px; /* brutalist: bigger + dominant, founder-locked canonical (was 118) */
+  line-height: 0.9;
+  letter-spacing: -0.01em; /* tighter, denser block */
   color: var(--am-acid);
-  text-shadow: 0 0 24px rgba(57, 255, 53, 0.65), 0 0 64px rgba(57, 255, 53, 0.35);
+  text-shadow: 0 0 12px rgba(57, 255, 53, 0.5); /* tight hard glow, not a soft halo */
 }
 .skin-americana .am-dark-stage {
   position: absolute;

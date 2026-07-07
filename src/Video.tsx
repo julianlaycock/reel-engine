@@ -318,8 +318,10 @@ export const Video: React.FC<VideoProps> = ({video}) => {
     let acc = 0;
     for (const s of video.scenes) {
       const f = sceneFrames(s);
-      const dark = s.kind === 'asciiField' || (s as {beat?: string}).beat === 'dark';
-      if (s.kind === 'broll' || (americana && dark)) chromeHideRanges.push([acc, acc + f]);
+      // Founder 2026-07-06: the black masthead shows on EVERY slide (incl. blue/dark
+      // asciiField beats) for consistency — hidden only on full-bleed broll + the end card.
+      const isEndcard = Boolean((s as {endCard?: unknown}).endCard);
+      if (s.kind === 'broll' || isEndcard) chromeHideRanges.push([acc, acc + f]);
       acc += f;
     }
   }

@@ -31,7 +31,7 @@ const main = async () => {
 
   await execFileP(
     edge,
-    [`--user-data-dir=${fs.mkdtempSync(path.join(os.tmpdir(), 'edgecap-'))}`, '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars', `--force-device-scale-factor=${scale}`, '--virtual-time-budget=9000', `--screenshot=${out}`, `--window-size=${w},${h}`, url],
+    [`--user-data-dir=${fs.mkdtempSync(path.join(os.tmpdir(), 'edgecap-'))}`, '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars', `--force-device-scale-factor=${scale}`, ...(a.includes('--transparent') ? ['--default-background-color=00000000'] : []), '--virtual-time-budget=9000', `--screenshot=${out}`, `--window-size=${w},${h}`, url],
     {timeout: 90000},
   );
   // Edge's launcher process can return before the headless child flushes the
