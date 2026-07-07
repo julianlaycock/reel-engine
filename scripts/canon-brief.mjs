@@ -38,6 +38,7 @@ L.push(`CHROME [${sev(canon.chrome)}]: masthead/chrome on every slide; fields ${
 L.push(`AUDIO [${sev(canon.audio)}]: voiceover required; NO transition SFX (music bed + VO only, sfx:false).`);
 L.push(`SAFE ZONE [${sev(canon.safeZone)}]: all on-screen elements inside top ${zone.topPx} / bottom ${zone.bottomPx} / sides ${zone.sidePx} / rail-right ${zone.railRightPx}px (rail band y ${zone.railBandY[0]}-${zone.railBandY[1]}). Mascot: xPct ~20-62, yPct ~25-66, size <= 160.`);
 L.push(`FRAME-0 [${sev(canon.frameZero)}]: scene[0] must have VO copy and instant payoff (no static hold).`);
+if (canon.distinctiveElements) L.push(`DISTINCTIVE ELEMENT [${sev(canon.distinctiveElements)}]: add ONE optional distinctive element by the video's type (screenshot / screen-recording / animation / source-receipt / split-screen), ON by default, offered in the pitch as a one-line opt-out. Rights-clean sources ONLY (own capture / official press / PD-CC0-CC-BY / on-topic ASCII; never others' clips-as-footage, never unverified people/logos from stock, never CC-BY-SA); cite every stat/screenshot on-frame. See canon/DISTINCTIVE-ELEMENTS.md. Base skin canon untouched.`);
 L.push('');
 L.push('After building, run: node ../reel-engine/scripts/check-canon.mjs --brand ' + brand.name + ' --slug <slug>');
 
