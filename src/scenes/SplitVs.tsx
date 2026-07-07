@@ -51,8 +51,10 @@ export const SplitVs: React.FC<{scene: any; hideChrome?: boolean}> = ({scene}) =
         <span style={{fontFamily: '"Anton", sans-serif', fontSize: 62, color: '#fff', letterSpacing: '0.02em'}}>{scene.badge ?? 'VS'}</span>
       </div>
 
-      {/* top name/score */}
-      <div style={{position: 'absolute', top: 220, left: 70, right: 70, zIndex: 7, opacity: t1, transform: `translateY(${(1 - t1) * 16}px)`}}>
+      {/* top name/score — pushed below the persistent masthead (~320px deep) so
+          the label clears the chrome bar instead of rendering under it (was top:220,
+          occluded by the americana masthead). Baseline now sits ≥360px. */}
+      <div style={{position: 'absolute', top: 360, left: 70, right: 70, zIndex: 7, opacity: t1, transform: `translateY(${(1 - t1) * 16}px)`}}>
         <div style={{fontFamily: '"Anton", sans-serif', fontSize: 78, color: '#fff', textTransform: 'uppercase', lineHeight: 0.9}}>{scene.topName}</div>
         {scene.topSub ? <div style={{fontFamily: '"IBM Plex Mono", monospace', fontSize: 30, color: accent, marginTop: 10, letterSpacing: '0.04em'}}>{scene.topSub}</div> : null}
       </div>
