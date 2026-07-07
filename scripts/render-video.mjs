@@ -19,9 +19,11 @@ const normalizeLoudness = async (input, output) => {
     '-i',
     input,
     '-af',
-    // loudnorm sets loudness; the alimiter hard-caps true peak (single-pass loudnorm's TP
-    // target is only approximate — this guarantees TP ≤ -1 dBTP so QA never needs a manual fix).
-    'loudnorm=I=-14:TP=-1.5:LRA=11,alimiter=limit=0.75:level=disabled',
+    // loudnorm sets loudness; single-pass loudnorm's TP target is only approximate. alimiter
+    // is a SAMPLE-peak limiter, so on its own it lets inter-sample (true) peaks slip through on
+    // peaky VO. Oversample 4× around the limiter so it catches inter-sample peaks — this makes
+    // it a true-peak limiter and guarantees TP ≤ -1 dBTP so QA never needs a manual fix.
+    'loudnorm=I=-14:TP=-1.5:LRA=11,aresample=192000,alimiter=limit=0.75:level=disabled,aresample=48000',
     '-c:v',
     'copy',
     '-c:a',
