@@ -32,7 +32,7 @@ L.push('Follow every rule below. The canon gate BLOCKS the video on any BLOCKER 
 L.push('');
 L.push(`FORMAT [${sev(canon.format)}]: ${canon.format.width}x${canon.format.height} @ ${canon.format.fps}fps.`);
 L.push(`DURATION [${sev(canon.duration)}]: ${canon.duration.minSec}-${canon.duration.maxSec}s hard; target ${canon.duration.targetMinSec}-${canon.duration.targetMaxSec}s.`);
-if (canon.transcript) L.push(`TRANSCRIPT [${sev(canon.transcript)}]: if the concept is transcript-based (concept.json source_type:"transcript" or transcript_verbatim:true), the SOURCE TRANSCRIPT is the script — reproduce its content/claims/hook 1:1, NO trimming/paraphrase; EXEMPT from the duration cap. FACTS-POLICY is OVERRIDDEN (trust the source, no facts.json/check-facts). ALWAYS adapt the brand layer to Vektor: CTA/keyword+funnel, skin, voice, disclaimer. Footage-rights + safe-zone still apply.`);
+if (canon.transcript) L.push(`TRANSCRIPT [${sev(canon.transcript)}]: if the concept is transcript-based (concept.json source_type:"transcript" or transcript_verbatim:true), reproduce the SOURCE's content/structure/hook + human flow but LIGHTLY REWORD into original wording (not a word-for-word copy — minor tweaks, keep the natural flow). EXEMPT from the duration cap. FACTS-POLICY OVERRIDDEN (trust the source, no facts.json/check-facts). ALWAYS adapt the brand layer to Vektor: CTA/keyword+funnel, skin, voice, disclaimer. Footage-rights + safe-zone still apply.`);
 L.push(`SKIN [${sev(canon.skin)}]: ${canon.skin.required}.`);
 L.push(`CHROME [${sev(canon.chrome)}]: masthead/chrome on every slide; fields ${(canon.chrome.requireFields || []).join('+')}.`);
 L.push(`AUDIO [${sev(canon.audio)}]: voiceover required; NO transition SFX (music bed + VO only, sfx:false).`);
