@@ -360,9 +360,14 @@
 }
 
 .vs-row {
-  display: flex;
+  /* Optical-centering fix (2026-07-08, founder catch on the NO.010 rule
+     beats): the row HUGS its content and centers as ONE unit. The old
+     space-between + flex:1 columns centered each value inside its own half,
+     so a wide+narrow pair ("+180" vs "+6") read off-center. */
+  display: inline-flex;
+  align-self: center;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 30px;
 }
 
@@ -371,7 +376,7 @@
   flex-direction: column;
   align-items: center;
   gap: 18px;
-  flex: 1;
+  flex: none;
 }
 
 .vs-value {
@@ -397,6 +402,79 @@
   color: var(--muted);
   text-align: center;
   line-height: 1.2;
+  /* Safe-zone guard (canon v2.8): labels may never cross the platform margins.
+     Auto-fit in VersusScene.tsx sets the size; these are the hard backstops. */
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* The versus stage respects the platform safe zone like .ed-stage does —
+   150px sides; the auto-fit + nowrap above keep labels inside the columns.
+   position+z-index: the pair must layer ABOVE the .vs-ghost numeral. */
+.mid-versus {
+  padding-left: 150px;
+  padding-right: 150px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+}
+
+/* ---- versus-beat fill (NO.010, founder pick B+C 2026-07-08) ---- */
+/* Ghost rule numeral (variant C): huge outline numeral behind/below the pair.
+   Ink outline, opacity animated in VersusScene.tsx to ~0.13. DECORATIVE ONLY —
+   z-index 1 keeps it under .mid-versus (z 2); geometry mirrors the founder
+   mock (research/versus-fill-proposals.html .ghostnum). */
+.vs-ghost {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 880px;
+  text-align: center;
+  font-family: var(--display);
+  font-weight: 800; /* Inter Tight variable range clamps to 700 — intended */
+  font-size: 520px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: transparent;
+  -webkit-text-stroke: 3px rgba(16, 16, 16, 0.8);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Evidence diff lines (variant B, NO white card — founder amendment): mono
+   lines directly on the field, lower band, CENTERED under the pair per founder
+   mock B (final cut 2026-07-08: ghost numeral + fill-beat mascot removed, so
+   the left-anchor concession for the mascot slot is gone). The block shrinks
+   to its widest line and centers; lines stay left-aligned to each other so the
+   diff reads as a diff. minus = muted ink struck through, plus = caret-teal
+   (#0E9C86 — the acid law keeps acid off light fields). */
+.vs-lines {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 1100px; /* diffLines envelope 1080..1260 (wireframes v2) — 3 mono-30 lines end ≤1260 */
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: var(--mono);
+  font-size: 30px;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  text-align: left;
+  white-space: pre;
+}
+
+.vs-line-del {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+.vs-line-add {
+  color: #0e9c86;
+  font-weight: 500;
 }
 
 .vs-div {
@@ -1693,20 +1771,99 @@
   position: absolute;
   left: 150px;
   right: 150px;
-  bottom: 510px; /* clears the 500px caption zone — fully visible on-platform */
+  bottom: 500px; /* bottom edge ON the y1420 platform safe line — as low as fully visible (founder law 2026-07-08, wireframe contract v2 footer band 1380–1420) */
   display: flex;
   justify-content: space-between;
   font-family: "IBM Plex Mono", monospace;
   font-size: 22px;
+  line-height: 1; /* deterministic text box (22px) so the P1 hairline lands at y1368 exactly */
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(16, 16, 16, 0.6); /* ink 0.6 on light fields; hidden on dark beats */
+  color: rgba(16, 16, 16, 0.6); /* ink 0.6 on light fields */
   z-index: 40;
 }
+/* P1 FOLIO HAIRLINE (wireframes v2 furniture, founder-approved 2026-07-08):
+   a 1.5px ink rule spanning the content width (x150–930) at y≈1368, 12px above
+   the footer band — the footer reads as a newspaper FOLIO LINE. Ink 0.55 on
+   light fields, paper 0.4 on dark beats. */
+.skin-americana .am-footer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -30px; /* footer text top y1398 → hairline y1368 */
+  border-top: 1.5px solid rgba(16, 16, 16, 0.55);
+}
+.skin-americana .am-footer.am-dark {
+  color: rgba(239, 234, 221, 0.6); /* paper on middle dark beats (footer renders on EVERY slide) */
+}
+.skin-americana .am-footer.am-dark::before {
+  border-top-color: rgba(239, 234, 221, 0.4);
+}
+
+/* THE RECEIPTS LINE (wireframes v2 caption band y1300–1340, REQUIRED on middle
+   slides): P3 dateline grammar — "//// SRC · <source> — MM·YYYY". Four-tick
+   Workbench prefix + IBM Plex Mono 22, ink 0.62 on light / blueMeta on dark
+   (acid ticks on dark — acid only on ink/signal, the acid law). Same pixel
+   position on every kind — the system reads as one printed object. */
+.skin-americana .am-capline {
+  position: absolute;
+  left: 150px;
+  right: 150px;
+  top: 1300px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(16, 16, 16, 0.62);
+  z-index: 40;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.skin-americana .am-capline-ticks {
+  font-family: "Workbench", monospace;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  opacity: 0.85;
+}
+.skin-americana .am-capline.am-dark {
+  color: var(--am-blue-meta);
+}
+.skin-americana .am-capline.am-dark .am-capline-ticks {
+  color: var(--am-acid); /* acid on signal/ink — legal */
+}
+
+/* P2 REGISTRATION TICKS (wireframes v2 furniture, founder-approved 2026-07-08):
+   12px press marks at the four content-band corners (150/360 · 930/360 ·
+   150/1260 · 930/1260), 1.5px stroke, ink 0.32 on light / acid 0.35 on dark.
+   Proof-sheet furniture — the grid becomes FELT without being seen. */
+.skin-americana .am-regmarks {
+  --tick: rgba(16, 16, 16, 0.32);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 39;
+}
+.skin-americana .am-regmarks.am-dark {
+  --tick: rgba(57, 255, 53, 0.35); /* acid on dark beats — legal */
+}
+.skin-americana .am-tick {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+}
+.skin-americana .am-tick-tl { left: 150px; top: 360px; border-left: 1.5px solid var(--tick); border-top: 1.5px solid var(--tick); }
+.skin-americana .am-tick-tr { right: 150px; top: 360px; border-right: 1.5px solid var(--tick); border-top: 1.5px solid var(--tick); }
+.skin-americana .am-tick-bl { left: 150px; bottom: 660px; border-left: 1.5px solid var(--tick); border-bottom: 1.5px solid var(--tick); }
+.skin-americana .am-tick-br { right: 150px; bottom: 660px; border-right: 1.5px solid var(--tick); border-bottom: 1.5px solid var(--tick); }
 
 /* ---- shared americana editorial grammar ---- */
 .skin-americana .ed-stage {
-  padding: 360px 150px 560px; /* rail 150 · clear the 320px masthead + inset footer */
+  padding: 360px 150px 660px; /* rail 150 · clear the 320px masthead · content band ends 1260 (wireframes v2, conformed 2026-07-08) */
 }
 .skin-americana .ed-eyebrow {
   font-family: "Workbench", monospace;
@@ -1891,6 +2048,31 @@
   line-height: 0.92;
   color: var(--fg);
 }
+/* v2 band conformance (wireframes.json engineDrift → founder catch 06):
+   eyebrow/hatch lands in the headline envelope (y400..560), numeral in the
+   content envelope (y600..1260), left-aligned like the 171k board. .drift
+   pads 92/86 → padding here puts the hatch top at y400 and the column at
+   x150 (86 + 64). Caption is the shared P3 band (PersistentChrome). */
+.skin-americana .mid-counter {
+  justify-content: flex-start;
+  padding: 308px 64px 0 64px;
+  gap: 110px; /* eyebrow block ends ~y490 → focal top lands in the y600 numeral envelope */
+}
+.skin-americana .counter-word {
+  white-space: nowrap;
+}
+/* Struck counter-value beside a statement focal ("+180" struck next to "+6") —
+   superscript-style, quiet, decorative. */
+.counter-counterpoint {
+  font-size: 0.2em;
+  font-weight: 700;
+  margin-left: 0.18em;
+  position: relative;
+  top: -2.2em; /* superscript-style — hangs off the focal's upper third */
+  text-decoration: line-through;
+  text-decoration-thickness: 0.1em;
+  color: var(--muted);
+}
 .skin-americana .mid-counter .sub {
   font-family: "Workbench", monospace;
   font-size: 28px;
@@ -1922,7 +2104,7 @@
   position: absolute;
   left: 150px;
   right: 260px; /* clear the like/save rail band */
-  bottom: 560px;
+  bottom: 660px; /* headline bottom stops at 1260 (wireframes v2 content band, conformed 2026-07-08) */
 }
 .skin-americana .am-dark-headline {
   font-family: "Tektur", var(--display);
@@ -1943,14 +2125,19 @@
 }
 .skin-americana .am-credit {
   position: absolute;
-  right: 260px; /* right rail band */
-  bottom: 520px;
+  right: 260px; /* right rail band — right edge x820 */
+  bottom: 580px; /* the dark beat's receipts line sits IN the caption band 1300–1340 (wireframes v2, conformed 2026-07-08 — at 520 it collided with the always-on footer) */
   font-family: "IBM Plex Mono", monospace;
   font-size: 22px;
   letter-spacing: 0.04em;
   color: var(--am-acid);
   text-align: right;
   text-transform: uppercase;
+}
+/* the END CARD's issue line keeps the deeper row (bottom 520 → y1358..1400):
+   the chrome footer is hidden there, so no collision — endCard zone `issue`. */
+.skin-americana .am-endcard .am-credit {
+  bottom: 520px;
 }
 .skin-americana .am-endcard {
   position: absolute;
@@ -1999,6 +2186,13 @@
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--am-acid);
+}
+
+/* Versus receipts: in americana the caption ("line under the pair") renders in
+   the SHARED caption band via .am-capline (PersistentChrome, wireframes v2) —
+   the in-flow .vs-caption is suppressed so it can't double-render. */
+.skin-americana .vs-caption {
+  display: none;
 }
 
 /* ghost fragments: mono 19, corners only, max 2 per frame, ≤0.45 opacity */

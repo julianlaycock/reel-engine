@@ -55,14 +55,33 @@ const main = async () => {
   const outDir = path.join('out', '_qa', args.slug, 'judge');
   fs.mkdirSync(outDir, {recursive: true});
 
-  // Evenly-spaced frames across the whole video (skip the very last 0.3s tail).
+  // Sample at SCENE MIDPOINTS from video.json (canon v2.8) — blind time-bins used
+  // to land on cross-fades and miss whole beats (how a mascot-on-text frame passed).
+  // One frame per scene, plus frame-0 and the final CTA frame; falls back to
+  // evenly-spaced bins if video.json is missing. 810px wide (was 540 — too soft
+  // to see margin overflow and small labels).
   const dur = await ffprobeDuration(mp4);
-  const n = Math.max(3, Math.min(12, args.frames));
-  const stamps = Array.from({length: n}, (_, i) => +((i + 0.5) * (dur - 0.3) / n).toFixed(2));
+  let stamps = [];
+  try {
+    const vj = JSON.parse(fs.readFileSync(path.join('data', args.slug, 'video.json'), 'utf8'));
+    const fps = vj.fps || 30;
+    let acc = 0;
+    for (const sc of vj.scenes || []) {
+      const d = sc.durationInFrames || 0;
+      stamps.push(+(((acc + d / 2) / fps)).toFixed(2)); // scene midpoint
+      acc += d;
+    }
+    stamps.unshift(0.03); // frame-0 (the hook law's actual subject)
+    stamps.push(+Math.max(0, dur - 0.4).toFixed(2)); // final CTA state
+    stamps = [...new Set(stamps)].filter((t) => t >= 0 && t < dur).sort((a, b) => a - b);
+  } catch {
+    const n = Math.max(10, Math.min(16, args.frames));
+    stamps = Array.from({length: n}, (_, i) => +((i + 0.5) * (dur - 0.3) / n).toFixed(2));
+  }
   const frames = [];
   for (let i = 0; i < stamps.length; i += 1) {
     const f = path.join(outDir, `f${String(i + 1).padStart(2, '0')}.png`);
-    await execFileP('ffmpeg', ['-y', '-loglevel', 'error', '-ss', String(stamps[i]), '-i', mp4, '-frames:v', '1', '-vf', 'scale=540:-1', f]);
+    await execFileP('ffmpeg', ['-y', '-loglevel', 'error', '-ss', String(stamps[i]), '-i', mp4, '-frames:v', '1', '-vf', 'scale=810:-1', f]);
     frames.push({path: f, t: stamps[i]});
   }
 
@@ -80,6 +99,18 @@ const main = async () => {
     '  "dimensions": [ {"name": "<dim>", "pass": true|false, "severity": "minor|major|critical", "note": "<short>"} ],',
     '  "fixes": ["<highest-impact fix>", "..."] }',
     'Verdict rule: NO-GO if any critical; REVISE if any major; else GO.',
+    '',
+    'MANDATORY PER-FRAME CHECKS (canon v2.8 — answer for EVERY frame, do not skim):',
+    '- MARGINS: does ANY text/element touch or cross the platform safe-zone margins',
+    '  (top 220 / bottom 500 / sides 150 / right 260 in the rail band y850-1600)? Frames are',
+    `  810px wide → margins scale to top 92 / bottom 211 / sides 61 / rail-right 109 px. major+.`,
+    '- MASCOT: does the mascot overlap ANY text, wordmark, logo, or data element? major+.',
+    '- MASCOT SCALE: mid-scene mascot reads as a small companion; if it dominates the',
+    '  composition or acts as the background anywhere (incl. the end-card), critical.',
+    '- END-CARD: background must be the signal-blue field + on-topic ascii art — the mascot',
+    '  or an off-topic blow-up as background is critical.',
+    '- READABILITY: could a viewer actually read all on-screen text in the beat\'s duration',
+    '  (scene times are in the frame list)? Flag any wall-of-text or flash-by beat.',
     '',
     '===== RUBRIC =====',
     rubric.trim(),

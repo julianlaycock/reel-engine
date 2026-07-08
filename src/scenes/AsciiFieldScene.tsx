@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {AbsoluteFill, continueRender, delayRender, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
+import {AbsoluteFill, continueRender, delayRender, Easing, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {AsciiFieldScene as AsciiFieldSceneType} from '../video-schema';
 import '../style.css';
 
@@ -139,10 +139,16 @@ const CELL_W = 15;
 const CELL_H = 18;
 const NOISE = '`.,:;!i1tfjLCG0Z8W%@#/\\|_';
 
-// Smooth wordmark reveal (canon v2.5, 2026-07-06): staggered ease-in per letter,
-// replacing the old ASCII-noise "decode" churn that read as glitchy. No jitter,
-// no caret — the wordmark just settles in cleanly. Deterministic (frame-driven).
-const DecodeWordmark: React.FC<{text: string; frame: number; fps: number}> = ({text, frame, fps}) => {
+// ------------------------------- end-card wordmark motion (brand logoMotion) --
+// vektor-tokens.json options A–D, all implemented 2026-07-08. Law: plays ONCE
+// (end-card), every variant ends in the identical static .am-wordmark state
+// inside the end-card timing budget (~60f before the CTA is fully in). All
+// frame-deterministic — no Math.random (frames render out of order).
+export type WordmarkMotion = 'fade' | 'typeon' | 'registration' | 'decode' | 'presswipe';
+
+// 'fade' (default) — smooth wordmark reveal (canon v2.5, 2026-07-06): staggered
+// ease-in per letter. No jitter, no caret — the wordmark just settles in cleanly.
+const FadeWordmark: React.FC<{text: string; frame: number; fps: number}> = ({text, frame, fps}) => {
   const chars = text.split('');
   const step = Math.max(1, Math.round(fps * 0.05));
   return (
@@ -159,6 +165,178 @@ const DecodeWordmark: React.FC<{text: string; frame: number; fps: number}> = ({t
       })}
     </div>
   );
+};
+
+// A 'typeon' — letters print left-to-right in HARD steps (typewriter, one fully
+// formed letter every 4 frames) with a blinking block caret ahead of the print
+// position (16f blink cycle, gone when done). Caret is the brand teal — the
+// Vektor caret is ALWAYS teal (BRAND.md), never palette-recolored.
+const TypeOnWordmark: React.FC<{text: string; frame: number}> = ({text, frame}) => {
+  const chars = text.split('');
+  const start = 6;
+  const printed = frame < start ? 0 : Math.min(chars.length, Math.floor((frame - start) / 4) + 1);
+  const caretOn = printed < chars.length && frame % 16 < 8;
+  return (
+    <div className="am-wordmark">
+      {chars.map((ch, i) => (
+        <span key={i} style={{position: 'relative', display: 'inline-block'}}>
+          <span style={{opacity: i < printed ? 1 : 0}}>{ch === ' ' ? ' ' : ch}</span>
+          {i === printed ? (
+            <span
+              style={{
+                position: 'absolute',
+                left: 0,
+                bottom: '0.06em',
+                width: '0.6em',
+                height: '0.74em',
+                background: '#0E9C86',
+                opacity: caretOn ? 1 : 0,
+              }}
+            />
+          ) : null}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+// B 'registration' — three color plates (coral / acid / ink) start off-register
+// (±10px) at low opacity and SNAP into register over ~20 frames on a spring;
+// the plates fade as they converge, leaving the normal paper wordmark.
+const REG_PLATES: Array<{color: string; ox: number; oy: number}> = [
+  {color: '#D97757', ox: -10, oy: -7}, // coral
+  {color: '#B8E62E', ox: 9, oy: -5}, // acid
+  {color: '#101010', ox: -6, oy: 9}, // ink
+];
+const RegistrationWordmark: React.FC<{text: string; frame: number; fps: number}> = ({text, frame, fps}) => {
+  const start = 4;
+  const conv = spring({frame: Math.max(0, frame - start), fps, config: {damping: 12, stiffness: 65}}); // ~20f, snaps past register
+  const off = 1 - conv; // slightly negative on the overshoot — the "snap"
+  const plateOp = Math.max(0, 0.85 * (1 - conv));
+  const baseOp = interpolate(conv, [0, 0.55, 1], [0.12, 0.5, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  return (
+    <div className="am-wordmark" style={{position: 'relative'}}>
+      {plateOp > 0.01
+        ? REG_PLATES.map((p, i) => (
+            <div
+              key={i}
+              aria-hidden
+              style={{
+                position: 'absolute',
+                inset: 0,
+                color: p.color,
+                opacity: plateOp,
+                transform: `translate(${(p.ox * off).toFixed(2)}px, ${(p.oy * off).toFixed(2)}px)`,
+              }}
+            >
+              {text}
+            </div>
+          ))
+        : null}
+      <div style={{position: 'relative', opacity: baseOp}}>{text}</div>
+    </div>
+  );
+};
+
+// C 'decode' (premium — NOT the retired glitchy churn): per-letter left-to-right
+// stagger; each letter cycles deterministic noise glyphs (indexed, ≥3f per
+// glyph, reduced opacity) then resolves via a smooth 8-frame alpha/blur
+// crossfade. The real letter holds the layout so nothing jiggles.
+const DecodeWordmark: React.FC<{text: string; frame: number}> = ({text, frame}) => {
+  const start = 6;
+  return (
+    <div className="am-wordmark">
+      {text.split('').map((ch, i) => {
+        if (ch === ' ') return <span key={i}>{' '}</span>;
+        const s = start + i * 4;
+        const noiseEnd = s + 9; // 3 glyphs × 3 frames of noise
+        const resolveEnd = noiseEnd + 8; // eased 8f crossfade to the real letter
+        const glyph = NOISE[(i * 7 + Math.floor(frame / 3)) % NOISE.length];
+        const noiseOp =
+          frame < s
+            ? 0
+            : interpolate(frame, [noiseEnd, resolveEnd], [0.45, 0], {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp',
+                easing: Easing.inOut(Easing.quad),
+              });
+        const realOp = interpolate(frame, [noiseEnd, resolveEnd], [0, 1], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+          easing: Easing.out(Easing.quad),
+        });
+        const blur = interpolate(frame, [noiseEnd, resolveEnd], [5, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+        return (
+          <span key={i} style={{position: 'relative', display: 'inline-block'}}>
+            <span style={{display: 'inline-block', opacity: realOp, filter: blur > 0.05 && realOp > 0 ? `blur(${blur.toFixed(1)}px)` : undefined}}>
+              {ch}
+            </span>
+            {noiseOp > 0.01 ? (
+              <span
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: 0,
+                  transform: 'translateX(-50%)',
+                  opacity: noiseOp,
+                  color: 'var(--am-acid, #39FF35)',
+                }}
+              >
+                {glyph}
+              </span>
+            ) : null}
+          </span>
+        );
+      })}
+    </div>
+  );
+};
+
+// D 'presswipe' — an ink print-head bar carrying "///" diagonal strokes sweeps
+// left→right over ~24 frames (eased); the letters are revealed behind the
+// sweep edge (clip-path inset driven by the bar x). Bar exits, mark holds.
+const PressWipeWordmark: React.FC<{text: string; frame: number}> = ({text, frame}) => {
+  const start = 4;
+  const dur = 24;
+  const p = interpolate(frame, [start, start + dur], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.inOut(Easing.cubic),
+  });
+  const barW = 13; // % of the lockup width
+  const barX = p * (100 + 2 * barW) - barW; // bar center: -13% → 113%
+  const reveal = Math.max(0, Math.min(100, barX)); // letters exist left of the bar center
+  const done = p >= 1;
+  return (
+    <div className="am-wordmark" style={{position: 'relative', display: 'inline-block'}}>
+      <span style={{display: 'inline-block', clipPath: done ? undefined : `inset(-10% ${(100 - reveal).toFixed(2)}% -10% -10%)`}}>
+        {text}
+      </span>
+      {!done && p > 0 ? (
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: '-4%',
+            bottom: '2%',
+            left: `${(barX - barW / 2).toFixed(2)}%`,
+            width: `${barW}%`,
+            background: 'repeating-linear-gradient(115deg, #101010 0px 14px, #39FF35 14px 19px)',
+            boxShadow: '0 0 18px rgba(16,16,16,0.5)',
+          }}
+        />
+      ) : null}
+    </div>
+  );
+};
+
+const EndcardWordmark: React.FC<{text: string; motion: WordmarkMotion; frame: number; fps: number}> = ({text, motion, frame, fps}) => {
+  if (motion === 'typeon') return <TypeOnWordmark text={text} frame={frame} />;
+  if (motion === 'registration') return <RegistrationWordmark text={text} frame={frame} fps={fps} />;
+  if (motion === 'decode') return <DecodeWordmark text={text} frame={frame} />;
+  if (motion === 'presswipe') return <PressWipeWordmark text={text} frame={frame} />;
+  return <FadeWordmark text={text} frame={frame} fps={fps} />;
 };
 
 // Frame-accurate animated gamepad (Motion Lab option 09 · AnimateIcons pattern):
@@ -331,15 +509,17 @@ export const AsciiFieldScene: React.FC<{scene: AsciiFieldSceneType; hideChrome?:
       ) : null}
       <AbsoluteFill style={{background: 'rgba(10,26,70,0.45)'}} />
       {motionIcon === 'gamepad' ? (
-        <div style={{position: 'absolute', ...(scene.imgBox ?? {top: 300, left: 0, width: 1080, height: 700}), display: 'grid', placeItems: 'center', ...preMotionStyle}}>
+        <div style={{position: 'absolute', ...(scene.imgBox ?? {top: 360, left: 0, width: 1080, height: 640}), display: 'grid', placeItems: 'center', ...preMotionStyle}}>
           <MotionGamepad frame={frame} fps={fps} />
         </div>
       ) : pre ? (
         // Remotion <Img> holds the frame until the asset is fully decoded — no
         // progressive top-down pop-in at the scene cut (canon v2.2b transition fix).
+        // v2 art envelope (wireframes.json, founder catches 05/08): default box
+        // top 360 h640 — ascii art must never sit behind the 320px chrome band.
         <Img
           src={staticFile(scene.src)}
-          style={{position: 'absolute', ...(scene.imgBox ?? {top: 300, left: 0, width: 1080, height: 700}), objectFit: 'contain', ...preMotionStyle}}
+          style={{position: 'absolute', ...(scene.imgBox ?? {top: 360, left: 0, width: 1080, height: 640}), objectFit: 'contain', ...preMotionStyle}}
         />
       ) : (
         <canvas ref={canvasRef} width={1080} height={1920} style={{position: 'absolute', inset: 0, ...(split ? {transform: 'translateY(-60px) scale(0.62)', transformOrigin: 'top center'} : {})}} />
@@ -353,7 +533,9 @@ export const AsciiFieldScene: React.FC<{scene: AsciiFieldSceneType; hideChrome?:
 
       {ec ? (
         <div className="am-endcard">
-          {ec.wordmark ? <DecodeWordmark text={ec.wordmark} frame={frame} fps={fps} /> : null}
+          {ec.wordmark ? (
+            <EndcardWordmark text={ec.wordmark} motion={ec.wordmarkMotion ?? 'fade'} frame={frame} fps={fps} />
+          ) : null}
           {ec.cta ? <div className="am-cta" style={{opacity: interpolate(frame, [Math.round(fps * 0.9), Math.round(fps * 1.3)], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})}}>{ec.cta}</div> : null}
           {ec.issue ? <div className="am-credit">{ec.issue}</div> : null}
         </div>

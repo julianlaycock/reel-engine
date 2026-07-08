@@ -329,17 +329,34 @@ export const Video: React.FC<VideoProps> = ({video}) => {
   // Americana chrome data: per-beat section marker (Workbench, top-right) and
   // footer progress "NN / 06" — both advance with the current scene (progress
   // markers signal saveability, canon v1.7.1). One-Jacquard law checked here.
-  const amBeats: Array<{from: number; to: number; marker?: string; no?: string}> = [];
+  // Wireframe contract v2 (founder 2026-07-08): each beat also carries its
+  // RECEIPTS caption (rendered once, at the caption band y1300 — same pixel
+  // position on every kind), a dark flag (signal/ink recoloring) and the
+  // print-furniture gate (P2 registration ticks, middle slides only). The
+  // asciiField dark beat keeps its own .am-credit chip as the receipts line,
+  // so its `caption` is not lifted here (no double-render).
+  const amBeats: Array<{from: number; to: number; marker?: string; no?: string; caption?: string; dark?: boolean; furniture?: boolean}> = [];
   if (americana) {
     let acc = 0;
     let jacquards = 0;
-    for (const s of video.scenes) {
+    video.scenes.forEach((s, si) => {
       const f = sceneFrames(s);
-      const sc = s as {marker?: string; beatNo?: string; jacquardWord?: string; kind: string};
-      amBeats.push({from: acc, to: acc + f, marker: sc.marker, no: sc.beatNo});
+      const sc = s as {marker?: string; beatNo?: string; jacquardWord?: string; kind: string; caption?: string; field?: string; endCard?: unknown};
+      const isEnd = Boolean(sc.endCard);
+      const dark = sc.kind === 'asciiField' || sc.field === 'signal' || sc.field === 'ink';
+      const middle = si > 0 && !isEnd && sc.kind !== 'broll';
+      amBeats.push({
+        from: acc,
+        to: acc + f,
+        marker: sc.marker,
+        no: sc.beatNo,
+        caption: sc.kind === 'asciiField' || isEnd ? undefined : sc.caption,
+        dark,
+        furniture: middle,
+      });
       if (sc.kind === 'asciiField' && sc.jacquardWord) jacquards++;
       acc += f;
-    }
+    });
     if (jacquards > 1) {
       // eslint-disable-next-line no-console
       console.warn(`americana law: exactly ONE Jacquard word per video — found ${jacquards}`);
@@ -477,8 +494,22 @@ export const Video: React.FC<VideoProps> = ({video}) => {
                       ))
                     : null}
                   {(scene as {mascot?: MascotConfig}).mascot ? (
-                    <ClaudeMascot config={(scene as {mascot?: MascotConfig}).mascot!} frames={frames} />
+                    <ClaudeMascot
+                      config={(scene as {mascot?: MascotConfig}).mascot!}
+                      frames={frames}
+                      // end-card beats get their own vetted-slot table + size guard
+                      sceneKind={(scene as {endCard?: unknown}).endCard ? 'endCard' : scene.kind}
+                    />
                   ) : null}
+                  {/* styleboard/demo escape hatch: several mascots on one scene */}
+                  {((scene as {mascots?: MascotConfig[]}).mascots ?? []).map((m, mi) => (
+                    <ClaudeMascot
+                      key={`m${mi}`}
+                      config={m}
+                      frames={frames}
+                      sceneKind={(scene as {endCard?: unknown}).endCard ? 'endCard' : scene.kind}
+                    />
+                  ))}
                 </SceneEnvelope>
               </AbsoluteFill>
             </Series.Sequence>

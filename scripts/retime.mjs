@@ -10,6 +10,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
+import {readingFloorFrames} from './lib/reading-time.mjs';
 
 const execFileP = promisify(execFile);
 const root = process.cwd();
@@ -73,15 +74,38 @@ const main = async () => {
     acc += counts[i];
   }
 
-  const MIN = 40;
+  // Canon v2.8 floors: every voiced scene gets max(3s hard floor, reading time
+  // for its on-screen text). Deficits are borrowed from the NEXT scene so the
+  // total stays anchored to the audio (canon v2.0-3); if the last scene can't
+  // absorb it, the tail extends and we warn — that's an authoring problem
+  // (too much on-screen text for too little narration).
+  const floors = voiced.map((s) => readingFloorFrames(s, fps));
   const voicedAlloc = voiced.map((s, i) => {
     const endMs = i < starts.length - 1 ? starts[i + 1] : durMs + 250;
-    return Math.max(MIN, Math.round(((endMs - starts[i]) / 1000) * fps));
+    return Math.round(((endMs - starts[i]) / 1000) * fps);
   });
+  for (let i = 0; i < voicedAlloc.length; i += 1) {
+    const deficit = floors[i] - voicedAlloc[i];
+    if (deficit <= 0) continue;
+    voicedAlloc[i] += deficit;
+    if (i < voicedAlloc.length - 1) {
+      voicedAlloc[i + 1] -= deficit; // may cascade; next iteration re-floors it
+      console.warn(
+        `retime: scene ${i + 1} below reading floor (${floors[i]}f) — borrowed ${deficit}f from the next scene.`,
+      );
+    } else {
+      console.warn(
+        `retime: LAST scene extended ${deficit}f past the audio to meet its reading floor — trim its on-screen text or add narration.`,
+      );
+    }
+  }
 
   let vi = 0;
   video.scenes.forEach((s) => {
     if (isHold(s)) {
+      // Holds (silent end-cards etc.) keep their authored duration but still
+      // respect the reading floor for whatever text they show.
+      s.durationInFrames = Math.max(s.durationInFrames || 0, readingFloorFrames(s, fps));
       if (s.kind === 'card') s.card.durationInFrames = s.durationInFrames;
     } else {
       s.durationInFrames = voicedAlloc[vi];

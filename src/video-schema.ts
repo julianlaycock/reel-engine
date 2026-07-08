@@ -35,7 +35,15 @@ export type ScreenScene = {
 export type CounterScene = {
   kind: 'counter';
   from?: number; // default 0
-  to: number;
+  to?: number; // required unless `word` is set (statement mode)
+  // Statement mode (rule-beat treatment 05 language, 2026-07-08): render WORD
+  // as the giant Tektur focal instead of a numeric count-up (e.g. "MATCHED.",
+  // "ASK."). Auto-fits to the content column; lands with the same punch.
+  // `word` IS read → counted by reading-time READ_KEYS.
+  word?: string;
+  // Optional small struck counter-value beside the focal (e.g. a struck
+  // "+180" superscript next to "+6") — decorative counterpoint, not linearly read.
+  counterpoint?: string;
   decimals?: number; // default 0
   prefix?: string; // e.g. "" or "<"
   suffix?: string; // e.g. "×", "%", " HOURS"
@@ -57,6 +65,17 @@ export type VersusScene = {
   rightValue: string;
   rightLabel: string;
   caption?: string; // line under the pair
+  // NO.010 versus-beat fill (founder pick: B+C combined, 2026-07-08).
+  // ghost = huge outline rule numeral ("R2") behind/below the pair, ink outline
+  // at ~13% opacity. DECORATIVE — the key is deliberately NOT in
+  // reading-time.mjs READ_KEYS so it never inflates the reading floor.
+  // Never put content that must be read here.
+  ghost?: string;
+  // lines = short mono diff-style evidence lines rendered DIRECTLY on the field
+  // (no card/panel/background), lower band. A leading '-' renders muted ink
+  // (struck), a leading '+' renders caret-teal (acid law: acid never on light
+  // fields). These ARE read → 'lines' IS a READ_KEY; keep each ≤22 chars.
+  lines?: string[];
   kicker?: string;
   kickerRight?: string;
   footerRight?: string;
@@ -89,6 +108,7 @@ export type EditorialScene = {
   };
   callouts?: EditorialCallout[];
   footnote?: string; // muted line under the subject
+  caption?: string; // receipts line (wireframes v2 caption band y1300, P3 dateline grammar) — rendered by PersistentChrome in americana
   kicker?: string;
   kickerRight?: string;
   footerRight?: string;
@@ -559,6 +579,9 @@ export type AsciiFieldScene = {
   imgBox?: {top: number; left: number; width: number; height: number}; // optional position/size for `pre` <Img> (default {top:300,left:0,width:1080,height:700})
   endCard?: {
     wordmark?: string; // 150px lockup; decode logo-motion (option C) plays once
+    // brand logoMotion (vektor-tokens.json): plays once, ends in the identical
+    // static wordmark. 'fade' = current staggered per-letter fade (default).
+    wordmarkMotion?: 'fade' | 'typeon' | 'registration' | 'decode' | 'presswipe';
     cta?: string; // Workbench acid CTA
     issue?: string; // issue chip, bottom-right acid credit format
   };

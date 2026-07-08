@@ -15,8 +15,20 @@ export type ChromeDarkMorph = {
 };
 
 // Americana chrome data: which beat is under the playhead (drives the Workbench
-// section marker + the "NN / 06" footer progress).
-export type ChromeBeat = {from: number; to: number; marker?: string; no?: string};
+// section marker + the "NN / 06" footer progress). Wireframe contract v2
+// (founder 2026-07-08) adds the per-beat RECEIPTS caption (rendered at the
+// caption band y1300 — same pixel position on every kind), the dark flag
+// (signal/ink beats recolor the caption/furniture) and the print-furniture
+// gate (P1 folio hairline + P2 registration ticks on middle slides).
+export type ChromeBeat = {
+  from: number;
+  to: number;
+  marker?: string;
+  no?: string;
+  caption?: string; // receipts line (P3 dateline grammar) — caption band y1300..1340
+  dark?: boolean; // signal/ink beat → blueMeta caption, acid ticks, paper hairline
+  furniture?: boolean; // middle slide → P2 registration ticks at the content-band corners
+};
 
 // Rendered ONCE at the video level (outside the scene Series), so the bars fade
 // in a single time at the start and hold for the whole video — no per-cut flicker.
@@ -86,19 +98,20 @@ export const PersistentChrome: React.FC<{
   // wordmark left (Inter Tight 600 lowercase, NO caret: the mark stands alone),
   // Workbench section marker right — and a mono footer 56px from the bottom:
   // "vektor /// no. NNN" left, "NN / 06" progress right. Constant ink, no
-  // dark-morph lerp; dark beats hide the whole set via hideRanges.
-  // FOOTER = INTRO-ONLY (founder 2026-07-07): the mono footer showed on every
-  // slide and read as messy over visualisations. It now renders ONLY during the
-  // first scene (the intro); scenes 2..N carry the top ink bar alone.
+  // dark-morph lerp; broll + end card hide the whole set via hideRanges.
+  // FOOTER = EVERY SLIDE (founder law 2026-07-08, wireframe contract v2 —
+  // REVERSES the 2026-07-07 intro-only rule): the mono footer is the premium
+  // anchor line on every slide, bottom edge hugging the y1420 platform safe
+  // line (style.css .am-footer bottom:500). It hides only with the rest of the
+  // chrome (hideRanges: broll + end card — the end card's issue line is its
+  // footer analogue).
   if (skin === 'americana') {
     const beat = beats?.find((b) => frame >= b.from && frame < b.to);
     // FRAME-ZERO LAW + loop-seam law: the ink bar is part of the finished F0
     // thumbnail AND of a loop cut's hand-back frame — no fade-in, no end-of-video
-    // fade. Dark beats hide it via hideRanges; nothing else does.
+    // fade. hideRanges (broll + end card) hides it; nothing else does.
     const amOpacity = hide;
-    // Footer only lives in the intro: visible while the playhead is inside the
-    // first beat's range (falls back to "always" if no beats are supplied).
-    const inIntro = beats && beats.length ? frame < beats[0].to : true;
+    const dark = Boolean(beat?.dark);
     return (
       <AbsoluteFill>
         <div className="frame" style={{background: 'transparent'}}>
@@ -106,7 +119,30 @@ export const PersistentChrome: React.FC<{
             <span className="am-chrome-wordmark">{chrome.topLeft ?? 'vektor'}</span>
             <span className="am-chrome-marker">{beat?.marker ?? chrome.topRight ?? ''}</span>
           </div>
-          <div className="am-footer" style={{opacity: inIntro ? amOpacity : 0}}>
+          {/* P2 REGISTRATION TICKS (wireframes v2 furniture, founder-approved
+              2026-07-08): 12px press marks at the four content-band corners
+              (150/360 · 930/360 · 150/1260 · 930/1260). Deterministic, static,
+              quiet — proof-sheet furniture, middle slides only. */}
+          {beat?.furniture ? (
+            <div className={`am-regmarks${dark ? ' am-dark' : ''}`} style={{opacity: amOpacity}}>
+              <span className="am-tick am-tick-tl" />
+              <span className="am-tick am-tick-tr" />
+              <span className="am-tick am-tick-bl" />
+              <span className="am-tick am-tick-br" />
+            </div>
+          ) : null}
+          {/* THE RECEIPTS LINE (wireframes v2 caption band, REQUIRED on middle
+              slides): P3 dateline grammar — four-tick Workbench prefix + mono 22,
+              same pixel position (y1300) on every kind. */}
+          {beat?.caption ? (
+            <div className={`am-capline${dark ? ' am-dark' : ''}`} style={{opacity: amOpacity}}>
+              <span className="am-capline-ticks">{'////'}</span>
+              <span>{beat.caption}</span>
+            </div>
+          ) : null}
+          {/* P1 FOLIO HAIRLINE lives on .am-footer::before (style.css) — the
+              footer reads as a newspaper folio line under a rule. */}
+          <div className={`am-footer${dark ? ' am-dark' : ''}`} style={{opacity: amOpacity}}>
             <span>{chrome.footerLeft ?? ''}</span>
             <span>{beat?.no ?? chrome.footerRight ?? ''}</span>
           </div>

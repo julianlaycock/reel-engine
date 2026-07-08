@@ -123,8 +123,11 @@ const validateVideo = (video) => {
         throw new Error(`${at}: durationInFrames must be an integer >= 30`);
       }
     } else if (scene.kind === 'counter') {
-      if (typeof scene.to !== 'number') {
-        throw new Error(`${at}: counter scene needs a numeric "to"`);
+      // Statement mode (treatment 05, founder-locked 2026-07-08): a "word"
+      // focal replaces the numeric count-up — either is a valid counter.
+      const isStatement = typeof scene.word === 'string' && scene.word.length > 0;
+      if (!isStatement && typeof scene.to !== 'number') {
+        throw new Error(`${at}: counter scene needs a numeric "to" or a "word" statement`);
       }
       if (!Number.isInteger(scene.durationInFrames) || scene.durationInFrames < 30) {
         throw new Error(`${at}: durationInFrames must be an integer >= 30`);

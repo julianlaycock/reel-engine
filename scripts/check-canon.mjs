@@ -18,6 +18,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {createRequire} from 'node:module';
 import {resolveBrand} from '../lib/brand.mjs';
+import {readingFloorFrames, CPS} from './lib/reading-time.mjs';
 
 const execFileP = promisify(execFile);
 const require = createRequire(import.meta.url);
@@ -147,6 +148,41 @@ const main = async () => {
       }
     });
     results.push(R(offenders.length === 0, sz.severity, 'safeZone.mascot', offenders.length ? offenders.join(' | ') : 'all mascots inside zone'));
+  }
+
+  // pacing — reading-time floor per scene (canon v2.8; same math as retime.mjs
+  // via scripts/lib/reading-time.mjs, so build and gate can never drift)
+  {
+    const sev = canon.pacing?.severity ?? 'blocker';
+    const fps = video.fps || 30;
+    const slow = [];
+    (video.scenes || []).forEach((sc, i) => {
+      const floor = readingFloorFrames(sc, fps);
+      const dur = sc.durationInFrames || 0;
+      if (dur < floor) slow.push(`scene[${i}] ${dur}f < floor ${floor}f (${(floor / fps).toFixed(1)}s to read its text @${CPS}cps)`);
+    });
+    results.push(R(slow.length === 0, sev, 'pacing.readingFloor', slow.length ? slow.join(' | ') : 'every scene readable'));
+  }
+
+  // mascot size cap — the mascot is a companion, never the background (canon v2.8)
+  {
+    const cap = zone.mascotMaxSize ?? 160;
+    const big = [];
+    (video.scenes || []).forEach((sc, i) => {
+      if (sc.mascot && (sc.mascot.size ?? 160) > cap) big.push(`scene[${i}] size=${sc.mascot.size} > ${cap}`);
+    });
+    results.push(R(big.length === 0, canon.safeZone?.severity ?? 'blocker', 'mascot.sizeCap', big.length ? big.join(' | ') : `all mascots ≤ ${cap}px`));
+  }
+
+  // wordmark reveal — end-card wordmarkMotion must be founder-approved (canon v2.8 §5)
+  if (canon.wordmark?.allowed) {
+    const allowed = new Set(canon.wordmark.allowed.concat('fade')); // fade = engine default when unset
+    const bad = [];
+    (video.scenes || []).forEach((sc, i) => {
+      const wm = sc.endCard?.wordmarkMotion;
+      if (sc.endCard && wm && !allowed.has(wm)) bad.push(`scene[${i}] wordmarkMotion="${wm}" not in [${canon.wordmark.allowed.join(', ')}]`);
+    });
+    results.push(R(bad.length === 0, canon.wordmark.severity ?? 'blocker', 'wordmark.motion', bad.length ? bad.join(' | ') : 'approved reveal'));
   }
 
   // frame-0 cliff (proxy)
