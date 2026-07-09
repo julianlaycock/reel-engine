@@ -45,8 +45,10 @@ const KineticWords: React.FC<{text: string; accentWords?: string[]; frame: numbe
             </span>
           );
         }
-        // Masked rise + tracking settle; weight FIXED (animating wght reflows
-        // neighbor word widths per frame — visible jitter on display type).
+        // Masked rise; weight AND tracking FIXED (animating wght or
+        // letter-spacing reflows neighbor word widths per frame — the subpixel
+        // jitter the founder called "glitchy" on some slides; motion research
+        // 2026-07-09: never animate text metrics, animate transform/opacity only).
         const s = 4 + i * KSTAG;
         const p = interp(frame, [s, s + 12], [0, 1], easeOutExpo);
         return (
@@ -56,7 +58,6 @@ const KineticWords: React.FC<{text: string; accentWords?: string[]; frame: numbe
                 display: 'inline-block',
                 transform: `translateY(${(1 - p) * 112}%)`,
                 opacity: interp(frame, [s, s + 6], [0, 1]),
-                letterSpacing: `${(0.08 * (1 - p)).toFixed(3)}em`,
                 fontWeight: 650,
               }}
             >
@@ -115,6 +116,45 @@ const SpringWords: React.FC<{text: string; accentWords?: string[]; frame: number
     </>
   );
 };
+
+// REVEAL CANDIDATES (founder motion round, 2026-07-09 — editorial-print
+// subtle anchor). Both animate ONLY transform/opacity/filter at fixed text
+// metrics — no letter-spacing or weight animation, so no reflow jitter.
+
+// Soft blur-in: the whole headline resolves from a gentle blur + small rise.
+// The most print-like reveal — the type "comes into focus" like a press proof.
+const softBlurIn = (frame: number, delay = 4): React.CSSProperties => {
+  const p = interp(frame, [delay, delay + 22], [0, 1], easeOutExpo);
+  return {
+    opacity: interp(frame, [delay, delay + 8], [0, 1]),
+    filter: `blur(${((1 - p) * 12).toFixed(2)}px)`,
+    transform: `translateY(${((1 - p) * 22).toFixed(2)}px)`,
+  };
+};
+
+// Line mask-rise: each LINE rises from behind a mask (no per-word churn) —
+// one deliberate motion per line, staggered. Calmer than word-by-word kinetic.
+const MaskLines: React.FC<{text: string; accentWords?: string[]; frame: number}> = ({text, accentWords, frame}) => (
+  <>
+    {text.replace(/[{}]/g, '').split('\n').map((line, i) => {
+      const s = 4 + i * 6;
+      const p = interp(frame, [s, s + 16], [0, 1], easeOutExpo);
+      return (
+        <span key={i} style={{display: 'block', overflow: 'hidden', paddingBottom: '0.06em'}}>
+          <span
+            style={{
+              display: 'block',
+              transform: `translateY(${((1 - p) * 108).toFixed(2)}%)`,
+              opacity: interp(frame, [s, s + 7], [0, 1]),
+            }}
+          >
+            {renderAccent(line, accentWords)}
+          </span>
+        </span>
+      );
+    })}
+  </>
+);
 
 // Mock product window — the focal subject. Later this slot holds a real
 // screen-capture; the annotation layer (callouts) draws on top of either.
@@ -222,6 +262,14 @@ export const EditorialScene: React.FC<{
             ) : (scene as {reveal?: string}).reveal === 'spring' ? (
               <div className="ed-headline">
                 <SpringWords text={scene.headline} accentWords={scene.accentWords} frame={frame} fps={fps} />
+              </div>
+            ) : (scene as {reveal?: string}).reveal === 'blur' ? (
+              <div className="ed-headline" style={softBlurIn(frame)}>
+                {renderAccent(scene.headline, scene.accentWords)}
+              </div>
+            ) : (scene as {reveal?: string}).reveal === 'maskline' ? (
+              <div className="ed-headline">
+                <MaskLines text={scene.headline} accentWords={scene.accentWords} frame={frame} />
               </div>
             ) : (
               <div className="ed-headline" style={rise(6, 14)}>

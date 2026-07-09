@@ -47,6 +47,28 @@ const main = async () => {
     await sleep(500);
   }
   if (!fs.existsSync(out)) throw new Error('no screenshot produced');
+
+  // Return the REQUESTED size, not the device-scaled size. At --scale 2 Edge
+  // writes a 2x PNG (a 1080x960 request → 2160x1920), which (a) surprises
+  // callers and (b) blows past the 2000px-per-side cap the Anthropic API
+  // enforces in many-image requests — an oversized frame then re-fails on
+  // every turn it stays in context, quietly re-billing. So supersample for
+  // sharpness, then downsample to exactly w×h with lanczos. Callers who want
+  // the raw 2x should ask for it via --w/--h directly.
+  const wantW = Number(w);
+  const wantH = Number(h);
+  try {
+    const {stdout} = await execFileP('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', out]);
+    const [gotW, gotH] = stdout.trim().split(',').map(Number);
+    if ((gotW > wantW || gotH > wantH) && wantW > 0 && wantH > 0) {
+      const tmp = out + '.rs.png';
+      await execFileP('ffmpeg', ['-v', 'error', '-y', '-i', out, '-vf', `scale=${wantW}:${wantH}:flags=lanczos`, tmp]);
+      fs.renameSync(tmp, out);
+    }
+  } catch (e) {
+    console.error(`  (resize skipped: ${e.message || e})`); // ffmpeg/ffprobe missing — leave the raw capture
+  }
+
   const bytes = fs.statSync(out).size;
   // Crude hint only — the real check is the vision audit reading the image.
   console.log(JSON.stringify({out, bytes, hint: bytes < 90000 ? 'small file — may be a bot-check wall; VERIFY the image before using' : 'ok'}));
