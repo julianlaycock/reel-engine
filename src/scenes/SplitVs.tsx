@@ -51,15 +51,18 @@ export const SplitVs: React.FC<{scene: any; hideChrome?: boolean}> = ({scene}) =
         <span style={{fontFamily: '"Anton", sans-serif', fontSize: 62, color: '#fff', letterSpacing: '0.02em'}}>{scene.badge ?? 'VS'}</span>
       </div>
 
-      {/* top name/score — pushed below the persistent masthead (~320px deep) so
-          the label clears the chrome bar instead of rendering under it (was top:220,
-          occluded by the americana masthead). Baseline now sits ≥360px. */}
-      <div style={{position: 'absolute', top: 360, left: 70, right: 70, zIndex: 7, opacity: t1, transform: `translateY(${(1 - t1) * 16}px)`}}>
+      {/* top name/score — below the persistent masthead (~320px), inside the
+          150px sides (sides-150 law — labels are must-read text, only the
+          full-bleed IMAGES are band-exempt texture). */}
+      <div style={{position: 'absolute', top: 360, left: 150, right: 150, zIndex: 7, opacity: t1, transform: `translateY(${(1 - t1) * 16}px)`}}>
         <div style={{fontFamily: '"Anton", sans-serif', fontSize: 78, color: '#fff', textTransform: 'uppercase', lineHeight: 0.9}}>{scene.topName}</div>
         {scene.topSub ? <div style={{fontFamily: '"IBM Plex Mono", monospace', fontSize: 30, color: accent, marginTop: 10, letterSpacing: '0.04em'}}>{scene.topSub}</div> : null}
       </div>
-      {/* bottom name/score */}
-      <div style={{position: 'absolute', bottom: 240, left: 70, right: 70, zIndex: 7, opacity: t2, transform: `translateY(${(1 - t2) * 16}px)`}}>
+      {/* bottom name/score — anchored BELOW the seam (mirrors the top label
+          below the chrome) so the platform zone, caption band (1300) and footer
+          band (1380) stay clear of label text. Was bottom:240 (~y1560, inside
+          the bottom-500 platform overlay) — founder conform call 2026-07-09. */}
+      <div style={{position: 'absolute', top: 1050, left: 150, right: 150, zIndex: 7, opacity: t2, transform: `translateY(${(1 - t2) * 16}px)`}}>
         <div style={{fontFamily: '"Anton", sans-serif', fontSize: 78, color: '#fff', textTransform: 'uppercase', lineHeight: 0.9}}>{scene.botName}</div>
         {scene.botSub ? <div style={{fontFamily: '"IBM Plex Mono", monospace', fontSize: 30, color: '#cdd3e6', marginTop: 10, letterSpacing: '0.04em'}}>{scene.botSub}</div> : null}
       </div>

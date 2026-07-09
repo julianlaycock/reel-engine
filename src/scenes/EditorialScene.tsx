@@ -177,6 +177,16 @@ export const EditorialScene: React.FC<{
   const isMethod = scene.amBeat === 'method';
   const fit = isMethod && panelRows >= 3 ? 0.84 : isMethod && panelRows === 2 ? 0.93 : 1;
 
+  // RECEIPT BAND FIT (wireframes v2 — 2026-07-09): the eyebrow+headline+plate
+  // stack must fit the 360..1260 content band AT REST — tall screenshots crop
+  // inside the plate (object-fit cover) instead of pushing it under the
+  // caption/footer bands. Deterministic budget from the headline line count,
+  // same doctrine as the method-panel fit above (headless DOM measurement is
+  // unreliable). 0 lines = hero plate (no headline), the plate owns the band.
+  const isReceiptShot = Boolean(scene.panel?.image);
+  const headlineLines = isReceiptShot && scene.headline ? scene.headline.split('\n').length : 0;
+  const shotMax = isReceiptShot ? (headlineLines === 0 ? 640 : headlineLines === 1 ? 450 : 360) : undefined;
+
   return (
     <AbsoluteFill>
       <div className="frame">
@@ -189,7 +199,7 @@ export const EditorialScene: React.FC<{
         )}
 
         <div className="ed-stage">
-        <div className="ed-fit" style={{transform: `scale(${(drift * fit).toFixed(4)})`, transformOrigin: fit < 1 ? '50% 0%' : '50% 50%'}}>
+        <div className="ed-fit" style={{transform: `scale(${(drift * fit).toFixed(4)})`, transformOrigin: fit < 1 ? '50% 0%' : '50% 50%', ...(shotMax ? ({'--shot-max': `${shotMax}px`} as React.CSSProperties) : {})}}>
           {scene.eyebrow ? (
             <div className="ed-eyebrow" style={rise(2, 12)}>
               {scene.eyebrow}

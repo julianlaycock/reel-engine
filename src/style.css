@@ -1881,6 +1881,25 @@
   color: var(--fg);
   max-width: 780px; /* safe-zone content column: 1080 − 2×150 */
 }
+/* PROPOSAL M3-B (2026-07-09): americana typography for the VersusScene pair row —
+   Tektur 900 values + Workbench labels so versus-pair speaks the system's voice
+   (it rendered in the default display font, the "generic" look the founder parked).
+   Founder RENDER→SEE→LOCK; versus-pair.v2 returns from parked only on approval. */
+.skin-americana .vs-value {
+  font-family: "Tektur", var(--display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  filter: none; /* the base drop-shadow halo reads soft/dated on print fields */
+}
+.skin-americana .vs-label {
+  font-family: "Workbench", monospace;
+  font-size: 26px;
+  letter-spacing: 0.06em;
+  color: var(--fg);
+  opacity: 0.8;
+}
+
 /* the /// hatch rule under headlines (0.4–0.55) + a Workbench support line slot */
 .skin-americana .ed-headline::after {
   content: "////////////////////";
@@ -2020,7 +2039,15 @@
 }
 .skin-americana .am-beat-receipt .ed-shot {
   border-radius: 0;
-  max-height: 660px; /* whole plate must fit the ~1000px safe stage */
+  /* band-fit budget set per-scene by EditorialScene (--shot-max: 640 hero /
+     450 one-line headline / 360 two-line) so the whole plate stack fits the
+     360..1260 content band at rest — wireframes v2 (2026-07-09) */
+  max-height: var(--shot-max, 660px);
+}
+/* PROPOSAL M3-A (2026-07-09): offset solid ink shadow on the receipt plate —
+   the zine/photostat depth grammar applied to receipts. Founder RENDER→SEE→LOCK. */
+.skin-americana .am-beat-receipt .ed-panel {
+  box-shadow: 14px 14px 0 rgba(16, 16, 16, 0.9);
 }
 
 /* number beat: fog field, giant Tektur numeral, mono support, orchid chip */

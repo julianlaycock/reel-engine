@@ -58,6 +58,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {createRequire} from 'node:module';
 import {resolveBrand} from '../lib/brand.mjs';
+import {composeScript, validateVoTags} from './lib/vo-script.mjs';
 
 const execFileP = promisify(execFile);
 const require = createRequire(import.meta.url);
@@ -145,6 +146,7 @@ const mapKind = (sc) => {
   if (sc.endCard) return 'endCard';
   if (sc.kind === 'asciiField') return 'asciiField';
   if (sc.kind === 'versus') return 'versus';
+  if (sc.kind === 'splitvs') return 'versus'; // splitvs is the versus kind's screenshot variant (styleboard 04)
   if (sc.kind === 'photostat') return 'photostat';
   if (sc.kind === 'counter') return 'stat';
   if (sc.kind === 'editorial') {
@@ -267,6 +269,82 @@ const checkWireframes = (video, wf, results) => {
     jac.length > 1 ? `${jac.length} jacquard words (max 1 per video)` : jacOnLight.length ? 'jacquard on a non-dark beat' : `${jac.length} jacquard word(s), dark beat only`));
 };
 
+// ------------------------------------------------------- template registry layer
+// THE ANTI-FREESTYLE GATE (founder mission 2026-07-09): every scene must be
+// built from a registered, founder-approved template in
+// canon/templates/templates.json. The field WHITELIST is the teeth — a scene
+// cannot carry any key the template doesn't declare, so an invented
+// composition is structurally inexpressible, not just discouraged. While the
+// registry has enforce:false (menu awaiting founder sign-off) violations are
+// warnings; the sign-off flips them to blockers.
+const getPath = (obj, dotted) => dotted.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
+
+const checkTemplates = (video, registry, results) => {
+  if (!registry) {
+    results.push(R(false, 'warn', 'templates.menu', 'canon/templates/templates.json missing — template menu not enforced (pre-v3 contract)'));
+    return;
+  }
+  const sev = registry.enforce ? 'blocker' : 'warn';
+  const shared = new Set(registry.sharedFields || []);
+  const menu = Object.entries(registry.templates || {})
+    .filter(([, t]) => t.status === 'approved').map(([id]) => id);
+  const fails = [];
+  (video.scenes || []).forEach((sc, i) => {
+    const tag = `scene[${i}] (${mapKind(sc)})`;
+    const id = sc.template;
+    if (!id) {
+      fails.push(`${tag} has NO template id — every scene is built from a registered template (menu: ${menu.join(', ') || 'none approved yet'})`);
+      return;
+    }
+    const t = registry.templates?.[id];
+    if (!t) {
+      fails.push(`${tag} template '${id}' is not in the registry — new templates enter only via founder RENDER→SEE→LOCK`);
+      return;
+    }
+    if (t.status !== 'approved') {
+      fails.push(`${tag} template '${id}' is '${t.status}' — only founder-approved templates ship`);
+      return;
+    }
+    // binds: the template pins what the scene must be
+    if (t.binds?.kind && sc.kind !== t.binds.kind) fails.push(`${tag} template '${id}' binds kind='${t.binds.kind}' but scene has kind='${sc.kind}'`);
+    if (t.binds?.amBeat && sc.amBeat !== t.binds.amBeat) fails.push(`${tag} template '${id}' binds amBeat='${t.binds.amBeat}' but scene has amBeat='${sc.amBeat ?? '(none)'}'`);
+    if (t.binds?.endCard === true && !sc.endCard) fails.push(`${tag} template '${id}' requires an endCard block`);
+    if (t.binds?.endCard === false && sc.endCard) fails.push(`${tag} template '${id}' forbids an endCard block`);
+    // field whitelist — the anti-freestyle rule
+    const allowed = new Set([
+      ...shared,
+      ...(t.fields?.required || []).map((p) => p.split('.')[0]),
+      ...(t.fields?.optional || []).map((p) => p.split('.')[0]),
+    ]);
+    for (const key of Object.keys(sc)) {
+      if (!allowed.has(key)) fails.push(`${tag} field '${key}' is not part of template '${id}' — freestyle composition blocked (allowed: ${[...allowed].join(', ')})`);
+    }
+    // required fields (dotted paths reach into panel/endCard blocks)
+    for (const p of t.fields?.required || []) {
+      if (getPath(sc, p) === undefined) fails.push(`${tag} template '${id}' requires '${p}'`);
+    }
+    // enum constraints (value allowlists)
+    for (const [k, allowedVals] of Object.entries(t.constraints || {})) {
+      const v = getPath(sc, k);
+      if (v !== undefined && !allowedVals.some((a) => JSON.stringify(a) === JSON.stringify(v))) {
+        fails.push(`${tag} '${k}'=${JSON.stringify(v)} is outside template '${id}' allowlist ${JSON.stringify(allowedVals)}`);
+      }
+    }
+    // pattern constraints (e.g. receipt-source caption must read 'SOURCE: …')
+    for (const [k, re] of Object.entries(t.patterns || {})) {
+      const v = getPath(sc, k);
+      if (typeof v === 'string' && !new RegExp(re).test(v)) fails.push(`${tag} '${k}' must match /${re}/ for template '${id}' (got '${v}')`);
+    }
+    // wireframe congruence — the template's declared wireframe kind must be
+    // the one the golden gate will actually check this scene against
+    if (t.wireframeKind && t.wireframeKind !== 'broll' && mapKind(sc) !== t.wireframeKind) {
+      fails.push(`${tag} maps to wireframe kind '${mapKind(sc)}' but template '${id}' declares '${t.wireframeKind}'`);
+    }
+  });
+  results.push(R(fails.length === 0, sev, 'templates.menu',
+    fails.length ? fails.join(' | ') : `all ${video.scenes?.length ?? 0} scenes built from registered templates (registry v${registry.version}${registry.enforce ? '' : ' — ADVISORY, enforce:false until founder menu sign-off'})`));
+};
+
 // ------------------------------------------------------------------------ main
 const main = async () => {
   const args = parseArgs();
@@ -345,6 +423,34 @@ const main = async () => {
 
   // ---- 3. wireframe zone check (structural) ----------------------------------
   checkWireframes(video, wf, results);
+
+  // ---- 4. template registry (the anti-freestyle menu) -------------------------
+  {
+    const regPath = path.join('canon', 'templates', 'templates.json');
+    const registry = fs.existsSync(regPath) ? JSON.parse(fs.readFileSync(regPath, 'utf8')) : null;
+    checkTemplates(video, registry, results);
+  }
+
+  // ---- 5. context-aware VO (voTag vocabulary + composed-script drift) ---------
+  // The narrated script is COMPOSED from video.json (compose-script.mjs). The
+  // gate re-composes with the SAME shared lib and diffs data/<slug>/script.txt —
+  // a hand-edited script (or stale tags) can never ship. Tag vocabulary comes
+  // from canon.yml#voice.tags.allowed (founder-approved 2026-07-09).
+  if (canon.voice?.tags) {
+    const allowed = canon.voice.tags.allowed ?? [];
+    const tagFails = validateVoTags(video, allowed);
+    results.push(R(tagFails.length === 0, 'blocker', 'voice.tags',
+      tagFails.length ? tagFails.join(' | ') : `voTags valid (vocabulary: ${allowed.join(', ')})`));
+    const scriptPath = path.join('data', args.slug, 'script.txt');
+    if (fs.existsSync(scriptPath)) {
+      const onDisk = fs.readFileSync(scriptPath, 'utf8').replace(/\r\n/g, '\n');
+      const composed = composeScript(video);
+      results.push(R(onDisk === composed, 'blocker', 'voice.script',
+        onDisk === composed ? 'script.txt matches the video.json composition' : 'script.txt DRIFTED from the video.json vo/voTag composition — regenerate with compose-script.mjs (never hand-edit)'));
+    } else {
+      results.push(R(false, 'warn', 'voice.script', 'no data/<slug>/script.txt — compose it with compose-script.mjs before the VO build'));
+    }
+  }
 
   // ---- report -----------------------------------------------------------------
   const fails = results.filter((r) => !r.ok);

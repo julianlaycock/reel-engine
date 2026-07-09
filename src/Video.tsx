@@ -187,15 +187,21 @@ const SceneBody: React.FC<{scene: Scene; frames: number; hideChrome: boolean}> =
 const Camera: React.FC<{
   cam?: {fromZoom?: number; toZoom?: number; fx?: number; fy?: number};
   frames: number;
+  maxZoom?: number;
   children: React.ReactNode;
-}> = ({cam, frames, children}) => {
+}> = ({cam, frames, maxZoom, children}) => {
   const frame = useCurrentFrame();
   if (!cam) return <>{children}</>;
-  const z = interpolate(frame, [0, Math.max(frames - 1, 1)], [cam.fromZoom ?? 1, cam.toZoom ?? 1.3], {
+  const zRaw = interpolate(frame, [0, Math.max(frames - 1, 1)], [cam.fromZoom ?? 1, cam.toZoom ?? 1.3], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
     easing: Easing.inOut(Easing.ease),
   });
+  // Band guard (wireframes v2 — 2026-07-09): on band-governed scenes the push
+  // is capped so scaled content can never cross the chrome band above or the
+  // caption/footer bands below. 1.06 keeps a full 360..1260 stack inside the
+  // 320 chrome edge and the 1300 caption band at every frame.
+  const z = maxZoom ? Math.min(zRaw, maxZoom) : zRaw;
   // Soft entrance (dissolve-up) so camera scenes transition instead of hard-cutting.
   const enter = interpolate(frame, [0, 7], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   return (
@@ -482,7 +488,11 @@ export const Video: React.FC<VideoProps> = ({video}) => {
                 className={americana && (scene as {amBeat?: string}).amBeat ? 'am-beat-' + (scene as {amBeat?: string}).amBeat : undefined}
               >
                 <SceneEnvelope frames={frames} first={index === 0} enter={(scene as {transition?: string}).transition} morph={fx?.morph}>
-                  <Camera cam={(scene as {camera?: {fromZoom?: number; toZoom?: number; fx?: number; fy?: number}}).camera} frames={frames}>
+                  <Camera
+                    cam={(scene as {camera?: {fromZoom?: number; toZoom?: number; fx?: number; fy?: number}}).camera}
+                    frames={frames}
+                    maxZoom={americana && !(scene as {endCard?: unknown}).endCard ? 1.06 : undefined}
+                  >
                     <SceneBody scene={scene} frames={frames} hideChrome={hasChrome} />
                   </Camera>
                   {americana && (scene as {ghosts?: string[]}).ghosts
