@@ -7,10 +7,61 @@ import {easePhysical, interp} from '../motion';
 // energy, instantly readable. Photos slide in from opposite edges on entry.
 //   {kind:'splitvs', topImg, botImg, topFocus?, botFocus?, topName, botName,
 //    topSub?, botSub?, badge?, accent?, durationInFrames}
+// EDITORIAL VARIANT (variant:"editorial") — the premium before/after in the
+// americana print language (founder 2026-07-09: the VS/Anton/dark-full-bleed
+// look isn't premium). Light paper field; the "before" is a small ghosted card,
+// the "after" is the crisp hero card; a thin ink divider + verdict word replace
+// the esports badge; Tektur/Workbench type in ink, no Ken-Burns. Calm, printed.
+const EditorialSplit: React.FC<{scene: any}> = ({scene}) => {
+  const frame = useCurrentFrame();
+  const ink = '#101010';
+  const paper = scene.paper ?? '#EFEADD';
+  const accent = scene.accent ?? '#0E9C86';
+  const settle = interp(frame, [4, 20], [0, 1], easePhysical);
+  const after = interp(frame, [14, 32], [0, 1], easePhysical);
+  const card = (img: string, focus: string): React.CSSProperties => ({
+    backgroundImage: `url(${staticFile(img)})`,
+    backgroundSize: 'cover',
+    backgroundPosition: focus ?? 'center top',
+  });
+  const label: React.CSSProperties = {fontFamily: '"Workbench", "IBM Plex Mono", monospace', fontSize: 26, letterSpacing: '0.04em', color: ink, textTransform: 'uppercase'};
+  const sub: React.CSSProperties = {fontFamily: '"IBM Plex Mono", monospace', fontSize: 24, color: 'rgba(16,16,16,0.55)', marginTop: 6};
+  return (
+    <AbsoluteFill style={{background: paper}}>
+      {/* BEFORE — small, ghosted, struck (the wrong way, demoted). 0.62 not
+          0.45: the board render read borderline-illegible at 0.45 (founder
+          catch 2026-07-09) — still clearly demoted vs the crisp after card. */}
+      <div style={{position: 'absolute', left: 150, top: 400, width: 560, opacity: 0.62 * settle}}>
+        <div style={{...label, display: 'flex', gap: 12, alignItems: 'center'}}>
+          <span style={{color: ink}}>✗</span><span>{scene.topName}</span>
+        </div>
+        <div style={{...card(scene.topImg, scene.topFocus), width: 560, height: 232, marginTop: 14, filter: 'grayscale(0.4)', border: '1px solid rgba(16,16,16,0.25)'}} />
+        {scene.topSub ? <div style={{...sub, textDecoration: 'line-through'}}>{scene.topSub}</div> : null}
+      </div>
+
+      {/* verdict rule — a thin ink hairline + a small word, no badge */}
+      <div style={{position: 'absolute', left: 150, right: 150, top: 760, opacity: settle}}>
+        <div style={{height: 1.5, background: 'rgba(16,16,16,0.28)'}} />
+        <div style={{...label, color: accent, marginTop: 10}}>instead ↓</div>
+      </div>
+
+      {/* AFTER — the crisp hero card (the right way) */}
+      <div style={{position: 'absolute', left: 150, top: 840, width: 780, opacity: after, transform: `translateY(${(1 - after) * 18}px)`}}>
+        <div style={{...label, display: 'flex', gap: 12, alignItems: 'center', fontSize: 30}}>
+          <span style={{color: accent}}>✓</span><span>{scene.botName}</span>
+        </div>
+        <div style={{...card(scene.botImg, scene.botFocus), width: 780, height: 300, marginTop: 14, border: `2px solid ${ink}`, boxShadow: '14px 14px 0 rgba(16,16,16,0.9)'}} />
+        {scene.botSub ? <div style={{...sub, color: 'rgba(16,16,16,0.62)'}}>{scene.botSub}</div> : null}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const SplitVs: React.FC<{scene: any; hideChrome?: boolean}> = ({scene}) => {
   const frame = useCurrentFrame();
   const {fps, durationInFrames} = useVideoConfig();
   const accent = scene.accent ?? '#E0431F';
+  if (scene.variant === 'editorial') return <EditorialSplit scene={scene} />;
 
   const enter = spring({frame, fps, config: {damping: 16, stiffness: 90}});
   const topX = interpolate(enter, [0, 1], [-120, 0]);
