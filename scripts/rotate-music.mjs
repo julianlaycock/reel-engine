@@ -96,7 +96,7 @@ if (pool.length === 0) {
   credit = chosen.attribution;
   video.audio = video.audio || {};
   video.audio.musicSrc = chosen.file;
-  video.audio.musicVolume = video.audio.musicVolume ?? 0.07;
+  video.audio.musicVolume = video.audio.musicVolume ?? 0.04;
   fs.writeFileSync(vjPath, JSON.stringify(video, null, 2) + '\n');
   if (credit) fs.writeFileSync(path.join(ROOT, 'data', slug, '_music-credit.txt'), credit + '\n');
   console.log(`[rotate-music] ${slug} → ${chosen.file}`);

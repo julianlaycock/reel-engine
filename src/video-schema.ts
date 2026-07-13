@@ -71,6 +71,9 @@ export type VersusScene = {
   // reading-time.mjs READ_KEYS so it never inflates the reading floor.
   // Never put content that must be read here.
   ghost?: string;
+  // versus-pair.v3 prototype (2026-07-13): ONE acid Jacquard blackletter word as a
+  // top-left verdict stamp (acid on dark fields, ink on light — the acid law).
+  jacquardWord?: string;
   // lines = short mono diff-style evidence lines rendered DIRECTLY on the field
   // (no card/panel/background), lower band. A leading '-' renders muted ink
   // (struck), a leading '+' renders caret-teal (acid law: acid never on light

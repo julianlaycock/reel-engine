@@ -2127,6 +2127,28 @@
   color: var(--am-acid);
   text-shadow: 0 0 12px rgba(57, 255, 53, 0.5); /* tight hard glow, not a soft halo */
 }
+/* versus-pair.v3 prototype (2026-07-13): the acid Jacquard word applied to the
+   value-pair slide. Slightly smaller than the end-card canonical (166) so the
+   +N pair stays the hero; ink variant drops the acid glow for light fields. */
+.skin-americana .vs-jacquard {
+  font-size: 128px;
+  z-index: 3;
+}
+.skin-americana .vs-jacquard--ink {
+  color: #101010;
+  text-shadow: none;
+}
+/* editorial-statement.v2 (2026-07-13): the same acid Jacquard verdict word applied
+   to the centered statement beat. Slightly smaller than the end-card canonical (166)
+   so the headline stays the hero; ink variant drops the acid glow for light fields. */
+.skin-americana .ed-jacquard {
+  font-size: 128px;
+  z-index: 3;
+}
+.skin-americana .ed-jacquard--ink {
+  color: #101010;
+  text-shadow: none;
+}
 .skin-americana .am-dark-stage {
   position: absolute;
   left: 150px;
@@ -2249,3 +2271,225 @@
   right: 150px;
   bottom: 570px; /* above the inset footer (510) */
 }
+
+/* ---- terminal scene (animated "live Claude Code session", proposed 2026-07-13) ----
+   Three looks via `termStyle`: 'live' (full-bleed near-black CLI, JetBrains Mono,
+   acid caret), 'editorial' (premium white paper card + offset ink shadow), and
+   'kinetic' (✗ NO PLAN → ✓ THE PLAN resolve, rows sweep + a scan bar). All content
+   stays in the master band (y 360–1260) and the 150px side safe zone; the 14px
+   ink shadow on the card is budgeted so the plate never crosses a band. */
+
+/* content-band stage: sides 150, band 360..1260 (bottom = 1920-1260 = 660) */
+.term-stage {
+  position: absolute;
+  inset: 360px 150px 660px 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* terminal.v2 (proposed 2026-07-13): a PROMINENT rule-title band ABOVE the CLI.
+   Big Tektur 900 uppercase caps at the top of the content band (below the
+   masthead, like .am-jacquard at 372). Colour is set inline per field (acid on
+   dark, ink on light). When present, `.term-frame--titled` pushes the CLI stage
+   down to 600 so the two never collide (title occupies ~372..540). */
+.term-ruletitle {
+  position: absolute;
+  left: 150px;
+  right: 150px;
+  top: 372px;
+  z-index: 3;
+  font-family: "Tektur", var(--display);
+  font-weight: 900;
+  font-size: 80px;
+  line-height: 0.92;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+}
+.term-frame--titled .term-stage { top: 600px; }
+.term-line {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.term-caret {
+  display: inline-block;
+  width: 5px;
+  height: 34px;
+  margin-left: 4px;
+  vertical-align: -5px;
+  flex: none;
+}
+.term-caret-block { width: 18px; }
+.term-caret-acid { background: #39FF35; box-shadow: 0 0 10px rgba(57, 255, 53, 0.55); }
+.term-caret-ed { background: #0E9C86; }
+
+/* A · LIVE — the terminal IS the frame (no card); near-black field carries it */
+.term-stage-live { justify-content: flex-start; }
+.term-live {
+  width: 100%;
+  max-width: 800px;
+  font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color: #d8dccf;
+  font-size: 36px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.term-live-top {
+  font-size: 22px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(216, 220, 207, 0.4);
+  margin-bottom: 12px;
+}
+.term-usr-caret { color: #39FF35; font-weight: 500; }
+.term-usr { color: #f0f2ea; }
+.term-head-live { color: rgba(216, 220, 207, 0.9); }
+.term-dot-live { color: #39FF35; margin-right: 10px; }
+.term-row-live {
+  display: flex;
+  gap: 18px;
+  font-size: 33px;
+  padding-left: 42px;
+  align-items: baseline;
+  white-space: nowrap;
+}
+.term-rn-live { color: rgba(57, 255, 53, 0.8); width: 22px; flex: none; }
+.term-rp-live { color: rgba(216, 220, 207, 0.82); flex: none; }
+.term-note-live { color: rgba(216, 220, 207, 0.42); flex: none; }
+.term-confirm-live { color: #f0f2ea; margin-top: 6px; }
+
+/* A · LIVE — GENERIC TYPED-LINE session (plan / grep / diff). Dims nudged one
+   step brighter than the plan-form greys for phone-size legibility (founder). */
+.term-l-prompt { font-size: 34px; }
+.term-l-confirm { font-size: 32px; color: #f4f6ee; margin-top: 8px; }
+.term-l-thinking { font-size: 30px; align-items: baseline; gap: 12px; }
+.term-l-think-dot { color: rgba(57, 255, 53, 0.85); flex: none; }
+.term-l-think-tx { color: rgba(222, 226, 214, 0.82); }
+.term-l-header {
+  font-size: 27px;
+  color: rgba(230, 234, 222, 0.95);
+  letter-spacing: 0.04em;
+  font-weight: 500;
+  margin-top: 2px;
+}
+.term-l-row { font-size: 30px; padding-left: 34px; gap: 14px; white-space: nowrap; }
+.term-l-row-n { color: rgba(57, 255, 53, 0.85); flex: none; }
+.term-l-row-tx { color: rgba(224, 228, 216, 0.9); flex: none; }
+.term-l-result {
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  gap: 0;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+.term-l-res-loc { color: rgba(228, 233, 219, 0.74); flex: none; }
+.term-l-res-code { color: #eef1e7; flex: none; }
+.term-l-add { font-size: 29px; color: #39FF35; white-space: nowrap; text-shadow: 0 0 8px rgba(57, 255, 53, 0.25); }
+.term-l-del { font-size: 29px; color: rgba(224, 122, 112, 0.82); white-space: nowrap; }
+.term-l-context { font-size: 26px; color: rgba(200, 206, 190, 0.66); font-style: italic; }
+
+/* B/C · the premium paper card (offset ink shadow, americana window chrome) */
+.term-card {
+  width: 748px;
+  background: #ffffff;
+  border: 2px solid #101010;
+  border-radius: 10px;
+  box-shadow: 14px 14px 0 rgba(16, 16, 16, 0.9);
+  overflow: hidden;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+.term-card-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 26px;
+  border-bottom: 2px solid #101010;
+  background: #f4efdf;
+}
+.term-tl {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(16, 16, 16, 0.45);
+  flex: none;
+}
+.term-tl-r { background: #e0655b; }
+.term-tl-y { background: #e4b95b; }
+.term-tl-g { background: #7fb77e; }
+.term-card-title {
+  margin-left: 14px;
+  font-size: 24px;
+  letter-spacing: 0.06em;
+  color: rgba(16, 16, 16, 0.62);
+}
+.term-card-body {
+  padding: 32px 30px 38px;
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  color: #101010;
+  font-size: 33px;
+  line-height: 1.4;
+}
+.term-usr-caret.ed { color: #0E9C86; font-weight: 500; }
+.term-usr.ed { color: #101010; }
+.term-head-ed { color: rgba(16, 16, 16, 0.78); font-size: 28px; display: flex; gap: 12px; align-items: baseline; }
+.term-dot-ed { color: #0E9C86; flex: none; }
+.term-row-ed {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  font-size: 29px;
+  padding-left: 30px;
+  white-space: nowrap;
+}
+.term-rn-ed { color: #0E9C86; width: 20px; flex: none; font-weight: 500; }
+.term-rp-ed { color: #101010; flex: none; }
+.term-note-ed { color: rgba(16, 16, 16, 0.5); flex: none; }
+.term-confirm-ed { color: #101010; margin-top: 4px; }
+
+/* C · KINETIC — the ✗→✓ resolve + row sweep + scan bar */
+.term-state-wrap {
+  position: relative;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+}
+.term-state {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.term-state-no { color: #c0392b; }
+.term-state-ok { color: #0E9C86; }
+.term-state-mark { font-size: 36px; }
+.term-row-kin {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  font-size: 29px;
+  padding: 4px 0 4px 30px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.term-scan {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: #0E9C86;
+}
+.term-rn-kin { color: #0E9C86; width: 20px; flex: none; font-weight: 600; position: relative; }
+.term-rp-kin { color: #101010; position: relative; flex: none; }
+.term-note-kin { color: rgba(16, 16, 16, 0.5); position: relative; flex: none; }
+.term-confirm-kin { color: #101010; font-weight: 500; margin-top: 6px; }

@@ -134,6 +134,15 @@ const main = async () => {
       const sfxOff = !(video.audio && video.audio.sfx === true);
       results.push(R(sfxOff, a.severity, 'audio.noSfx', sfxOff ? 'no transition SFX' : 'audio.sfx is true (transition SFX not allowed)'));
     }
+    // music bed level — a video's audio.musicVolume must not EXCEED canon.audio.musicVolumeMax.
+    // The default bed (0.04) lives in the engine fallback, so an OMITTED musicVolume is on-canon;
+    // this only fires when a video sets a bed louder than the cap. WARN (not a blocker) per canon.
+    const max = a.musicVolumeMax;
+    const vol = video.audio?.musicVolume;
+    if (typeof max === 'number' && typeof vol === 'number') {
+      results.push(R(vol <= max, 'warn', 'audio.musicVolume',
+        vol <= max ? `${vol} ≤ ${max}` : `music bed too loud (${vol} > ${max})`));
+    }
   }
 
   // safe zone (mascot placements)
@@ -191,6 +200,40 @@ const main = async () => {
     const s0 = (video.scenes || [])[0] || {};
     if (fz.requireFirstSceneVo) results.push(R(Boolean(s0.vo && s0.vo.trim()), fz.severity, 'frameZero.vo', s0.vo ? 'VO at frame 0' : 'scene[0] has no VO'));
     if (fz.requireFirstSceneInstant) results.push(R(s0.instant === true, fz.severity, 'frameZero.instant', s0.instant === true ? 'payoff instant' : 'scene[0] not instant (static hold risk)'));
+  }
+
+  // transition grammar (canon v1.12) — every scene's `transition` (when set) must be
+  // one of the curated values in canon.transitions.allowed; an unknown value warns.
+  {
+    const tr = canon.transitions;
+    if (tr && Array.isArray(tr.allowed)) {
+      const allowed = new Set(tr.allowed);
+      const bad = [];
+      (video.scenes || []).forEach((sc, i) => {
+        if (sc.transition != null && !allowed.has(sc.transition)) bad.push(`scene[${i}] transition="${sc.transition}"`);
+      });
+      results.push(R(bad.length === 0, tr.severity ?? 'warn', 'transitions',
+        bad.length ? `${bad.join(', ')} not in allowed [${tr.allowed.join(', ')}]` : 'all transitions in the allowed grammar'));
+    }
+  }
+
+  // video model shape (canon v1.12) — every video DEFAULTS to a standalone topic; a
+  // series/part-N is the ALLOWED but FLAGGED exception (concept.json shape:"series").
+  // A continuation's INTENT isn't reliably detectable from the data, so this never
+  // blocks: it confirms an explicit `series` flag, else reminds that non-standalone
+  // must be flagged. WARN severity (from canon.videoModel), reminder only.
+  {
+    const vm = canon.videoModel;
+    if (vm) {
+      const shape = concept?.shape;
+      if (shape === 'series') {
+        results.push(R(true, vm.severity ?? 'warn', 'videoModel.shape', 'concept.json flags shape:"series" — allowed flagged exception (noted)'));
+      } else if (shape && shape !== vm.shapeDefault) {
+        results.push(R(false, 'warn', 'videoModel.shape', `concept.json shape='${shape}' is not '${vm.shapeDefault}' or 'series' — flag a continuation as shape:"series"`));
+      } else {
+        results.push(R(true, vm.severity ?? 'warn', 'videoModel.shape', `shape='${shape ?? `${vm.shapeDefault} (default)`}' — reminder: a series/part-N must set concept.json shape:"series"`));
+      }
+    }
   }
 
   // ── report ──

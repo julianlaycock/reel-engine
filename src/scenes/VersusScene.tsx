@@ -54,9 +54,35 @@ export const VersusScene: React.FC<{
     extrapolateRight: 'clamp',
   });
 
+  // versus-pair.v3 PROTOTYPE (exploratory 2026-07-13, founder pick): un-bland the
+  // value pair with the acid Jacquard blackletter word (normally the ONE acid word
+  // on the end-card). Rendered as a top-left stamp (same grammar as .am-jacquard),
+  // acid on dark fields (ink/signal) or ink on light fields — the acid law. Sits
+  // above the vertically-centred pair (372..~520), no collision. DECORATIVE accent.
+  const sc = scene as VersusSceneType & {jacquardWord?: string; field?: string};
+  const jWord = typeof sc.jacquardWord === 'string' && sc.jacquardWord.trim() ? sc.jacquardWord : undefined;
+  const darkField = sc.field === 'ink' || sc.field === 'signal';
+  const jInk = !darkField;
+  // versus-pair.v3 DARK+ACID (founder Option A, 2026-07-13): the right/winner value
+  // uses .vs-value.r → var(--accent), which the ink/signal fields do NOT override
+  // (it stays near-black #101010 → invisible on the near-black field). On dark
+  // fields recolor the winner to acid (the verdict colour, matching the jacquard
+  // stamp); light fields keep the approved v2 ink accent untouched.
+  const rValueStyle: React.CSSProperties = darkField
+    ? {color: '#39FF35', textShadow: '0 0 18px rgba(57, 255, 53, 0.35)'}
+    : {};
+
   return (
     <AbsoluteFill>
       <div className="frame">
+        {jWord ? (
+          <div
+            className={`am-jacquard vs-jacquard${jInk ? ' vs-jacquard--ink' : ''}`}
+            style={fadeRise(frame, 8, 16)}
+          >
+            {jWord}
+          </div>
+        ) : null}
         <div className="drift" style={{transform: `scale(${drift})`}}>
           {hideChrome ? null : (
             <Chrome
@@ -103,7 +129,7 @@ export const VersusScene: React.FC<{
               <div className="vs-col" style={pop(frame, 34, fps)}>
                 <div
                   className="vs-value r"
-                  style={{fontSize: valueSize, transform: accentPop(frame, 44)}}
+                  style={{fontSize: valueSize, transform: accentPop(frame, 44), ...rValueStyle}}
                 >
                   {scene.rightValue}
                 </div>

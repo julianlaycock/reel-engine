@@ -262,11 +262,17 @@ const checkWireframes = (video, wf, results) => {
     results.push(R(false, 'warn', 'wireframe.endCard', 'no endCard scene found'));
   }
 
-  // one jacquard word per VIDEO (dark beats only carry it)
+  // jacquard = the DARK-BEAT acid verdict ornament. Ornament law RELAXED 2026-07-13
+  // (founder, americana-tokens.json#type.ornament): no longer exactly-one-per-video —
+  // the verdict word may carry on the approved dark payoff beats (versus-pair.v3,
+  // editorial-statement.v2, end-card.v1) as well as the end card. The one hard law
+  // that remains is acid-on-dark-fields-only: a jacquard word on a LIGHT field (not
+  // ink/signal, not an asciiField dark beat) is still a BLOCKER.
+  const DARK_FIELDS = new Set(['ink', 'signal', 'signalBlue']);
   const jac = scenes.filter((sc) => sc.jacquardWord);
-  const jacOnLight = jac.filter((sc) => sc.kind !== 'asciiField');
-  results.push(R(jac.length <= 1 && jacOnLight.length === 0, 'blocker', 'wireframe.jacquard',
-    jac.length > 1 ? `${jac.length} jacquard words (max 1 per video)` : jacOnLight.length ? 'jacquard on a non-dark beat' : `${jac.length} jacquard word(s), dark beat only`));
+  const jacOnLight = jac.filter((sc) => sc.kind !== 'asciiField' && !DARK_FIELDS.has(sc.field));
+  results.push(R(jacOnLight.length === 0, 'blocker', 'wireframe.jacquard',
+    jacOnLight.length ? `jacquard on a non-dark beat (acid-on-dark law): ${jacOnLight.map((s) => `field '${s.field ?? '(none)'}'`).join(', ')}` : `${jac.length} jacquard verdict word(s), all on dark payoff beats`));
 };
 
 // ------------------------------------------------------- template registry layer

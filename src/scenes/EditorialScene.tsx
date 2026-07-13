@@ -227,9 +227,26 @@ export const EditorialScene: React.FC<{
   const headlineLines = isReceiptShot && scene.headline ? scene.headline.split('\n').length : 0;
   const shotMax = isReceiptShot ? (headlineLines === 0 ? 640 : headlineLines === 1 ? 450 : 360) : undefined;
 
+  // editorial-statement.v2 (founder RENDER→SEE→LOCK 2026-07-13): the optional acid
+  // Jacquard verdict word — same top-left stamp grammar as VersusScene's vs-jacquard
+  // and the end-card's .am-jacquard. Acid #39FF35 (glow) on dark fields (ink/signal);
+  // ink on light fields — the acid-on-dark law. Decorative accent over the centered
+  // statement, fades+rises in. Absent ⇒ editorial-statement.v1 renders as before.
+  const sc = scene as EditorialSceneType & {jacquardWord?: string; field?: string};
+  const jWord = typeof sc.jacquardWord === 'string' && sc.jacquardWord.trim() ? sc.jacquardWord : undefined;
+  const jInk = !(sc.field === 'ink' || sc.field === 'signal');
+
   return (
     <AbsoluteFill>
       <div className="frame">
+        {jWord ? (
+          <div
+            className={`am-jacquard ed-jacquard${jInk ? ' ed-jacquard--ink' : ''}`}
+            style={fadeRise(frame, 8, 16)}
+          >
+            {jWord}
+          </div>
+        ) : null}
         {hideChrome ? null : (
           <Chrome
             kicker={scene.kicker}
