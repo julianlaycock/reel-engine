@@ -2,6 +2,10 @@
 
 Every engine change goes here ONCE; it applies to all three brands (vektor · caelith · caelith-labs) automatically.
 
+## 2026-07-09 — canon-board (visual canon as a build artifact)
+- `scripts/canon-board.mjs` renders `canon/BOARD.html` from the canon sources (`americana-tokens.json`, `wireframes/wireframes.json`, `canon.yml`) — the board is now a generated artifact, never hand-edited. Run via `npm run canon:board` from the brand dir (`--brand vektor`).
+- Enforcement wiring (projects-level): Claude Code PostToolUse hook (`.claude/hooks/canon-regen.mjs`) auto-regenerates the board after any canon-file edit; vektor git `pre-commit` hook regenerates + stages BOARD.html in the same commit as a canon change; `/canon-change` skill runs the founder-approval ritual. Law recorded in `projects/CLAUDE.md`.
+
 ## 2026-07-05 — Americana platform safe zone
 - TikTok/IG aspect-fill 9:16 onto ~9:19.5 screens (~100px cropped per side) and overlay UI; the NO.004 upload lost its masthead, headline edge, footer and meta line. All `.skin-americana` layout now lives inside the union safe zone: top 220 / bottom 500 / sides 150 / right 260 in the y 850–1600 rail band.
 - Masthead bar deepened 100→320px (full-bleed ink, content row bottom-aligned below the top overlay); footer inset 56→510 from bottom; rail 44→150; ghosts, jacquard, dark-stage, credit pulled inside; americana `.caps` override.

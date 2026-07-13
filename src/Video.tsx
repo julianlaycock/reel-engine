@@ -40,6 +40,7 @@ import {HeroWordScene} from './scenes/HeroWordScene';
 import {PosterScene} from './scenes/PosterScene';
 import {SplitVs} from './scenes/SplitVs';
 import {PhotoStat} from './scenes/PhotoStat';
+import {TerminalScene} from './scenes/TerminalScene';
 import {GradientBackground} from './scenes/GradientBackground';
 import {Captions} from './Captions';
 import {AsciiFieldScene} from './scenes/AsciiFieldScene';
@@ -147,6 +148,9 @@ const SceneBody: React.FC<{scene: Scene; frames: number; hideChrome: boolean}> =
   if ((scene as {kind: string}).kind === 'photostat') {
     return <PhotoStat scene={scene} hideChrome={hideChrome} />;
   }
+  if ((scene as {kind: string}).kind === 'terminal') {
+    return <TerminalScene scene={scene as any} hideChrome={hideChrome} />;
+  }
   if (scene.kind === 'nodegraph') {
     return <NodeGraphScene scene={scene} hideChrome={hideChrome} />;
   }
@@ -246,7 +250,12 @@ const SceneEnvelope: React.FC<{frames: number; first: boolean; enter?: string; m
   // easeOutExpo (ty 18→0). Founder QA 2026-07-04: the original ~16–20-frame seam
   // read as dead air / a glitch at ≤45s pacing — VO narrated over an empty canvas.
   // No lateral slides (family never-do).
-  if (morph) {
+  // Curated transition mix (2026-07-13 consolidation): a scene that explicitly asks
+  // for a distinct directional transition (whip/left/right/scale) renders THAT even
+  // when global fx.morph is on — whip INTO punchy beats, morph seam on the calm ones.
+  // Only the default/undirected scenes take the palette-morph bare-canvas seam.
+  const directional = enter === 'whip' || enter === 'left' || enter === 'right' || enter === 'scale';
+  if (morph && !directional) {
     const op = Math.min(
       interpolate(frame, [2, 14], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.16, 1, 0.3, 1)}),
       interpolate(frame, [frames - 10, frames - 4], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.5, 0, 0.75, 0)}),
@@ -578,7 +587,7 @@ export const Video: React.FC<VideoProps> = ({video}) => {
         <Audio src={staticFile(audio.voSrc)} volume={audio.voVolume ?? 1} />
       ) : null}
       {audio?.musicSrc ? (
-        <Audio src={staticFile(audio.musicSrc)} volume={audio.musicVolume ?? 0.12} loop />
+        <Audio src={staticFile(audio.musicSrc)} volume={audio.musicVolume ?? 0.04} loop />
       ) : null}
       {audio?.endMusicSrc ? (
         <Sequence from={video.scenes.slice(0, -1).reduce((s, sc) => s + sceneFrames(sc), 0)} layout="none">

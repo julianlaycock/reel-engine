@@ -43,7 +43,20 @@ const collect = (node, out, keyed) => {
 
 export const visibleChars = (scene) => {
   const out = [];
-  collect(scene, out, false);
+  // A terminal scene is a SCANNED CLI artifact (kind:'terminal', 2026-07-13):
+  // its typed body — prompt / planHeader / rows / lines / confirm — is texture
+  // paced by the char-by-char typing animation + the VO, NOT linearly-read prose.
+  // Like a screenshot or ascii capture (whose `src`/`image` is already skipped),
+  // the viewer scans it; the meaning rides the voiceover. Counting every grep/
+  // diff line at 15 cps would demand ~18s for a 6-line session — absurd. So the
+  // floor for a terminal is governed by its title/caption furniture + the 3s
+  // hard floor (which still guarantees real dwell). Non-terminal scenes unchanged.
+  if (scene && scene.kind === 'terminal') {
+    const {lines, rows, prompt, planHeader, confirm, ...rest} = scene;
+    collect(rest, out, false);
+  } else {
+    collect(scene, out, false);
+  }
   // Count meaningful characters only (drop repeated whitespace).
   return out.join(' ').replace(/\s+/g, ' ').trim().length;
 };

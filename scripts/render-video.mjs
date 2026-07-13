@@ -103,7 +103,7 @@ const validateVideo = (video) => {
       if (!Number.isInteger(scene.durationInFrames) || scene.durationInFrames < 30) {
         throw new Error(`${at}: durationInFrames must be an integer >= 30`);
       }
-    } else if (scene.kind === 'montecarlo' || scene.kind === 'plinko' || scene.kind === 'guessreveal' || scene.kind === 'barrace' || scene.kind === 'shotmap' || scene.kind === 'poisson2d' || scene.kind === 'outro2' || scene.kind === 'flow' || scene.kind === 'hero' || scene.kind === 'poster' || scene.kind === 'splitvs' || scene.kind === 'photostat') {
+    } else if (scene.kind === 'montecarlo' || scene.kind === 'plinko' || scene.kind === 'guessreveal' || scene.kind === 'barrace' || scene.kind === 'shotmap' || scene.kind === 'poisson2d' || scene.kind === 'outro2' || scene.kind === 'flow' || scene.kind === 'hero' || scene.kind === 'poster' || scene.kind === 'splitvs' || scene.kind === 'photostat' || scene.kind === 'terminal') {
       if (!Number.isInteger(scene.durationInFrames) || scene.durationInFrames < 30) {
         throw new Error(`${at}: durationInFrames must be an integer >= 30`);
       }
