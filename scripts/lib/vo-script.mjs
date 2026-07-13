@@ -1,35 +1,42 @@
-// vo-script.mjs — ONE shared composer for the narrated script (founder-approved
-// context-aware VO, 2026-07-09). data/<slug>/script.txt is COMPOSED from
-// video.json: each scene's clean `vo` line prefixed with its `voTag` as an
-// eleven_v3 inline audio tag. The vo field stays tag-free (captions +
-// reading-time never see tags); the composed script is the ONLY text that
-// reaches the ElevenLabs API — in a single call (v3 has no request stitching).
+// vo-script.mjs — ONE shared composer for the narrated script.
+// data/<slug>/script.txt is COMPOSED from video.json: each scene's clean `vo`
+// line, joined by blank lines. NO audio tags — the [voTag] system was REMOVED
+// 2026-07-13. Audio tags were the voice-drift source; the founder locked a
+// natural narration voice on eleven_multilingual_v2 (config/voices.json#voices.vektor)
+// and tags no longer touch the pipeline. A pronunciation map respells known
+// problem-words in the SPOKEN text so pronunciation never has to be hand-fixed.
 //
 // Used by compose-script.mjs (build) AND check-goldens.mjs (gate) so the build
 // and the gate can never drift — same doctrine as lib/reading-time.mjs.
 
-// The founder-approved tag vocabulary (canon.yml#voice.tags.allowed mirrors this;
-// the gate cross-checks against canon so the two can't drift silently).
-export const APPROVED_VO_TAGS = ['excited', 'confident', 'curious', 'thoughtful', 'happily'];
+// Extensible spoken-pronunciation map: whole-word, case-insensitive respellings
+// applied to VO text before composition, so script.txt itself carries the
+// respelling and every video benefits. Add future problem-words as [regex, to].
+export const PRONUNCIATION = [
+  [/\bmarkdown\b/gi, 'mark down'],
+];
 
-// Compose the full narrated script from video.json scenes.
-// Beat boundaries are blank lines; a tagged beat opens with its audio tag.
+// Apply the pronunciation map to a single piece of VO text.
+export const applyPronunciation = (text = '') =>
+  PRONUNCIATION.reduce((s, [re, to]) => s.replace(re, to), text);
+
+// Compose the full narrated script from video.json scenes. Beat boundaries are
+// blank lines. NO audio tags are ever injected; the pronunciation map is applied
+// so the composed script is exactly what should be spoken.
 export const composeScript = (video) =>
   (video.scenes || [])
     .filter((sc) => sc.vo)
-    .map((sc) => (sc.voTag ? `[${sc.voTag}] ${sc.vo}` : sc.vo))
+    .map((sc) => applyPronunciation(sc.vo))
     .join('\n\n') + '\n';
 
-// Validate every scene's voTag against an allowed list. Returns fail strings.
-export const validateVoTags = (video, allowed = APPROVED_VO_TAGS) => {
-  const fails = [];
-  (video.scenes || []).forEach((sc, i) => {
-    if (sc.voTag && !allowed.includes(sc.voTag)) {
-      fails.push(`scene[${i}] voTag '${sc.voTag}' is not in the approved tag vocabulary [${allowed.join(', ')}]`);
-    }
-    if (sc.vo && /\[[a-z ]+\]/i.test(sc.vo)) {
-      fails.push(`scene[${i}] vo contains an inline [tag] — tags live ONLY in voTag; vo stays clean for captions/reading-time`);
-    }
-  });
-  return fails;
+// Detect any inline audio tag ([excited], [confident], … or any bracketed
+// lowercase word) left in a composed script. Tags are gone; the gate BLOCKS if
+// one reappears so the drift source can never come back. Returns the offending
+// markers (empty = clean).
+export const findAudioTags = (script = '') => {
+  const re = /\[[a-z][a-z ]*\]/gi;
+  const out = [];
+  let m;
+  while ((m = re.exec(script))) out.push(m[0]);
+  return out;
 };

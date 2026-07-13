@@ -58,7 +58,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {createRequire} from 'node:module';
 import {resolveBrand} from '../lib/brand.mjs';
-import {composeScript, validateVoTags} from './lib/vo-script.mjs';
+import {composeScript, findAudioTags} from './lib/vo-script.mjs';
 
 const execFileP = promisify(execFile);
 const require = createRequire(import.meta.url);
@@ -431,22 +431,22 @@ const main = async () => {
     checkTemplates(video, registry, results);
   }
 
-  // ---- 5. context-aware VO (voTag vocabulary + composed-script drift) ---------
+  // ---- 5. VO script (composition drift + NO audio tags) ----------------------
   // The narrated script is COMPOSED from video.json (compose-script.mjs). The
   // gate re-composes with the SAME shared lib and diffs data/<slug>/script.txt —
-  // a hand-edited script (or stale tags) can never ship. Tag vocabulary comes
-  // from canon.yml#voice.tags.allowed (founder-approved 2026-07-09).
-  if (canon.voice?.tags) {
-    const allowed = canon.voice.tags.allowed ?? [];
-    const tagFails = validateVoTags(video, allowed);
-    results.push(R(tagFails.length === 0, 'blocker', 'voice.tags',
-      tagFails.length ? tagFails.join(' | ') : `voTags valid (vocabulary: ${allowed.join(', ')})`));
+  // a hand-edited or stale script can never ship. The [voTag] audio-tag system
+  // was REMOVED 2026-07-13 (it was the voice-drift source); this gate BLOCKS if
+  // any [tag] marker reappears in the composed script. voTags are NOT required.
+  {
     const scriptPath = path.join('data', args.slug, 'script.txt');
     if (fs.existsSync(scriptPath)) {
       const onDisk = fs.readFileSync(scriptPath, 'utf8').replace(/\r\n/g, '\n');
       const composed = composeScript(video);
       results.push(R(onDisk === composed, 'blocker', 'voice.script',
-        onDisk === composed ? 'script.txt matches the video.json composition' : 'script.txt DRIFTED from the video.json vo/voTag composition — regenerate with compose-script.mjs (never hand-edit)'));
+        onDisk === composed ? 'script.txt matches the video.json vo composition' : 'script.txt DRIFTED from the video.json vo composition — regenerate with compose-script.mjs (never hand-edit)'));
+      const tags = findAudioTags(onDisk);
+      results.push(R(tags.length === 0, 'blocker', 'voice.noTags',
+        tags.length ? `composed script contains audio tag(s) ${tags.join(', ')} — the [voTag] system was removed 2026-07-13; audio tags reintroduce voice drift and are blocked` : 'no [audio tags] in the composed script'));
     } else {
       results.push(R(false, 'warn', 'voice.script', 'no data/<slug>/script.txt — compose it with compose-script.mjs before the VO build'));
     }

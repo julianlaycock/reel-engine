@@ -49,6 +49,7 @@ const parseArgs = () => {
     else if (a === '--stability') p.stability = args[++i];
     else if (a === '--style') p.style = args[++i];
     else if (a === '--similarity') p.similarity = args[++i];
+    else if (a === '--seed') p.seed = args[++i];
   }
   if (!p.output || (!p.input && !p.text)) {
     throw new Error('Usage: npm run voiceover -- --input <script.txt> --output <vo.mp3> --voice <key>  (or --text / --voice-id)');
@@ -106,6 +107,7 @@ const main = async () => {
       body: JSON.stringify({
         text,
         model_id: args.model ?? v.model_id,
+        ...((args.seed ?? v.seed) != null ? {seed: parseInt(args.seed ?? v.seed, 10)} : {}),
         voice_settings: {
           stability: v.stability ?? 0.5,
           similarity_boost: v.similarity_boost ?? 0.8,
