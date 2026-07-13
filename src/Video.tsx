@@ -1,5 +1,9 @@
 import React from 'react';
-import {AbsoluteFill, Audio, Easing, Sequence, Series, interpolate, staticFile, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Audio, Easing, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
+import {TransitionSeries} from '@remotion/transitions';
+import {CameraMotionBlur} from '@remotion/motion-blur';
+import {buildTransition, type TransitionVariant} from './TransitionDemo';
+import {easeOutExpo, easeInOut} from './motion';
 import type {Scene, VideoProps} from './video-schema';
 import {sceneFrames} from './video-schema';
 import {AnimatedCard} from './AnimatedCard';
@@ -50,7 +54,7 @@ import './style.css';
 // Americana Cut skin (Vektor, locked 2026-07-04) — flat field colors per beat.
 // The video.json author sets a per-scene `"field"`; light fields carry ink text,
 // signal/ink fields carry paper text. Spec: vektor/canon/americana-tokens.json.
-const AM_FIELDS: Record<string, {bg: string; fg: string; muted: string; hairline: string}> = {
+export const AM_FIELDS: Record<string, {bg: string; fg: string; muted: string; hairline: string}> = {
   orchid: {bg: '#C77BC9', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.28)'},
   aqua: {bg: '#8FC5C9', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.28)'},
   cream: {bg: '#F4EFDF', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.24)'},
@@ -59,7 +63,7 @@ const AM_FIELDS: Record<string, {bg: string; fg: string; muted: string; hairline
   signal: {bg: '#1B4FA0', fg: '#EFEADD', muted: '#BFD9FF', hairline: 'rgba(191,217,255,0.3)'},
 };
 
-const amFieldVars = (field?: string): React.CSSProperties => {
+export const amFieldVars = (field?: string): React.CSSProperties => {
   const f = AM_FIELDS[field ?? ''];
   if (!f) return {};
   return {
@@ -74,7 +78,7 @@ const amFieldVars = (field?: string): React.CSSProperties => {
   } as React.CSSProperties;
 };
 
-const SceneBody: React.FC<{scene: Scene; frames: number; hideChrome: boolean}> = ({
+export const SceneBody: React.FC<{scene: Scene; frames: number; hideChrome: boolean}> = ({
   scene,
   frames,
   hideChrome,
@@ -192,8 +196,9 @@ const Camera: React.FC<{
   cam?: {fromZoom?: number; toZoom?: number; fx?: number; fy?: number};
   frames: number;
   maxZoom?: number;
+  noEnter?: boolean;
   children: React.ReactNode;
-}> = ({cam, frames, maxZoom, children}) => {
+}> = ({cam, frames, maxZoom, noEnter, children}) => {
   const frame = useCurrentFrame();
   if (!cam) return <>{children}</>;
   const zRaw = interpolate(frame, [0, Math.max(frames - 1, 1)], [cam.fromZoom ?? 1, cam.toZoom ?? 1.3], {
@@ -207,7 +212,10 @@ const Camera: React.FC<{
   // 320 chrome edge and the 1300 caption band at every frame.
   const z = maxZoom ? Math.min(zRaw, maxZoom) : zRaw;
   // Soft entrance (dissolve-up) so camera scenes transition instead of hard-cutting.
-  const enter = interpolate(frame, [0, 7], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  // When the scene rides a coupled TransitionSeries slide (noEnter), the slide IS
+  // the entrance — a 7-frame opacity fade would make the content ghost in while it
+  // slides, fighting the coupling; render at full opacity from frame 0 instead.
+  const enter = noEnter ? 1 : interpolate(frame, [0, 7], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   return (
     <AbsoluteFill
       style={{
@@ -224,14 +232,26 @@ const Camera: React.FC<{
 // Gentle dissolve envelope per scene — content eases in and out so consecutive
 // scenes cross-dissolve through the background instead of hard-cutting. The
 // continuous VO track runs across the cut (an L-cut feel). Restraint = elegant.
-const SceneEnvelope: React.FC<{frames: number; first: boolean; enter?: string; morph?: boolean; children: React.ReactNode}> = ({
+const SceneEnvelope: React.FC<{frames: number; first: boolean; enter?: string; morph?: boolean; ride?: {enter: boolean; exit: boolean}; children: React.ReactNode}> = ({
   frames,
   first,
   enter = 'rise',
   morph = false,
+  ride,
   children,
 }) => {
   const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+  const rid = React.useId().replace(/[:]/g, '');
+  // COUPLED-RIDE (2026-07-14): the truly-overlapping premium transitions run in the
+  // main `TransitionSeries` (buildTransition + slide()/CameraMotionBlur). When a
+  // TransitionSeries.Transition slides this scene IN (ride.enter) the slide IS the
+  // entrance, and when the NEXT scene's slide pushes this one OUT (ride.exit) the
+  // slide IS the exit — so the internal envelope MUST NOT also fade/translate on a
+  // ridden side or it cross-dissolves against the slide (the exact "look-alike" the
+  // Approval Protocol forbids). Suppress the fighting side; keep the other.
+  const rideEnter = ride?.enter ?? false;
+  const rideExit = ride?.exit ?? false;
   // Americana motion law ("hard steps only"): `"transition": "cut"` = a true hard
   // cut — no envelope fades at all; the flat field color changes in one frame.
   if (enter === 'cut') {
@@ -239,9 +259,23 @@ const SceneEnvelope: React.FC<{frames: number; first: boolean; enter?: string; m
   }
   // FRAME-ZERO LAW (canon v1.2.0): the opening scene renders at FULL opacity with
   // no entrance transform from frame 0 — the first frame must work as a static
-  // thumbnail (TikTok decides in ~1s; a fade-in reads as an empty frame).
+  // thumbnail (TikTok decides in ~1s; a fade-in reads as an empty frame). If the
+  // NEXT scene's coupled slide pushes it off (rideExit), hold to the end so the
+  // slide has real content to push — no premature fade before the hand-off.
   if (first) {
-    const outOp = interpolate(frame, [frames - (morph ? 16 : 12), frames - (morph ? 6 : 0)], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+    const outOp = rideExit
+      ? 1
+      : interpolate(frame, [frames - (morph ? 16 : 12), frames - (morph ? 6 : 0)], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+    return <AbsoluteFill style={{opacity: outOp}}>{children}</AbsoluteFill>;
+  }
+  // A scene the coupled slide brings IN: present from frame 0 (the slide is the
+  // entrance). Hold to the end if the next slide also pushes it out (rideExit),
+  // else keep the normal outro fade so a following hard cut still reads. This
+  // supersedes every internal premium/directional branch below for coupled beats.
+  if (rideEnter) {
+    const outOp = rideExit
+      ? 1
+      : interpolate(frame, [frames - 12, frames], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
     return <AbsoluteFill style={{opacity: outOp}}>{children}</AbsoluteFill>;
   }
   // DOCTRINE COLOR-MORPH (canon v1.5.0, seam tightened 2026-07-04): scenes do NOT
@@ -254,11 +288,20 @@ const SceneEnvelope: React.FC<{frames: number; first: boolean; enter?: string; m
   // for a distinct directional transition (whip/left/right/scale) renders THAT even
   // when global fx.morph is on — whip INTO punchy beats, morph seam on the calm ones.
   // Only the default/undirected scenes take the palette-morph bare-canvas seam.
-  const directional = enter === 'whip' || enter === 'left' || enter === 'right' || enter === 'scale';
+  // spring-slide / whip-real are intentionally absent: they render as COUPLED
+  // overlaps in the main TransitionSeries and exit at the rideEnter guard above,
+  // never reaching this single-scene path (see the NOTE below).
+  const directional =
+    enter === 'whip' ||
+    enter === 'left' ||
+    enter === 'right' ||
+    enter === 'scale' ||
+    enter === 'luma-wipe' ||
+    enter === 'overshoot';
   if (morph && !directional) {
     const op = Math.min(
       interpolate(frame, [2, 14], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.16, 1, 0.3, 1)}),
-      interpolate(frame, [frames - 10, frames - 4], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.5, 0, 0.75, 0)}),
+      rideExit ? 1 : interpolate(frame, [frames - 10, frames - 4], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.5, 0, 0.75, 0)}),
     );
     const ty = interpolate(frame, [2, 14], [18, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.16, 1, 0.3, 1)});
     return <AbsoluteFill style={{opacity: op, transform: `translateY(${ty}px)`}}>{children}</AbsoluteFill>;
@@ -267,8 +310,43 @@ const SceneEnvelope: React.FC<{frames: number; first: boolean; enter?: string; m
   const outN = 12;
   const op = Math.min(
     interpolate(frame, [0, inN], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}),
-    interpolate(frame, [frames - outN, frames], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}),
+    rideExit ? 1 : interpolate(frame, [frames - outN, frames], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}),
   );
+  // === PREMIUM TRANSITIONS (2026-07-13) ===
+  // NOTE (2026-07-14): the truly-COUPLED spring-slide / whip-real now render in the
+  // main `TransitionSeries` (buildTransition + slide()/CameraMotionBlur) — see the
+  // rideEnter guard above; those beats never fall through to the single-scene
+  // approximations below. The branches here remain ONLY for non-coupled single-scene
+  // enters (luma-wipe / overshoot / whip / left / right / scale) that do not request
+  // an overlapping hand-off. (The old same-named spring-slide/whip-real single-scene
+  // look-alikes are slated for deletion once the coupled render is founder-approved.)
+
+  // 4 — OVERSHOOT: eased (easeOutExpo) opacity + a spring overshoot on the scale.
+  if (enter === 'overshoot') {
+    const opIn = interpolate(frame, [0, inN], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: easeOutExpo});
+    const opO = Math.min(opIn, interpolate(frame, [frames - outN, frames], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}));
+    const s = spring({frame, fps, config: {damping: 11, stiffness: 120, mass: 0.9}, durationInFrames: 24});
+    const scale = interpolate(s, [0, 1], [0.9, 1]); // spring overshoots >1 then settles
+    return <AbsoluteFill style={{opacity: opO, transform: `scale(${scale})`, transformOrigin: '50% 46%'}}>{children}</AbsoluteFill>;
+  }
+
+  // 3 — LUMA-WIPE: reveal through a soft luminance mask sweep (Sam-Kolder), no flat opacity dip.
+  if (enter === 'luma-wipe') {
+    const p = interpolate(frame, [0, inN + 8], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: easeInOut});
+    const feather = 22;
+    const edge = -feather + p * (100 + feather * 2);
+    const mask = `linear-gradient(112deg, #000 ${edge - feather}%, transparent ${edge}%)`;
+    const opOut = interpolate(frame, [frames - outN, frames], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+    return <AbsoluteFill style={{opacity: opOut, WebkitMaskImage: mask, maskImage: mask}}>{children}</AbsoluteFill>;
+  }
+
+  // NOTE (2026-07-14): the single-scene 'spring-slide' and 'whip-real' approximations
+  // that used to live here were DELETED when those transitions became truly coupled
+  // in the main TransitionSeries (buildTransition, src/TransitionDemo.tsx). Keeping a
+  // same-named look-alike here is exactly what the Approval Protocol forbids (rule 2:
+  // one implementation), and check-goldens#transitions.coupled BLOCKS its return.
+  // Coupled beats never reach this far — they exit at the rideEnter guard above.
+
   // Directional enter transition (preserves total duration — no TransitionSeries).
   const p = interpolate(frame, [0, inN + 2], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic)});
   let transform = `translateY(${(1 - p) * 36}px)`;
@@ -319,8 +397,29 @@ const MorphGrid: React.FC<{ranges: Array<[number, number]>; light: string; dark:
   return <AbsoluteFill className="vk-grid" style={{['--hairline' as string]: line, opacity: 1 - dm}} />;
 };
 
+// Frame-gated CameraMotionBlur (2026-07-14): the whip-real transitions carry REAL
+// motion blur (identical wrapper to TransitionDemo — shutterAngle 220, 12 samples),
+// but the calm spring-slide seams must stay blur-free (matching the approved
+// 1-spring-slide.mp4). Wrapping the whole TransitionSeries would blur BOTH, so we
+// only mount CameraMotionBlur on the absolute frame windows a whip occupies. Each
+// frame renders independently (headless capture), so toggling the wrapper per frame
+// is deterministic and seamless — outside a whip window there is no motion to blur
+// anyway, so the boundary is continuous.
+const MotionBlurGate: React.FC<{windows: Array<[number, number]>; children: React.ReactNode}> = ({windows, children}) => {
+  const frame = useCurrentFrame();
+  const active = windows.some(([s, e]) => frame >= s && frame < e);
+  return active ? (
+    <CameraMotionBlur shutterAngle={220} samples={12}>
+      {children}
+    </CameraMotionBlur>
+  ) : (
+    <>{children}</>
+  );
+};
+
 export const Video: React.FC<VideoProps> = ({video}) => {
   const {audio, captions, captionStyle, chrome} = video;
+  const {fps} = useVideoConfig();
   const hasChrome = Boolean(chrome);
   const skin = video.skin ?? 'vmax';
   const americana = skin === 'americana';
@@ -449,6 +548,46 @@ export const Video: React.FC<VideoProps> = ({video}) => {
       } as React.CSSProperties)
     : {};
 
+  // === COUPLED TRANSITION PLAN (2026-07-14) ==================================
+  // The scenes render in a `TransitionSeries` so premium `spring-slide`/`whip-real`
+  // beats OVERLAP (outgoing + incoming on screen at once) — the founder-approved
+  // hand-off from `TransitionDemo`, reusing the SAME `buildTransition()` (Approval
+  // Protocol rule 2: one implementation, no look-alikes).
+  //
+  // TransitionSeries eats `D` frames per transition into the overlap, which would
+  // shift every later scene EARLIER and desync the single straight-through VO track
+  // (Audio, below) plus the chrome/caption/morph ranges (all keyed to the natural
+  // cumulative scene starts). To keep every scene's ABSOLUTE start put, each
+  // sequence is padded by the overlap of the transition that FOLLOWS it
+  // (L_i = naturalFrames_i + D_{i+1}). Algebra: start_i = Σ_{j<i}L_j − Σ_{k≤i}D_k =
+  // Σ_{j<i} naturalFrames_j — identical to the old sequential `Series`, and the
+  // total stays `totalFrames(video)`. The extra pad is exactly the tail the
+  // outgoing scene needs to still be on-screen while the next one slides in.
+  const COUPLED: Record<string, TransitionVariant> = {'spring-slide': 'spring-slide', 'whip-real': 'whip'};
+  const scenePlan = video.scenes.map((scene, i) => {
+    const variant = COUPLED[(scene as {transition?: string}).transition ?? ''];
+    // A transition element sits BEFORE scene i (i≥1) when scene i asks for a coupled
+    // enter. Its overlap D and blur flag come straight from buildTransition().
+    const t = i >= 1 && variant ? buildTransition(variant) : undefined;
+    const D = t ? t.timing.getDurationInFrames({fps}) : 0;
+    return {scene, variant, transition: t, D, natural: sceneFrames(scene)};
+  });
+  const n = scenePlan.length;
+  // Whip transitions carry REAL CameraMotionBlur (exactly like TransitionDemo). The
+  // spring-slide seams must stay blur-free (the approved 1-spring-slide.mp4 has no
+  // blur), so instead of wrapping the whole series we gate the blur to just the
+  // absolute frame windows a whip transition occupies. At most one transition is
+  // ever active at a time (scenes don't otherwise overlap), so a whip window never
+  // coincides with a spring-slide — the gate isolates blur per transition class.
+  const whipWindows: Array<[number, number]> = [];
+  {
+    let orig = 0;
+    scenePlan.forEach((p, i) => {
+      if (i >= 1 && p.transition?.blur) whipWindows.push([orig, orig + p.D]);
+      orig += p.natural;
+    });
+  }
+
   return (
     <AbsoluteFill
       style={{backgroundColor: brand?.bgBot ?? '#070707', ...brandVars, ...(orb2 ? {['--orb2' as string]: orb2} : {})}}
@@ -484,57 +623,93 @@ export const Video: React.FC<VideoProps> = ({video}) => {
           <Atmosphere orbs={fx?.orbs} grain={fx?.grain} />
         </AbsoluteFill>
       ) : null}
-      <Series>
-        {video.scenes.map((scene, index) => {
-          const frames = sceneFrames(scene);
-          return (
-            <Series.Sequence key={index} durationInFrames={frames}>
-              <AbsoluteFill
-                style={{
-                  ...((scene as {beat?: string}).beat === 'dark' ? darkVars : {}),
-                  ...(americana ? amFieldVars((scene as {field?: string}).field) : {}),
-                }}
-                className={americana && (scene as {amBeat?: string}).amBeat ? 'am-beat-' + (scene as {amBeat?: string}).amBeat : undefined}
-              >
-                <SceneEnvelope frames={frames} first={index === 0} enter={(scene as {transition?: string}).transition} morph={fx?.morph}>
-                  <Camera
-                    cam={(scene as {camera?: {fromZoom?: number; toZoom?: number; fx?: number; fy?: number}}).camera}
-                    frames={frames}
-                    maxZoom={americana && !(scene as {endCard?: unknown}).endCard ? 1.06 : undefined}
+      <MotionBlurGate windows={whipWindows}>
+        <TransitionSeries>
+          {scenePlan.flatMap((p, index) => {
+            const {scene} = p;
+            const natural = p.natural;
+            // Pad this sequence by the overlap of the coupled transition that
+            // FOLLOWS it, so the outgoing scene is still on-screen while the next
+            // one slides in AND every absolute scene start stays put (see plan above).
+            const dAfter = index < n - 1 ? scenePlan[index + 1].D : 0;
+            const seqFrames = natural + dAfter;
+            // A coupled slide brings scene i IN (rideEnter) and the next coupled slide
+            // pushes it OUT (rideExit) — the internal SceneEnvelope must not fight
+            // either ridden side. The last coupled-entered scene holds to the end.
+            const rideEnter = index >= 1 && Boolean(p.variant);
+            const rideExit =
+              (index < n - 1 && Boolean(scenePlan[index + 1].variant)) || (index === n - 1 && rideEnter);
+            const sequence = (
+              <TransitionSeries.Sequence key={`s${index}`} durationInFrames={seqFrames}>
+                <AbsoluteFill
+                  style={{
+                    ...((scene as {beat?: string}).beat === 'dark' ? darkVars : {}),
+                    ...(americana ? amFieldVars((scene as {field?: string}).field) : {}),
+                  }}
+                  className={americana && (scene as {amBeat?: string}).amBeat ? 'am-beat-' + (scene as {amBeat?: string}).amBeat : undefined}
+                >
+                  <SceneEnvelope
+                    frames={natural}
+                    first={index === 0}
+                    enter={(scene as {transition?: string}).transition}
+                    morph={fx?.morph}
+                    ride={{enter: rideEnter, exit: rideExit}}
                   >
-                    <SceneBody scene={scene} frames={frames} hideChrome={hasChrome} />
-                  </Camera>
-                  {americana && (scene as {ghosts?: string[]}).ghosts
-                    ? // ghost fragments: mono 19, corners only, max 2 per frame, ≤0.45
-                      (scene as {ghosts?: string[]}).ghosts!.slice(0, 2).map((g, gi) => (
-                        <div key={gi} className={`am-ghost ${gi === 0 ? 'am-ghost-tl' : 'am-ghost-br'}`}>
-                          {g}
-                        </div>
-                      ))
-                    : null}
-                  {(scene as {mascot?: MascotConfig}).mascot ? (
-                    <ClaudeMascot
-                      config={(scene as {mascot?: MascotConfig}).mascot!}
-                      frames={frames}
-                      // end-card beats get their own vetted-slot table + size guard
-                      sceneKind={(scene as {endCard?: unknown}).endCard ? 'endCard' : scene.kind}
-                    />
-                  ) : null}
-                  {/* styleboard/demo escape hatch: several mascots on one scene */}
-                  {((scene as {mascots?: MascotConfig[]}).mascots ?? []).map((m, mi) => (
-                    <ClaudeMascot
-                      key={`m${mi}`}
-                      config={m}
-                      frames={frames}
-                      sceneKind={(scene as {endCard?: unknown}).endCard ? 'endCard' : scene.kind}
-                    />
-                  ))}
-                </SceneEnvelope>
-              </AbsoluteFill>
-            </Series.Sequence>
-          );
-        })}
-      </Series>
+                    <Camera
+                      cam={(scene as {camera?: {fromZoom?: number; toZoom?: number; fx?: number; fy?: number}}).camera}
+                      frames={natural}
+                      maxZoom={americana && !(scene as {endCard?: unknown}).endCard ? 1.06 : undefined}
+                      noEnter={rideEnter}
+                    >
+                      <SceneBody scene={scene} frames={natural} hideChrome={hasChrome} />
+                    </Camera>
+                    {americana && (scene as {ghosts?: string[]}).ghosts
+                      ? // ghost fragments: mono 19, corners only, max 2 per frame, ≤0.45
+                        (scene as {ghosts?: string[]}).ghosts!.slice(0, 2).map((g, gi) => (
+                          <div key={gi} className={`am-ghost ${gi === 0 ? 'am-ghost-tl' : 'am-ghost-br'}`}>
+                            {g}
+                          </div>
+                        ))
+                      : null}
+                    {(scene as {mascot?: MascotConfig}).mascot ? (
+                      <ClaudeMascot
+                        config={(scene as {mascot?: MascotConfig}).mascot!}
+                        frames={natural}
+                        // end-card beats get their own vetted-slot table + size guard
+                        sceneKind={(scene as {endCard?: unknown}).endCard ? 'endCard' : scene.kind}
+                      />
+                    ) : null}
+                    {/* styleboard/demo escape hatch: several mascots on one scene */}
+                    {((scene as {mascots?: MascotConfig[]}).mascots ?? []).map((m, mi) => (
+                      <ClaudeMascot
+                        key={`m${mi}`}
+                        config={m}
+                        frames={natural}
+                        sceneKind={(scene as {endCard?: unknown}).endCard ? 'endCard' : scene.kind}
+                      />
+                    ))}
+                  </SceneEnvelope>
+                </AbsoluteFill>
+              </TransitionSeries.Sequence>
+            );
+            // Coupled beats get a real overlapping Transition BEFORE them (spring-slide
+            // pushes the outgoing scene off as the incoming springs in; whip rides its
+            // CameraMotionBlur via the gate). Non-coupled seams get none → a hard cut,
+            // with the single-scene enter still handled inside SceneEnvelope.
+            if (p.transition) {
+              return [
+                <TransitionSeries.Transition
+                  key={`t${index}`}
+                  timing={p.transition.timing}
+                  presentation={p.transition.presentation}
+                />,
+                sequence,
+              ];
+            }
+            return [sequence];
+          })}
+        </TransitionSeries>
+      </MotionBlurGate>
 
       {/* Always-on subtle film grain + soft vignette — kills the sterile flat-white look
           and adds depth (premium texture). Static, deterministic, under chrome/captions.

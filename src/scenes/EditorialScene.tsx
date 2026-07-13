@@ -161,10 +161,14 @@ const MaskLines: React.FC<{text: string; accentWords?: string[]; frame: number}>
 const Panel: React.FC<{
   panel: NonNullable<EditorialSceneType['panel']>;
   frame: number;
-}> = ({panel, frame}) => {
+  noEntrance?: boolean;
+}> = ({panel, frame, noEntrance}) => {
   const bodyLen = panel.body?.length ?? 0;
   return (
-    <div className="ed-panel" style={fadeRise(frame, 16, 18)}>
+    // noEntrance: the scene rides a slide/whip transition (SceneEnvelope) — the
+    // TRANSITION is the entrance, so the panel is present from frame 0 and slides
+    // in as one piece (else the card pops in AFTER the slide; founder 2026-07-14).
+    <div className="ed-panel" style={noEntrance ? undefined : fadeRise(frame, 16, 18)}>
       <div className="ed-bar">
         <span className="ed-dot" />
         <span className="ed-dot" />
@@ -207,6 +211,11 @@ export const EditorialScene: React.FC<{
   // F0 as an empty field, the #1 documented drop-off cause.
   const instant = Boolean((scene as {instant?: boolean}).instant);
   const rise = (delay: number, dist: number) => (instant ? undefined : fadeRise(frame, delay, dist));
+  // When the scene rides a directional/slide transition (SceneEnvelope), the
+  // TRANSITION is the entrance — panel/content should be present from frame 0 so
+  // they slide in as one piece rather than pop in after the slide settles.
+  const enterT = (scene as {transition?: string}).transition;
+  const ridesTransition = enterT === 'spring-slide' || enterT === 'whip-real' || enterT === 'left' || enterT === 'right' || enterT === 'scale' || enterT === 'whip';
 
   // AUTO-SHRINK-TO-FIT (canon v2.3, 2026-07-05): DOM measurement is unreliable in Remotion's
   // headless capture (ref/continueRender race), so we shrink deterministically by the panel's
@@ -294,7 +303,7 @@ export const EditorialScene: React.FC<{
               </div>
             )
           ) : null}
-          {scene.panel ? <Panel panel={scene.panel} frame={frame} /> : null}
+          {scene.panel ? <Panel panel={scene.panel} frame={frame} noEntrance={instant || ridesTransition} /> : null}
           {scene.footnote ? (
             <div className="ed-footnote" style={rise(44, 12)}>
               {renderAccent(scene.footnote, scene.accentWords)}

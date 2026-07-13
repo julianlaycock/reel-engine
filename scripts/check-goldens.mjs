@@ -458,6 +458,30 @@ const main = async () => {
     }
   }
 
+  // ---- 6. coupled transitions (Approval Protocol — one implementation) -------
+  // The premium spring-slide / whip-real transitions ship as TRULY-COUPLED
+  // overlaps (outgoing + incoming on screen at once) via <TransitionSeries> +
+  // buildTransition() from src/TransitionDemo.tsx — the founder-approved 2026-07-14
+  // hand-off. This tripwire BLOCKS a build that (a) drops that wiring or (b) brings
+  // back a same-named SINGLE-SCENE look-alike branch in SceneEnvelope — the exact
+  // "approved X, shipped Y" failure the Approval Protocol exists to stop.
+  {
+    try {
+      const src = fs.readFileSync(new URL('../src/Video.tsx', import.meta.url), 'utf8');
+      const wired = /TransitionSeries/.test(src) && /buildTransition\(/.test(src);
+      const lookAlike = /enter === 'spring-slide'/.test(src) || /enter === 'whip-real'/.test(src);
+      const ok = wired && !lookAlike;
+      results.push(R(ok, 'blocker', 'transitions.coupled',
+        ok
+          ? 'coupled via TransitionSeries + buildTransition (no single-scene look-alikes)'
+          : !wired
+            ? 'Video.tsx no longer wires TransitionSeries + buildTransition — the COUPLED transitions were lost; restore the TransitionSeries render path'
+            : "Video.tsx still has a single-scene 'spring-slide'/'whip-real' branch — a same-named look-alike (Approval Protocol rule 2: ONE implementation). Route those transitions through TransitionSeries only."));
+    } catch (e) {
+      results.push(R(false, 'warn', 'transitions.coupled', `could not read engine src/Video.tsx to verify coupling: ${e.message}`));
+    }
+  }
+
   // ---- report -----------------------------------------------------------------
   const fails = results.filter((r) => !r.ok);
   const blockers = fails.filter((r) => r.severity === 'blocker');
