@@ -91,6 +91,24 @@ const CHAINS = {
     'deesser=i=0.18',
     'acompressor=threshold=-18dB:ratio=2:attack=20:release=250:makeup=1', // slow + gentle = keeps natural dynamics
   ],
+  // THE VEKTOR VOICE MASTER — founder-locked 2026-07-14. The `natural` voicing above
+  // (which preserves the karpathy "more human" character the founder approved) followed
+  // by a firm de-hiss that kills the eleven_v3 ambience/hiss floor the founder flagged
+  // ("annoying background noise"). This is the two-stage chain the founder signed off on
+  // by ear (natural master → highpass+afftdn nr22), folded into ONE deterministic pass.
+  // Do NOT retune without a founder unlock — it is fingerprinted via voices.json#vektor
+  // master_strength (canon.yml#voice.fingerprint / check-goldens).
+  'natural-dehiss': [
+    'highpass=f=90',
+    'equalizer=f=180:t=q:w=1.1:g=-1.5', // light mud trim (natural voicing)
+    'afftdn=nr=6', // gentle first-pass denoise — keeps breath/air natural
+    'equalizer=f=2800:t=q:w=1.2:g=1', // a touch of presence
+    'equalizer=f=6500:t=q:w=2:g=-1', // soften sibilance lightly
+    'deesser=i=0.18',
+    'acompressor=threshold=-18dB:ratio=2:attack=20:release=250:makeup=1', // slow + gentle = natural dynamics
+    'highpass=f=75', // de-hiss stage — tighten the low end the v3 floor lives in
+    'afftdn=nr=22:nf=-40:tn=1', // firm broadband hiss-kill (tracks the noise floor) — the approved de-hiss
+  ],
 };
 
 const parseArgs = () => {

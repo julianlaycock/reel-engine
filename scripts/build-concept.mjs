@@ -68,8 +68,15 @@ const main = async () => {
     }
   }
   voiceKey = voiceKey || voicesCfg.default;
-  const voice = voicesCfg.voices[voiceKey];
-  if (!voice) throw new Error(`Unknown voice key "${voiceKey}"`);
+  let voice = voicesCfg.voices[voiceKey];
+  if (!voice) {
+    // Locked-voice policy (2026-07-14): a retired/unknown key falls back to the locked
+    // default so no build errors on — or silently ships — a preset that no longer exists.
+    console.warn(`Unknown voice key "${voiceKey}" — falling back to the locked default voice "${voicesCfg.default}".`);
+    voiceKey = voicesCfg.default;
+    voice = voicesCfg.voices[voiceKey];
+    if (!voice) throw new Error('No default voice configured in config/voices.json');
+  }
   const masterStrength = voice.master_strength || 'balanced';
 
   const voRaw = `public/audio/${slug}/vo.mp3`;
