@@ -14,24 +14,66 @@ const root = process.cwd();
 // Social loudness target. ElevenLabs exports ~-24 LUFS; normalize so the VO
 // plays at the platform standard (-14 LUFS, true peak <= -1 dBTP) without clipping.
 const normalizeLoudness = async (input, output) => {
-  await execFileP('ffmpeg', [
-    '-y',
-    '-i',
-    input,
-    '-af',
-    // loudnorm sets loudness; single-pass loudnorm's TP target is only approximate. alimiter
-    // is a SAMPLE-peak limiter, so on its own it lets inter-sample (true) peaks slip through on
-    // peaky VO. Oversample 4× around the limiter so it catches inter-sample peaks — this makes
-    // it a true-peak limiter and guarantees TP ≤ -1 dBTP so QA never needs a manual fix.
-    'loudnorm=I=-14:TP=-1.5:LRA=11,aresample=192000,alimiter=limit=0.75:level=disabled,aresample=48000',
-    '-c:v',
-    'copy',
-    '-c:a',
-    'aac',
-    '-b:a',
-    '256k',
-    output,
-  ]);
+  const I = -14;
+  const TP = -1.5;
+  const LRA = 11;
+
+  // Pass 1 — measure. Single-pass loudnorm only APPROXIMATES the target and
+  // undershoots on high-dynamic-range voice (a VO with LRA ~10 landed at
+  // -16.4 LUFS, failing QA's -14 ±1.5 floor). So first analyze the muxed
+  // audio's true loudness stats with print_format=json.
+  const {stderr: measureLog} = await execFileP(
+    'ffmpeg',
+    [
+      '-y',
+      '-i',
+      input,
+      '-af',
+      `loudnorm=I=${I}:TP=${TP}:LRA=${LRA}:print_format=json`,
+      '-f',
+      'null',
+      '-',
+    ],
+    {maxBuffer: 1 << 26},
+  );
+  // loudnorm prints its JSON stats block to stderr; grab the last {...} object.
+  const jsonBlocks = measureLog.match(/\{[\s\S]*?\}/g);
+  if (!jsonBlocks) {
+    throw new Error('loudnorm pass 1: could not parse measurement JSON');
+  }
+  const m = JSON.parse(jsonBlocks[jsonBlocks.length - 1]);
+
+  // Pass 2 — apply. Feed the measured stats back into loudnorm with linear=true
+  // so it LINEARLY corrects to exactly I=-14 / TP=-1.5, regardless of source
+  // dynamics — deterministic, and it lands on target where single-pass undershot.
+  const applyLoudnorm =
+    `loudnorm=I=${I}:TP=${TP}:LRA=${LRA}` +
+    `:measured_I=${m.input_i}:measured_TP=${m.input_tp}` +
+    `:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}` +
+    `:offset=${m.target_offset}:linear=true:print_format=summary`;
+
+  await execFileP(
+    'ffmpeg',
+    [
+      '-y',
+      '-i',
+      input,
+      '-af',
+      // Two-pass loudnorm is the primary normalizer. Keep the 4× oversampled
+      // alimiter as a true-peak SAFETY net: alimiter is a SAMPLE-peak limiter, so
+      // oversampling 4× around it catches inter-sample (true) peaks and guarantees
+      // TP ≤ -1 dBTP so QA never needs a manual fix.
+      `${applyLoudnorm},aresample=192000,alimiter=limit=0.75:level=disabled,aresample=48000`,
+      '-c:v',
+      'copy',
+      '-c:a',
+      'aac',
+      '-b:a',
+      '256k',
+      output,
+    ],
+    {maxBuffer: 1 << 26},
+  );
 };
 
 const parseArgs = () => {
