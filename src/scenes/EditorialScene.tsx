@@ -223,7 +223,7 @@ export const EditorialScene: React.FC<{
   // lines) overflow the footer at 3 rows; scale the stage so the last row always clears it.
   // Scales from the top so the bottom lifts up (see transformOrigin below). No-op elsewhere.
   const panelRows = scene.panel && !scene.panel.image ? scene.panel.body?.length ?? 0 : 0;
-  const isMethod = scene.amBeat === 'method';
+  const isMethod = (scene as {amBeat?: string}).amBeat === 'method';
   const fit = isMethod && panelRows >= 3 ? 0.84 : isMethod && panelRows === 2 ? 0.93 : 1;
 
   // RECEIPT BAND FIT (wireframes v2 — 2026-07-09): the eyebrow+headline+plate
@@ -238,7 +238,7 @@ export const EditorialScene: React.FC<{
 
   // editorial-statement.v2 (founder RENDER→SEE→LOCK 2026-07-13): the optional acid
   // Jacquard verdict word — same top-left stamp grammar as VersusScene's vs-jacquard
-  // and the end-card's .am-jacquard. Acid #39FF35 (glow) on dark fields (ink/signal);
+  // and the end-card's .am-jacquard. Acid green (glow) on dark fields (ink/signal);
   // ink on light fields — the acid-on-dark law. Decorative accent over the centered
   // statement, fades+rises in. Absent ⇒ editorial-statement.v1 renders as before.
   const sc = scene as EditorialSceneType & {jacquardWord?: string; field?: string};

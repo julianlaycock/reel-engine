@@ -3,6 +3,7 @@ import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from 'remotion';
 import {Chrome} from './Chrome';
 import {renderAccent} from '../accent';
 import '../style.css';
+import {FONTS} from '@tokens/tokens';
 
 const ease = Easing.bezier(0.16, 1, 0.3, 1);
 
@@ -38,8 +39,8 @@ export const BarsScene: React.FC<{scene: any; hideChrome?: boolean}> = ({scene, 
               return (
                 <div className="bars-row" key={i} style={{opacity: op}}>
                   <div className="bars-rowtop">
-                    <span className="bars-label" style={{fontFamily: 'var(--label-font), "Noto Color Emoji"', fontWeight: 600, letterSpacing: '-0.01em', textTransform: 'none'}}>{b.label}</span>
-                    <span className="bars-val" style={{color: b.accent ? 'var(--accent)' : 'var(--fg)', fontFamily: 'var(--label-font)', fontVariantNumeric: 'tabular-nums', fontWeight: 700}}>{b.display ?? `${Math.round(w)}%`}</span>
+                    <span className="bars-label" style={{fontFamily: FONTS.labelEmoji, fontWeight: 600, letterSpacing: '-0.01em', textTransform: 'none'}}>{b.label}</span>
+                    <span className="bars-val" style={{color: b.accent ? 'var(--accent)' : 'var(--fg)', fontFamily: FONTS.label, fontVariantNumeric: 'tabular-nums', fontWeight: 700}}>{b.display ?? `${Math.round(w)}%`}</span>
                   </div>
                   <div className="bars-track" style={{background: 'var(--track, rgba(0,0,0,0.08))'}}>
                     <div className="bars-fill" style={{width: `${(w / scaleMax) * 100}%`, background: 'var(--accent)', opacity: b.accent ? 1 : 0.42, borderRadius: 'inherit'}} />

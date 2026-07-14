@@ -5,8 +5,9 @@ import {useThree} from '@react-three/fiber';
 import * as THREE from 'three';
 import type {Heatmap3DScene} from '../video-schema';
 import {SpecimenOverlay} from './_overlay';
+import {COLORS} from '@tokens/tokens';
 
-const DEFAULT_PALETTE = ['#2BD4B5', '#1E5A8C'];
+const DEFAULT_PALETTE = [COLORS.teal, COLORS.vmaxBlue];
 
 const poisson = (k: number, lambda: number) => {
   let fact = 1;

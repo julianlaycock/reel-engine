@@ -38,7 +38,7 @@ import {Poisson2D} from './scenes/Poisson2D';
 import {Outro} from './scenes/Outro';
 import {Flow} from './scenes/Flow';
 import {GradeOverlay} from './scenes/GradeOverlay';
-import {hexLerp} from './palettes';
+import {hexLerp} from './color';
 import {ClaudeMascot, type MascotConfig} from './scenes/ClaudeMascot';
 import {HeroWordScene} from './scenes/HeroWordScene';
 import {PosterScene} from './scenes/PosterScene';
@@ -48,20 +48,16 @@ import {TerminalScene} from './scenes/TerminalScene';
 import {GradientBackground} from './scenes/GradientBackground';
 import {Captions} from './Captions';
 import {AsciiFieldScene} from './scenes/AsciiFieldScene';
+import {FIELDS, COLORS, CSS_VARS, FONTS, type FieldTokens} from '@tokens/tokens';
+import {resolveTokenRefsDeep} from './token-ref';
 import './fonts';
 import './style.css';
 
 // Americana Cut skin (Vektor, locked 2026-07-04) — flat field colors per beat.
 // The video.json author sets a per-scene `"field"`; light fields carry ink text,
-// signal/ink fields carry paper text. Spec: vektor/canon/americana-tokens.json.
-export const AM_FIELDS: Record<string, {bg: string; fg: string; muted: string; hairline: string}> = {
-  orchid: {bg: '#C77BC9', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.28)'},
-  aqua: {bg: '#8FC5C9', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.28)'},
-  cream: {bg: '#F4EFDF', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.24)'},
-  fog: {bg: '#E8ECEA', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.24)'},
-  ink: {bg: '#101010', fg: '#EFEADD', muted: 'rgba(239,234,221,0.6)', hairline: 'rgba(239,234,221,0.25)'},
-  signal: {bg: '#1B4FA0', fg: '#EFEADD', muted: '#BFD9FF', hairline: 'rgba(191,217,255,0.3)'},
-};
+// signal/ink fields carry paper text. Values are GENERATED from the canon
+// (vektor/canon/americana-tokens.json → gen-tokens.mjs → @tokens/tokens).
+export const AM_FIELDS: Record<string, FieldTokens> = FIELDS;
 
 export const amFieldVars = (field?: string): React.CSSProperties => {
   const f = AM_FIELDS[field ?? ''];
@@ -335,7 +331,7 @@ const SceneEnvelope: React.FC<{frames: number; first: boolean; enter?: string; m
     const p = interpolate(frame, [0, inN + 8], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: easeInOut});
     const feather = 22;
     const edge = -feather + p * (100 + feather * 2);
-    const mask = `linear-gradient(112deg, #000 ${edge - feather}%, transparent ${edge}%)`;
+    const mask = `linear-gradient(112deg, ${COLORS.black} ${edge - feather}%, transparent ${edge}%)`;
     const opOut = interpolate(frame, [frames - outN, frames], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
     return <AbsoluteFill style={{opacity: opOut, WebkitMaskImage: mask, maskImage: mask}}>{children}</AbsoluteFill>;
   }
@@ -417,7 +413,11 @@ const MotionBlurGate: React.FC<{windows: Array<[number, number]>; children: Reac
   );
 };
 
-export const Video: React.FC<VideoProps> = ({video}) => {
+export const Video: React.FC<VideoProps> = ({video: rawVideo}) => {
+  // Canon-resolver: resolve "token:<group>.<name>" references ONCE at the
+  // composition entry, so every consumer below (brand vars, scenes, chrome)
+  // sees plain CSS values. A video with no references passes through untouched.
+  const video = React.useMemo(() => resolveTokenRefsDeep(rawVideo), [rawVideo]);
   const {audio, captions, captionStyle, chrome} = video;
   const {fps} = useVideoConfig();
   const hasChrome = Boolean(chrome);
@@ -510,7 +510,7 @@ export const Video: React.FC<VideoProps> = ({video}) => {
         ...(brand.panelDot ? {'--panel-dot': brand.panelDot} : {}),
         ...(brand.panelTitle ? {'--panel-title': brand.panelTitle} : {}),
         ...(brand.panelDoc ? {'--panel-doc': brand.panelDoc} : {}),
-        // Generic escape hatch: brand.vars = {"ag-flag": "#d62828", ...} sets any
+        // Generic escape hatch: brand.vars = {"ag-flag": "<color>", ...} sets any
         // --custom-property without needing a named key here.
         ...((brand as unknown as {vars?: Record<string, string>}).vars
           ? Object.fromEntries(
@@ -590,11 +590,11 @@ export const Video: React.FC<VideoProps> = ({video}) => {
 
   return (
     <AbsoluteFill
-      style={{backgroundColor: brand?.bgBot ?? '#070707', ...brandVars, ...(orb2 ? {['--orb2' as string]: orb2} : {})}}
+      style={{backgroundColor: brand?.bgBot ?? CSS_VARS['--bg-bot'], ...brandVars, ...(orb2 ? {['--orb2' as string]: orb2} : {})}}
       className={[fx?.orbs || fx?.grain ? 'fx-on' : '', fx?.grid ? 'grid-on' : '', (video as {layout?: string}).layout ? 'layout-' + (video as {layout?: string}).layout : '', americana ? 'skin-americana' : ''].filter(Boolean).join(' ') || undefined}
     >
       {fx?.morph && darkRanges.length ? (
-        <MorphCanvas ranges={darkRanges} lightBg={brand?.bgMid ?? '#E7E0D0'} darkBg={darkTokens?.bg ?? '#0F1220'} />
+        <MorphCanvas ranges={darkRanges} lightBg={brand?.bgMid ?? COLORS.photoPaper} darkBg={darkTokens?.bg ?? COLORS.morphDarkBg} />
       ) : null}
       {fx?.grid ? (
         fx?.morph && darkRanges.length ? (
@@ -603,8 +603,8 @@ export const Video: React.FC<VideoProps> = ({video}) => {
           // line color toward a near-bg dark tone with the same dm ramp.
           <MorphGrid
             ranges={darkRanges}
-            light={brand?.hairline ?? '#D3C9B5'}
-            dark={(darkTokens as {grid?: string} | undefined)?.grid ?? '#1A2033'}
+            light={brand?.hairline ?? COLORS.morphLightHairline}
+            dark={(darkTokens as {grid?: string} | undefined)?.grid ?? COLORS.morphDarkGrid}
           />
         ) : (
           <AbsoluteFill className="vk-grid" />
@@ -730,7 +730,7 @@ export const Video: React.FC<VideoProps> = ({video}) => {
       {/* Cockpit layout: a composed source/context strip anchoring the lower frame. */}
       {(video as {layout?: string}).layout === 'cockpit' && (video as {sourceLine?: string}).sourceLine ? (
         <AbsoluteFill style={{pointerEvents: 'none'}}>
-          <div style={{position: 'absolute', left: 64, right: 64, bottom: 172, borderTop: '2px solid var(--hairline)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--mono)', fontSize: 23, letterSpacing: '0.08em', color: 'var(--muted)', textTransform: 'uppercase'}}>
+          <div style={{position: 'absolute', left: 64, right: 64, bottom: 172, borderTop: '2px solid var(--hairline)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', fontFamily: FONTS.mono, fontSize: 23, letterSpacing: '0.08em', color: 'var(--muted)', textTransform: 'uppercase'}}>
             <span>{(video as {sourceLine?: string}).sourceLine}</span><span>vektor.fm</span>
           </div>
         </AbsoluteFill>
@@ -750,8 +750,8 @@ export const Video: React.FC<VideoProps> = ({video}) => {
             fx?.morph && darkRanges.length && darkTokens
               ? {
                   ranges: darkRanges,
-                  light: {fg: brand?.fg ?? '#111', muted: brand?.muted ?? '#777', hairline: brand?.hairline ?? '#ccc'},
-                  dark: {fg: darkTokens.fg ?? '#eee', muted: darkTokens.muted ?? '#999', hairline: darkTokens.hairline ?? '#333'},
+                  light: {fg: brand?.fg ?? COLORS.fallbackLightFg, muted: brand?.muted ?? COLORS.fallbackLightMuted, hairline: brand?.hairline ?? COLORS.fallbackLightHairline},
+                  dark: {fg: darkTokens.fg ?? COLORS.fallbackDarkFg, muted: darkTokens.muted ?? COLORS.fallbackDarkMuted, hairline: darkTokens.hairline ?? COLORS.fallbackDarkHairline},
                 }
               : undefined
           }

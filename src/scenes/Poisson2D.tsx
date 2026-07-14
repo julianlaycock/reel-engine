@@ -3,6 +3,7 @@ import {AbsoluteFill, interpolate, useCurrentFrame} from 'remotion';
 import type {Poisson2DScene as Poisson2DSceneType} from '../video-schema';
 import {SpecimenOverlay} from './_overlay';
 import {KatexMath} from './KatexMath';
+import {FONTS} from '@tokens/tokens';
 
 const poisson = (k: number, l: number) => {
   let f = 1;
@@ -67,7 +68,7 @@ export const Poisson2D: React.FC<{scene: Poisson2DSceneType; hideChrome?: boolea
             </text>
           ))}
         </svg>
-        <div style={{fontFamily: 'var(--mono)', fontSize: 30, color: 'var(--muted)', marginTop: 28, letterSpacing: '0.02em'}}>
+        <div style={{fontFamily: FONTS.mono, fontSize: 30, color: 'var(--muted)', marginTop: 28, letterSpacing: '0.02em'}}>
           most likely · <span style={{color: 'var(--accent)', fontWeight: 700}}>{top.i}–{top.j}</span> · {(top.p * 100).toFixed(0)}%
         </div>
       </div>

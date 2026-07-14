@@ -3,6 +3,7 @@ import {AbsoluteFill, interpolate, useCurrentFrame} from 'remotion';
 import {fadeRise} from '../animation';
 import {interp, easePhysical} from '../motion';
 import {Chrome} from './Chrome';
+import {ACCENTS, FIELDS} from '@tokens/tokens';
 import '../style.css';
 
 // TERMINAL SCENE (proposed 2026-07-13) — an ANIMATED "live Claude Code session":
@@ -412,7 +413,7 @@ export const TerminalScene: React.FC<{scene: any; hideChrome?: boolean}> = ({sce
             className="term-ruletitle"
             style={{
               ...fadeRise(frame, 6, 14),
-              color: darkField ? '#39FF35' : '#101010',
+              color: darkField ? ACCENTS.acid : FIELDS.ink.bg,
               textShadow: darkField ? '0 0 14px rgba(57, 255, 53, 0.4)' : 'none',
             }}
           >

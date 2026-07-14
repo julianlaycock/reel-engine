@@ -3,20 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Shared Remotion JSON-in → MP4-out engine (cards · scene graph · Doctrine motion system). Consumed by vektor / caelith / caelith-labs.",
+  "description": "Shared Remotion JSON-in → MP4-out engine (scene graph · cards-in-video). Consumed by vektor / caelith / caelith-labs.",
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
     "start": "remotion studio src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:drift": "node scripts/check-drift.mjs"
   },
   "bin": {
     "reel-build-concept": "scripts/build-concept.mjs",
+    "reel-gen-tokens": "scripts/gen-tokens.mjs",
     "reel-render-video": "scripts/render-video.mjs",
-    "reel-render-doctrine": "scripts/render-doctrine.mjs",
-    "reel-render-doctrine-film": "scripts/render-doctrine-film.mjs",
-    "reel-render-card": "scripts/render-card.mjs",
     "reel-captions": "scripts/generate-captions.mjs",
     "reel-master-voice": "scripts/master-voice.mjs",
     "reel-retime": "scripts/retime.mjs",

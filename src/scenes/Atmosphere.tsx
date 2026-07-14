@@ -1,5 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import {CSS_VARS} from '@tokens/tokens';
 
 // Frame-driven atmospheric layer — slow-drifting blurred accent orbs (the
 // "motion design" depth from the caelith.tech hero) and an optional static
@@ -42,7 +43,7 @@ export const Atmosphere: React.FC<{orbs?: boolean; grain?: boolean}> = ({orbs, g
               bottom: -180,
               left: -160,
               transform: `translate(${o2x}px, ${o2y}px) scale(${2 - breathe})`,
-              background: 'radial-gradient(circle, var(--orb2, #e8a87c), transparent 68%)',
+              background: `radial-gradient(circle, var(--orb2, ${CSS_VARS['--orb2']}), transparent 68%)`,
               filter: 'blur(130px)',
               opacity: 0.12,
             }}

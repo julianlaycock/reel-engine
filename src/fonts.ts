@@ -15,9 +15,9 @@ import {loadFont as loadNotoEmoji} from '@remotion/google-fonts/NotoColorEmoji';
 // photostat / full-bleed covers). Registered so headless renders resolve "Anton".
 loadAnton('normal', {weights: ['400'], subsets: ['latin'], ignoreTooManyRequestsWarning: true});
 
-const opt = (weights: string[]) => ({
+const opt = <T extends string>(weights: T[]) => ({
   weights,
-  subsets: ['latin'] as const,
+  subsets: ['latin' as const],
   ignoreTooManyRequestsWarning: true as const,
 });
 

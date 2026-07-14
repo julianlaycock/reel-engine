@@ -1,6 +1,7 @@
 import React from 'react';
 import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import {nearestSlot} from './mascot-slots';
+import {ACCENTS, COLORS, FIELDS, FONTS} from '@tokens/tokens';
 
 // Per-scene animated pixel mascot ("Clawd"). Original pixel-grid redraw in code
 // (no third-party asset file) — nominative editorial depiction of Anthropic's
@@ -50,8 +51,8 @@ const LEG_COLS = [2, 4, 8, 10];
 const COLS = 13;
 const LEG_ROWS = 2;
 const ROWS = BODY.length + LEG_ROWS;
-const CORAL = '#D97757';
-const INK = '#101010';
+const CORAL = COLORS.coral;
+const INK = FIELDS.ink.bg;
 
 // warn ONCE per key per render process (slot drift / end-card clamp) — the
 // canon gate enforces; the warn just keeps authoring visible.
@@ -380,7 +381,7 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
             y={(blink ? y + 0.6 : y + eyeDy + (1 - ph) / 2) + dy}
             width={pw}
             height={ph}
-            fill="var(--fg, #2A3350)"
+            fill={`var(--fg, ${COLORS.mascotNavy})`}
           />,
         );
         // coral base behind the eye so the look-around never opens a hole
@@ -517,12 +518,12 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
             top: -bubbleH - size * 0.18,
             width: bubbleW,
             height: bubbleH,
-            background: '#EFEADD',
+            background: ACCENTS.paper,
             border: `${Math.max(3, unit * 0.28)}px solid ${INK}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: '"IBM Plex Mono", monospace',
+            fontFamily: FONTS.plexMono,
             fontWeight: 500,
             fontSize: bubbleH * 0.52,
             color: INK,
@@ -537,7 +538,7 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
               bottom: -size * 0.115,
               width: size * 0.11,
               height: size * 0.11,
-              background: '#EFEADD',
+              background: ACCENTS.paper,
               borderRight: `${Math.max(3, unit * 0.28)}px solid ${INK}`,
               borderBottom: `${Math.max(3, unit * 0.28)}px solid ${INK}`,
               transform: 'rotate(45deg)',

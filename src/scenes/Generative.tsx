@@ -5,8 +5,9 @@ import {useThree} from '@react-three/fiber';
 import * as THREE from 'three';
 import type {GenerativeScene} from '../video-schema';
 import {SpecimenOverlay} from './_overlay';
+import {COLORS} from '@tokens/tokens';
 
-const DEFAULT_PALETTE = ['#2BD4B5', '#1E5A8C', '#CFF3EC'];
+const DEFAULT_PALETTE = [COLORS.teal, COLORS.vmaxBlue, COLORS.vmaxMint];
 
 // Frame-driven camera: slow orbit + gentle dolly-in. Pure function of frame, so
 // the render is deterministic and scrubbable.

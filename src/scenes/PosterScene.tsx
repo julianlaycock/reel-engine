@@ -3,6 +3,7 @@ import {AbsoluteFill, useCurrentFrame} from 'remotion';
 import {easeOutExpo, easePhysical, interp} from '../motion';
 import {Chrome} from './Chrome';
 import '../style.css';
+import {FONTS} from '@tokens/tokens';
 
 // Editorial poster-grid scene (canon v1.5.0 trial — the "Compliance Off The
 // Record" reference grammar): huge uppercase display type top-left rising in
@@ -33,7 +34,7 @@ export const PosterScene: React.FC<{scene: any; hideChrome?: boolean}> = ({scene
                 {scene.eyebrow}
               </div>
             ) : null}
-            <div style={{fontFamily: 'var(--display)', fontSize: 118, fontWeight: 700, lineHeight: 1.02, letterSpacing: '-0.03em', textTransform: 'uppercase', color: 'var(--fg)'}}>
+            <div style={{fontFamily: FONTS.display, fontSize: 118, fontWeight: 700, lineHeight: 1.02, letterSpacing: '-0.03em', textTransform: 'uppercase', color: 'var(--fg)'}}>
               {lines.map((line, li) => (
                 <div key={li}>
                   {line.split(' ').map((w, wi) => {
@@ -62,10 +63,10 @@ export const PosterScene: React.FC<{scene: any; hideChrome?: boolean}> = ({scene
           <div style={{position: 'absolute', left: 110, bottom: 340, width: 470, display: 'flex', flexDirection: 'column', gap: 34}}>
             {(scene.cells ?? []).map((c: {label: string; value: string}, i: number) => (
               <div key={i} style={{opacity: interp(frame, [18 + i * 7, 30 + i * 7], [0, 1])}}>
-                <div style={{fontFamily: 'var(--mono)', fontSize: 22, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8}}>
+                <div style={{fontFamily: FONTS.mono, fontSize: 22, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8}}>
                   {c.label}
                 </div>
-                <div style={{fontFamily: 'var(--display)', fontSize: 32, fontWeight: 600, color: 'var(--fg)', maxWidth: 460, lineHeight: 1.2}}>
+                <div style={{fontFamily: FONTS.display, fontSize: 32, fontWeight: 600, color: 'var(--fg)', maxWidth: 460, lineHeight: 1.2}}>
                   {c.value}
                 </div>
               </div>
@@ -76,11 +77,11 @@ export const PosterScene: React.FC<{scene: any; hideChrome?: boolean}> = ({scene
               length so multi-char figures (e.g. "LLM01") never reach the cells. */}
           {scene.figure ? (
             <div style={{position: 'absolute', right: 110, bottom: 340, maxWidth: 470, textAlign: 'right', transform: `scale(${0.7 + figP * 0.3})`, transformOrigin: '100% 100%', opacity: figP}}>
-              <div style={{fontFamily: 'var(--display)', fontSize: String(scene.figure).replace(/[^0-9a-z]/gi, '').length <= 3 ? 190 : 120, fontWeight: 700, letterSpacing: '-0.05em', lineHeight: 0.95, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums'}}>
+              <div style={{fontFamily: FONTS.display, fontSize: String(scene.figure).replace(/[^0-9a-z]/gi, '').length <= 3 ? 190 : 120, fontWeight: 700, letterSpacing: '-0.05em', lineHeight: 0.95, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums'}}>
                 {scene.figure}
               </div>
               {scene.figureLabel ? (
-                <div style={{fontFamily: 'var(--mono)', fontSize: 24, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', marginTop: 10}}>
+                <div style={{fontFamily: FONTS.mono, fontSize: 24, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', marginTop: 10}}>
                   {scene.figureLabel}
                 </div>
               ) : null}

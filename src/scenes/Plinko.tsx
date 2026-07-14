@@ -2,6 +2,7 @@ import React, {useMemo} from 'react';
 import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from 'remotion';
 import type {PlinkoScene as PlinkoSceneType} from '../video-schema';
 import {SpecimenOverlay} from './_overlay';
+import {FONTS} from '@tokens/tokens';
 
 const rnd = (n: number) => {
   const x = Math.sin(n * 12.9898) * 43758.5453;
@@ -73,7 +74,7 @@ export const Plinko: React.FC<{scene: PlinkoSceneType; hideChrome?: boolean}> = 
     <AbsoluteFill>
       <div style={{position: 'absolute', left: 60, right: 60, top: '34%', height: '52%'}}>
         {/* ticking counters */}
-        <div style={{display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums', marginBottom: 10}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', fontFamily: FONTS.mono, fontVariantNumeric: 'tabular-nums', marginBottom: 10}}>
           <div>
             <div style={{fontSize: 22, color: 'var(--muted)', letterSpacing: '0.08em'}}>{throughLabel}</div>
             <div style={{fontSize: 40, color: 'var(--fg)'}}>{throughN.toLocaleString('en-US')} <span style={{fontSize: 26, color: 'var(--muted)'}}>· {pct(through)}%</span></div>

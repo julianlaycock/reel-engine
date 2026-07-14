@@ -13,12 +13,15 @@
 // Design: the spec POINTS to masters (e.g. safe-zone lives in americana-tokens.json)
 // so numbers are never duplicated — the gate follows the pointer.
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
 import {resolveBrand} from '../lib/brand.mjs';
 import {readingFloorFrames, CPS} from './lib/reading-time.mjs';
+import {loadTokenNames, loadFrozenSlugs, validateVideoTokens, FROZEN_MESSAGE} from './lib/validate-tokens.mjs';
 
 const execFileP = promisify(execFile);
 const require = createRequire(import.meta.url);
@@ -70,6 +73,14 @@ const main = async () => {
   const args = parseArgs();
   const brand = resolveBrand(args.brand);
   process.chdir(brand.brandRoot);
+
+  // Legacy freeze (canon-resolver step 5): frozen pre-canon-resolver videos are
+  // exempt from the gate — they are never re-rendered (render-video refuses),
+  // so gating their raw style values would only produce noise.
+  if (loadFrozenSlugs('.').has(args.slug)) {
+    console.log(`\ncanon gate · ${brand.name} · ${args.slug} — SKIPPED (${FROZEN_MESSAGE(args.slug)})`);
+    return;
+  }
 
   const canon = YAML.load(fs.readFileSync(path.join('canon', 'canon.yml'), 'utf8'));
   const video = JSON.parse(fs.readFileSync(path.join('data', args.slug, 'video.json'), 'utf8'));
@@ -233,6 +244,48 @@ const main = async () => {
       } else {
         results.push(R(true, vm.severity ?? 'warn', 'videoModel.shape', `shape='${shape ?? `${vm.shapeDefault} (default)`}' — reminder: a series/part-N must set concept.json shape:"series"`));
       }
+    }
+  }
+
+  // token-name enforcement (canon-resolver step 5) — the SAME implementation
+  // render-video.mjs runs (scripts/lib/validate-tokens.mjs): no raw hex/font
+  // values in video.json; token references + `field` names must be members of
+  // the generated name lists (src/generated/token-names.json).
+  {
+    const tokenNames = loadTokenNames('.');
+    if (tokenNames) {
+      const tokenErrors = validateVideoTokens(video, tokenNames);
+      results.push(R(tokenErrors.length === 0, canon.tokens?.severity ?? 'blocker', 'tokens.values',
+        tokenErrors.length ? tokenErrors.join(' | ') : 'no raw style values — token references resolve'));
+    } else {
+      results.push(R(false, 'warn', 'tokens.values', 'no src/generated/token-names.json — run npm run canon:tokens'));
+    }
+  }
+
+  // generated-token staleness (canon-resolver step 6): regenerate the tokens to
+  // a temp dir from the canon sources and byte-diff against the checked-in
+  // src/generated/. Any difference means code/gates are running on a stale
+  // vocabulary (e.g. a retirement that was never regenerated) — BLOCKER.
+  {
+    const genTokens = path.join(path.dirname(fileURLToPath(import.meta.url)), 'gen-tokens.mjs');
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gen-tokens-'));
+    try {
+      await execFileP('node', [genTokens, '--brand', brand.name, '--out', tmp]);
+      const stale = [];
+      for (const f of ['tokens.ts', 'tokens.css', 'token-names.ts', 'token-names.json']) {
+        const fresh = fs.readFileSync(path.join(tmp, f), 'utf8');
+        const checkedIn = path.join('src', 'generated', f);
+        const current = fs.existsSync(checkedIn) ? fs.readFileSync(checkedIn, 'utf8') : null;
+        if (current !== fresh) stale.push(f);
+      }
+      results.push(R(stale.length === 0, 'blocker', 'tokens.fresh',
+        stale.length
+          ? `generated tokens STALE (${stale.join(', ')} differ from canon sources) — run npm run canon:tokens and commit`
+          : 'src/generated matches the canon sources'));
+    } catch (e) {
+      results.push(R(false, 'blocker', 'tokens.fresh', `token regeneration failed: ${e.message}`));
+    } finally {
+      fs.rmSync(tmp, {recursive: true, force: true});
     }
   }
 

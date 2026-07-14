@@ -1,6 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {easePhysical, interp} from '../motion';
+import {ACCENTS, COLORS, FIELDS, FONTS} from '@tokens/tokens';
 
 // Split-screen versus (photo-forward): two player photos stacked, each pushing in
 // (Ken-Burns), names + scorelines rising, a VS badge popping in the seam. High
@@ -14,9 +15,9 @@ import {easePhysical, interp} from '../motion';
 // the esports badge; Tektur/Workbench type in ink, no Ken-Burns. Calm, printed.
 const EditorialSplit: React.FC<{scene: any}> = ({scene}) => {
   const frame = useCurrentFrame();
-  const ink = '#101010';
-  const paper = scene.paper ?? '#EFEADD';
-  const accent = scene.accent ?? '#0E9C86';
+  const ink = FIELDS.ink.bg;
+  const paper = scene.paper ?? ACCENTS.paper;
+  const accent = scene.accent ?? ACCENTS.caretTeal;
   const settle = interp(frame, [4, 20], [0, 1], easePhysical);
   const after = interp(frame, [14, 32], [0, 1], easePhysical);
   const card = (img: string, focus: string): React.CSSProperties => ({
@@ -24,8 +25,8 @@ const EditorialSplit: React.FC<{scene: any}> = ({scene}) => {
     backgroundSize: 'cover',
     backgroundPosition: focus ?? 'center top',
   });
-  const label: React.CSSProperties = {fontFamily: '"Workbench", "IBM Plex Mono", monospace', fontSize: 26, letterSpacing: '0.04em', color: ink, textTransform: 'uppercase'};
-  const sub: React.CSSProperties = {fontFamily: '"IBM Plex Mono", monospace', fontSize: 24, color: 'rgba(16,16,16,0.55)', marginTop: 6};
+  const label: React.CSSProperties = {fontFamily: FONTS.workbench, fontSize: 26, letterSpacing: '0.04em', color: ink, textTransform: 'uppercase'};
+  const sub: React.CSSProperties = {fontFamily: FONTS.plexMono, fontSize: 24, color: 'rgba(16,16,16,0.55)', marginTop: 6};
   return (
     <AbsoluteFill style={{background: paper}}>
       {/* BEFORE — small, ghosted, struck (the wrong way, demoted). 0.62 not
@@ -60,7 +61,7 @@ const EditorialSplit: React.FC<{scene: any}> = ({scene}) => {
 export const SplitVs: React.FC<{scene: any; hideChrome?: boolean}> = ({scene}) => {
   const frame = useCurrentFrame();
   const {fps, durationInFrames} = useVideoConfig();
-  const accent = scene.accent ?? '#E0431F';
+  const accent = scene.accent ?? COLORS.splitRed;
   if (scene.variant === 'editorial') return <EditorialSplit scene={scene} />;
 
   const enter = spring({frame, fps, config: {damping: 16, stiffness: 90}});
@@ -80,7 +81,7 @@ export const SplitVs: React.FC<{scene: any; hideChrome?: boolean}> = ({scene}) =
   });
 
   return (
-    <AbsoluteFill style={{background: '#0C0E18', overflow: 'hidden'}}>
+    <AbsoluteFill style={{background: COLORS.splitDark, overflow: 'hidden'}}>
       <div style={{...half, top: 0, transform: `translateX(${topX}px)`}}>
         <AbsoluteFill style={{transform: `scale(${zTop})`}}>
           <Img src={staticFile(scene.topImg)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: scene.topFocus ?? 'center 30%'}} />
@@ -98,24 +99,24 @@ export const SplitVs: React.FC<{scene: any; hideChrome?: boolean}> = ({scene}) =
       <div style={{position: 'absolute', top: '50%', left: 0, right: 0, height: 4, background: accent, transform: 'translateY(-2px)', zIndex: 6, opacity: 0.9}} />
 
       {/* VS badge */}
-      <div style={{position: 'absolute', top: '50%', left: '50%', transform: `translate(-50%,-50%) scale(${badge})`, zIndex: 8, width: 132, height: 132, borderRadius: '50%', background: accent, border: '5px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.4)'}}>
-        <span style={{fontFamily: '"Anton", sans-serif', fontSize: 62, color: '#fff', letterSpacing: '0.02em'}}>{scene.badge ?? 'VS'}</span>
+      <div style={{position: 'absolute', top: '50%', left: '50%', transform: `translate(-50%,-50%) scale(${badge})`, zIndex: 8, width: 132, height: 132, borderRadius: '50%', background: accent, border: `5px solid ${COLORS.white}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.4)'}}>
+        <span style={{fontFamily: FONTS.anton, fontSize: 62, color: COLORS.white, letterSpacing: '0.02em'}}>{scene.badge ?? 'VS'}</span>
       </div>
 
       {/* top name/score — below the persistent masthead (~320px), inside the
           150px sides (sides-150 law — labels are must-read text, only the
           full-bleed IMAGES are band-exempt texture). */}
       <div style={{position: 'absolute', top: 360, left: 150, right: 150, zIndex: 7, opacity: t1, transform: `translateY(${(1 - t1) * 16}px)`}}>
-        <div style={{fontFamily: '"Anton", sans-serif', fontSize: 78, color: '#fff', textTransform: 'uppercase', lineHeight: 0.9}}>{scene.topName}</div>
-        {scene.topSub ? <div style={{fontFamily: '"IBM Plex Mono", monospace', fontSize: 30, color: accent, marginTop: 10, letterSpacing: '0.04em'}}>{scene.topSub}</div> : null}
+        <div style={{fontFamily: FONTS.anton, fontSize: 78, color: COLORS.white, textTransform: 'uppercase', lineHeight: 0.9}}>{scene.topName}</div>
+        {scene.topSub ? <div style={{fontFamily: FONTS.plexMono, fontSize: 30, color: accent, marginTop: 10, letterSpacing: '0.04em'}}>{scene.topSub}</div> : null}
       </div>
       {/* bottom name/score — anchored BELOW the seam (mirrors the top label
           below the chrome) so the platform zone, caption band (1300) and footer
           band (1380) stay clear of label text. Was bottom:240 (~y1560, inside
           the bottom-500 platform overlay) — founder conform call 2026-07-09. */}
       <div style={{position: 'absolute', top: 1050, left: 150, right: 150, zIndex: 7, opacity: t2, transform: `translateY(${(1 - t2) * 16}px)`}}>
-        <div style={{fontFamily: '"Anton", sans-serif', fontSize: 78, color: '#fff', textTransform: 'uppercase', lineHeight: 0.9}}>{scene.botName}</div>
-        {scene.botSub ? <div style={{fontFamily: '"IBM Plex Mono", monospace', fontSize: 30, color: '#cdd3e6', marginTop: 10, letterSpacing: '0.04em'}}>{scene.botSub}</div> : null}
+        <div style={{fontFamily: FONTS.anton, fontSize: 78, color: COLORS.white, textTransform: 'uppercase', lineHeight: 0.9}}>{scene.botName}</div>
+        {scene.botSub ? <div style={{fontFamily: FONTS.plexMono, fontSize: 30, color: COLORS.splitMutedBlue, marginTop: 10, letterSpacing: '0.04em'}}>{scene.botSub}</div> : null}
       </div>
     </AbsoluteFill>
   );

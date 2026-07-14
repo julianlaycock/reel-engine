@@ -3,6 +3,7 @@ import {AbsoluteFill, interpolate, useCurrentFrame} from 'remotion';
 import {prepareWithSegments, layoutNextLineRange, materializeLineRange} from '@chenglou/pretext';
 import {Chrome} from './Chrome';
 import '../style.css';
+import {CSS_VARS, FONTS} from '@tokens/tokens';
 
 const STAGE_X = 110;
 const STAGE_W = 860;
@@ -78,14 +79,14 @@ export const PretextScene: React.FC<{scene: any; hideChrome?: boolean}> = ({scen
                 top: obsY,
                 width: obs.w,
                 height: obs.h,
-                background: obs.label ? 'transparent' : '#d62828',
+                background: obs.label ? 'transparent' : CSS_VARS['--accent'],
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
               {obs.label ? (
-                <span style={{fontSize: obs.labelSize ?? 200, fontWeight: 700, color: '#d62828', lineHeight: 1, letterSpacing: '-0.04em'}}>{obs.label}</span>
+                <span style={{fontSize: obs.labelSize ?? 200, fontWeight: 700, color: CSS_VARS['--accent'], lineHeight: 1, letterSpacing: '-0.04em'}}>{obs.label}</span>
               ) : null}
             </div>
           ) : null}
@@ -103,11 +104,11 @@ export const PretextScene: React.FC<{scene: any; hideChrome?: boolean}> = ({scen
                   left: ln.center ? ln.offsetX : 0,
                   width: ln.maxWidth,
                   opacity: op,
-                  fontFamily: '"Inter Tight", sans-serif',
+                  fontFamily: FONTS.interTight,
                   fontWeight: weight,
                   fontSize,
                   lineHeight: `${lineHeight}px`,
-                  color: '#f4f2ec',
+                  color: CSS_VARS['--fg'],
                   whiteSpace: 'nowrap',
                   wordSpacing: `${extra}px`,
                   textAlign: ln.center ? 'center' : 'left',

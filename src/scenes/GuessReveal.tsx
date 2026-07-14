@@ -2,6 +2,7 @@ import React from 'react';
 import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from 'remotion';
 import type {GuessRevealScene as GuessRevealSceneType} from '../video-schema';
 import {SpecimenOverlay} from './_overlay';
+import {FONTS} from '@tokens/tokens';
 
 // "Guess before the reveal" — the open-loop format. Question holds, a guess beat,
 // then the answer counts up, then the payoff + a comment prompt (participation).
@@ -30,32 +31,32 @@ export const GuessReveal: React.FC<{scene: GuessRevealSceneType; hideChrome?: bo
     <AbsoluteFill>
       <div style={{position: 'absolute', left: 80, right: 80, top: '20%', textAlign: 'center'}}>
         {/* question */}
-        <div style={{opacity: qOp, fontFamily: 'var(--label-font), sans-serif', fontWeight: 700, fontSize: 62, lineHeight: 1.1, color: 'var(--fg)', letterSpacing: '-0.02em'}}>
+        <div style={{opacity: qOp, fontFamily: FONTS.labelSans, fontWeight: 700, fontSize: 62, lineHeight: 1.1, color: 'var(--fg)', letterSpacing: '-0.02em'}}>
           {scene.question}
         </div>
         {/* guess beat */}
-        <div style={{opacity: guessOp, transform: `scale(${guessPulse})`, marginTop: 28, fontFamily: 'var(--mono)', fontSize: 30, color: 'var(--accent)', letterSpacing: '0.14em', textTransform: 'uppercase'}}>
+        <div style={{opacity: guessOp, transform: `scale(${guessPulse})`, marginTop: 28, fontFamily: FONTS.mono, fontSize: 30, color: 'var(--accent)', letterSpacing: '0.14em', textTransform: 'uppercase'}}>
           your guess?
         </div>
       </div>
 
       {/* the reveal number */}
       <div style={{position: 'absolute', left: 0, right: 0, top: '46%', textAlign: 'center', opacity: numOp}}>
-        <div style={{transform: `scale(${numPop})`, fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums', fontSize: 168, fontWeight: 800, color: 'var(--accent)', lineHeight: 1, filter: 'drop-shadow(0 16px 46px rgba(14,20,19,0.14))'}}>
+        <div style={{transform: `scale(${numPop})`, fontFamily: FONTS.mono, fontVariantNumeric: 'tabular-nums', fontSize: 168, fontWeight: 800, color: 'var(--accent)', lineHeight: 1, filter: 'drop-shadow(0 16px 46px rgba(14,20,19,0.14))'}}>
           {numStr}
         </div>
         {scene.answerLabel ? (
-          <div style={{marginTop: 12, fontFamily: 'var(--mono)', fontSize: 30, color: 'var(--muted)', letterSpacing: '0.04em'}}>{scene.answerLabel}</div>
+          <div style={{marginTop: 12, fontFamily: FONTS.mono, fontSize: 30, color: 'var(--muted)', letterSpacing: '0.04em'}}>{scene.answerLabel}</div>
         ) : null}
       </div>
 
       {/* payoff + comment prompt */}
       <div style={{position: 'absolute', left: 80, right: 80, top: '70%', textAlign: 'center'}}>
         {scene.payoff ? (
-          <div style={{opacity: payoffOp, fontFamily: 'var(--label-font), sans-serif', fontWeight: 600, fontSize: 40, lineHeight: 1.15, color: 'var(--fg)'}}>{scene.payoff}</div>
+          <div style={{opacity: payoffOp, fontFamily: FONTS.labelSans, fontWeight: 600, fontSize: 40, lineHeight: 1.15, color: 'var(--fg)'}}>{scene.payoff}</div>
         ) : null}
         {scene.commentPrompt ? (
-          <div style={{opacity: promptOp, marginTop: 26, fontFamily: 'var(--mono)', fontSize: 28, color: 'var(--accent)', letterSpacing: '0.02em'}}>{scene.commentPrompt}</div>
+          <div style={{opacity: promptOp, marginTop: 26, fontFamily: FONTS.mono, fontSize: 28, color: 'var(--accent)', letterSpacing: '0.02em'}}>{scene.commentPrompt}</div>
         ) : null}
       </div>
 

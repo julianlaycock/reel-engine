@@ -1,6 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Easing, Img, interpolate, staticFile, useCurrentFrame} from 'remotion';
 import type {RadarScene as RadarSceneType} from '../video-schema';
+import {FONTS} from '@tokens/tokens';
 
 // Radar / spider chart: a subject's profile across metrics; the polygon expands from the
 // centre (staggered per axis). Optional player photo up top. Frame-deterministic.
@@ -27,13 +28,13 @@ export const RadarScene: React.FC<{scene: RadarSceneType; hideChrome?: boolean}>
   return (
     <AbsoluteFill>
       <div style={{position: 'absolute', left: 60, right: 60, top: '12%', textAlign: 'center'}}>
-        {scene.eyebrow ? <div style={{fontFamily: 'var(--mono)', fontSize: 26, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: titleOp}}>{scene.eyebrow}</div> : null}
+        {scene.eyebrow ? <div style={{fontFamily: FONTS.mono, fontSize: 26, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: titleOp}}>{scene.eyebrow}</div> : null}
         {scene.photo ? (
           <div style={{width: 150, height: 150, borderRadius: '50%', overflow: 'hidden', margin: '16px auto 8px', border: '3px solid var(--accent)', opacity: titleOp}}>
             <Img src={staticFile(scene.photo)} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
           </div>
         ) : null}
-        {scene.title ? <div style={{fontFamily: 'var(--label-font), sans-serif', fontWeight: 800, fontSize: 56, color: 'var(--fg)', letterSpacing: '-0.02em', opacity: titleOp, marginTop: 6}}>{scene.title}</div> : null}
+        {scene.title ? <div style={{fontFamily: FONTS.labelSans, fontWeight: 800, fontSize: 56, color: 'var(--fg)', letterSpacing: '-0.02em', opacity: titleOp, marginTop: 6}}>{scene.title}</div> : null}
 
         <svg viewBox="0 0 800 820" style={{width: '92%', height: 'auto', margin: '10px auto 0', display: 'block', overflow: 'visible'}}>
           {/* grid rings */}
@@ -57,7 +58,7 @@ export const RadarScene: React.FC<{scene: RadarSceneType; hideChrome?: boolean}>
           <polygon points={poly} fill="var(--accent)" fillOpacity={0.22} stroke="var(--accent)" strokeWidth={4} strokeLinejoin="round" />
           {verts.map((v, i) => <circle key={i} cx={v[0]} cy={v[1]} r={7} fill="var(--accent)" />)}
         </svg>
-        {scene.caption ? <div style={{marginTop: 8, fontFamily: 'var(--mono)', fontSize: 26, color: 'var(--muted)'}}>{scene.caption}</div> : null}
+        {scene.caption ? <div style={{marginTop: 8, fontFamily: FONTS.mono, fontSize: 26, color: 'var(--muted)'}}>{scene.caption}</div> : null}
       </div>
     </AbsoluteFill>
   );

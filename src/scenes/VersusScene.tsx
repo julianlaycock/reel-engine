@@ -3,6 +3,7 @@ import {AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig} from 'remoti
 import type {VersusScene as VersusSceneType} from '../video-schema';
 import {accentPop, driftScale, fadeRise, pop} from '../animation';
 import {Chrome} from './Chrome';
+import {ACCENTS} from '@tokens/tokens';
 import '../style.css';
 
 // Two contrasting figures: left (problem) enters, then right (payoff, red) pops in
@@ -65,11 +66,11 @@ export const VersusScene: React.FC<{
   const jInk = !darkField;
   // versus-pair.v3 DARK+ACID (founder Option A, 2026-07-13): the right/winner value
   // uses .vs-value.r → var(--accent), which the ink/signal fields do NOT override
-  // (it stays near-black #101010 → invisible on the near-black field). On dark
+  // (it stays near-black ink → invisible on the near-black field). On dark
   // fields recolor the winner to acid (the verdict colour, matching the jacquard
   // stamp); light fields keep the approved v2 ink accent untouched.
   const rValueStyle: React.CSSProperties = darkField
-    ? {color: '#39FF35', textShadow: '0 0 18px rgba(57, 255, 53, 0.35)'}
+    ? {color: ACCENTS.acid, textShadow: '0 0 18px rgba(57, 255, 53, 0.35)'}
     : {};
 
   return (
