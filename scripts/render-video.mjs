@@ -2,6 +2,7 @@
 import {withEngineAlias} from './_engine.mjs';
 import {loadRegistry, engineRoot} from '../lib/brand.mjs';
 import {loadTokenNames, loadFrozenSlugs, validateVideoTokens, FROZEN_MESSAGE} from './lib/validate-tokens.mjs';
+import {runGates} from './run-gates.mjs';
 import {bundle} from '@remotion/bundler';
 import {getCompositions, renderMedia} from '@remotion/renderer';
 import {execFile} from 'node:child_process';
@@ -90,12 +91,16 @@ const parseArgs = () => {
       parsed.output = args[++i];
     } else if (arg === '--composition' || arg === '-c') {
       parsed.composition = args[++i];
+    } else if (arg === '--skip-gates') {
+      // Founder-only escape hatch: render WITHOUT the blocking gate suite.
+      // Loudly warned and logged to out/_qa/skip-gates.log — see main().
+      parsed.skipGates = true;
     }
   }
 
   if (!parsed.input || !parsed.output) {
     throw new Error(
-      'Usage: npm run render:video -- --input data/<slug>/video.json --output out/<slug>.mp4',
+      'Usage: npm run render:video -- --input data/<slug>/video.json --output out/<slug>.mp4 [--skip-gates (founder override — logged)]',
     );
   }
 
@@ -103,6 +108,7 @@ const parseArgs = () => {
     input: path.resolve(root, parsed.input),
     output: path.resolve(root, parsed.output),
     composition: parsed.composition ?? 'Video',
+    skipGates: Boolean(parsed.skipGates),
   };
 };
 
@@ -357,6 +363,49 @@ const main = async () => {
   console.log(
     `Rendered ${path.relative(root, args.output)} (${composition.durationInFrames} frames, audio: ${hasAudio ? 'yes, normalized -14 LUFS' : 'none'})`,
   );
+
+  // Approval Protocol (law 2026-07-14): a render is not done until the full
+  // blocking gate suite has passed against THE file that would ship. Founder
+  // policy: HARD BLOCK — a failed gate exits non-zero so no delivery step can
+  // run past it; only the founder overrides, via --skip-gates (logged).
+  if (args.skipGates) {
+    const logPath = path.join(root, 'out', '_qa', 'skip-gates.log');
+    await fs.mkdir(path.dirname(logPath), {recursive: true});
+    await fs.appendFile(
+      logPath,
+      `${new Date().toISOString()} --skip-gates slug=${slug} output=${path.relative(root, args.output)}\n`,
+    );
+    console.warn('');
+    console.warn('⚠⚠⚠  GATES SKIPPED (--skip-gates) — this render is UNVERIFIED.  ⚠⚠⚠');
+    console.warn('No gate has confirmed it matches what the founder approved. Do NOT');
+    console.warn(`ship it without founder sign-off. This skip was logged to ${path.relative(root, logPath)}.`);
+    return;
+  }
+
+  // Fail closed: if we cannot tell which brand this render belongs to, we
+  // cannot bind it to that brand's approved canon/goldens — so it is blocked,
+  // not waved through.
+  if (!brandName) {
+    console.error(
+      `\nRENDER BLOCKED — this directory is not a registered brand in brands.json, so the gate suite cannot check the render against approved canon. The mp4 exists at ${path.relative(root, args.output)} but MUST NOT ship. Founder override: --skip-gates (logged).`,
+    );
+    process.exit(1);
+  }
+
+  const report = await runGates({brand: brandName, slug, video: args.output, json: true});
+  console.log(`\ngate suite · ${report.brand} · ${report.slug}`);
+  for (const gate of report.gates) {
+    console.log(`  ${gate.ok ? '✓' : '✗'} ${gate.name.padEnd(16)} ${gate.summary}`);
+  }
+  if (report.jsonPath) console.log(`machine-readable results: ${report.jsonPath}`);
+  console.log(report.verdict);
+
+  if (!report.ok) {
+    console.error(
+      `\nRENDER BLOCKED — ${report.failedCount} gate(s) failed; the mp4 exists at ${path.relative(root, args.output)} but MUST NOT ship. Founder override: --skip-gates (logged).`,
+    );
+    process.exit(1);
+  }
 };
 
 main().catch((error) => {
