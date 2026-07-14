@@ -86,6 +86,25 @@ const cssVars = pending.cssRoot ?? {};
 const colors = pending.colors ?? {};
 const fonts = pending.fonts ?? {};
 
+// ── retirement (canon-resolver step 6) ───────────────────────────────────────
+// tokens-pending.json may carry a top-level "retired": ["<group>.<name>", ...]
+// list (groups: fields, accents, cssVars, gradients, colors, fonts). A retired
+// token is EXCLUDED from every generated output — its name leaves the unions /
+// name lists and its value leaves tokens.ts / tokens.css — so any engine code
+// or video.json still referencing it fails typecheck / token validation.
+{
+  const groups = {fields, accents, cssVars, gradients, colors, fonts};
+  for (const entry of pending.retired ?? []) {
+    const dot = entry.indexOf('.');
+    const group = dot > 0 ? entry.slice(0, dot) : entry;
+    const name = dot > 0 ? entry.slice(dot + 1) : '';
+    const map = groups[group];
+    if (!map) throw new Error(`retired entry "${entry}": unknown group "${group}" (have: ${Object.keys(groups).join(', ')})`);
+    if (!(name in map)) throw new Error(`retired entry "${entry}": no token "${name}" in ${group}`);
+    delete map[name];
+  }
+}
+
 // canon-derived :root custom properties (--am-*) for style.css consumption.
 const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 const amVars = {};
