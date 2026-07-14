@@ -49,6 +49,7 @@ import {GradientBackground} from './scenes/GradientBackground';
 import {Captions} from './Captions';
 import {AsciiFieldScene} from './scenes/AsciiFieldScene';
 import {FIELDS, COLORS, CSS_VARS, FONTS, type FieldTokens} from '@tokens/tokens';
+import {resolveTokenRefsDeep} from './token-ref';
 import './fonts';
 import './style.css';
 
@@ -412,7 +413,11 @@ const MotionBlurGate: React.FC<{windows: Array<[number, number]>; children: Reac
   );
 };
 
-export const Video: React.FC<VideoProps> = ({video}) => {
+export const Video: React.FC<VideoProps> = ({video: rawVideo}) => {
+  // Canon-resolver: resolve "token:<group>.<name>" references ONCE at the
+  // composition entry, so every consumer below (brand vars, scenes, chrome)
+  // sees plain CSS values. A video with no references passes through untouched.
+  const video = React.useMemo(() => resolveTokenRefsDeep(rawVideo), [rawVideo]);
   const {audio, captions, captionStyle, chrome} = video;
   const {fps} = useVideoConfig();
   const hasChrome = Boolean(chrome);

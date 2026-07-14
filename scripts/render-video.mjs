@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import {withEngineAlias} from './_engine.mjs';
 import {loadRegistry, engineRoot} from '../lib/brand.mjs';
+import {loadTokenNames, loadFrozenSlugs, validateVideoTokens, FROZEN_MESSAGE} from './lib/validate-tokens.mjs';
 import {bundle} from '@remotion/bundler';
 import {getCompositions, renderMedia} from '@remotion/renderer';
 import {execFile} from 'node:child_process';
@@ -277,6 +278,15 @@ const validateVideo = (video) => {
 
 const main = async () => {
   const args = parseArgs();
+
+  // Legacy freeze (canon-resolver step 5): pre-canon-resolver videos carrying
+  // raw style values are frozen as-is in canon/legacy-frozen.json — never
+  // re-rendered without founder approval + a token migration.
+  const slug = path.basename(path.dirname(args.input));
+  if (loadFrozenSlugs(root).has(slug)) {
+    throw new Error(FROZEN_MESSAGE(slug));
+  }
+
   const video = JSON.parse(await fs.readFile(args.input, 'utf8'));
 
   // Allow captions to live in a sibling file referenced by captionsFile.
@@ -286,18 +296,35 @@ const main = async () => {
   }
 
   validateVideo(video);
-  await fs.mkdir(path.dirname(args.output), {recursive: true});
-
-  const hasAudio = Boolean(video.audio?.voSrc || video.audio?.musicSrc);
 
   // Regenerate the brand's canon tokens (src/generated/, the '@tokens' alias
-  // target) so the bundle always renders from current canon, never a stale copy.
+  // target) so validation AND the bundle always run from current canon, never
+  // a stale copy.
   const brandName = Object.entries(loadRegistry().brands ?? {}).find(
     ([, rel]) => path.resolve(engineRoot, rel) === path.resolve(root),
   )?.[0];
   if (brandName) {
     await execFileP('node', [path.join(engineRoot, 'scripts', 'gen-tokens.mjs'), '--brand', brandName]);
   }
+
+  // Token-name enforcement (canon-resolver step 5, same implementation as the
+  // check-canon gate): no raw hex/font values; token references must resolve
+  // against the generated name lists. Skipped when the brand has no generated
+  // token-names.json (pre-resolver consumer).
+  {
+    const tokenNames = loadTokenNames(root);
+    if (tokenNames) {
+      const tokenErrors = validateVideoTokens(video, tokenNames);
+      if (tokenErrors.length) {
+        throw new Error(
+          `token validation failed (${tokenErrors.length} error(s)):\n  - ${tokenErrors.join('\n  - ')}`,
+        );
+      }
+    }
+  }
+  await fs.mkdir(path.dirname(args.output), {recursive: true});
+
+  const hasAudio = Boolean(video.audio?.voSrc || video.audio?.musicSrc);
 
   const serveUrl = await bundle({entryPoint: path.join(root, 'src/index.ts'), webpackOverride: withEngineAlias});
   const comps = await getCompositions(serveUrl, {inputProps: {video}});

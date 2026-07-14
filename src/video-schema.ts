@@ -1,4 +1,20 @@
 import type {CardJson} from './schema';
+import type {FieldName, GradientName} from '@tokens/token-names';
+
+// Canon-resolver (step 5): style values in video.json are TOKEN NAMES, never
+// raw hex/font literals. A TokenRef ("token:<group>.<name>") is resolved at the
+// composition entry by src/token-ref.ts from the generated canon tokens; the
+// vocabulary is enforced by scripts/lib/validate-tokens.mjs (render + gate).
+export type TokenRef = `token:${string}.${string}`;
+
+// A scene's Americana field — one of the generated canon field/gradient names
+// (src/generated/token-names.*, from canon/americana-tokens.json).
+export type SceneField = FieldName | GradientName;
+
+// Per-video brand override block (Video.tsx maps it onto CSS custom
+// properties). Values are token references or plain CSS values that carry no
+// raw hex/font literals (validate-tokens.mjs enforces).
+export type BrandOverrides = Record<string, string | Record<string, string>>;
 
 // Word-level caption timing, absolute milliseconds across the whole video.
 // Produced by scripts/generate-captions.mjs (whisper-cpp) or hand-authored.
@@ -332,6 +348,7 @@ export type Heatmap3DScene = {
   size?: number; // goals axis 0..size (default 5)
   formula?: string; // optional formula chip, e.g. "P(k) = e^(−λ) λ^k / k!"
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
   palette?: string[]; // [highColor, lowColor]; default [accent, ink]
   spin?: number; // camera azimuth sweep (radians); default 0.9
   xLabel?: string; // default "home goals"
@@ -360,6 +377,7 @@ export type BrollScene = {
   panY?: number; // vertical shift in % (negative pushes the top off-frame); default 0
   textTop?: number; // px from top for the headline block (push below scoreboards); default 330
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
   kicker?: string;
   kickerRight?: string;
   footerRight?: string;
@@ -379,6 +397,7 @@ export type WinProbScene = {
   suffix?: string; // default "%"
   caption?: string;
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
   kicker?: string;
   kickerRight?: string;
   footerRight?: string;
@@ -395,6 +414,7 @@ export type MonteCarloScene = {
   total?: number; // default 50000
   bins?: number; // default 15
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 // Galton-board / Plinko probability viz: sims drop through pegs and pile into two
@@ -412,6 +432,7 @@ export type PlinkoScene = {
   outLabel?: string; // default "OUT"
   rows?: number; // peg rows, default 7
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 // Flat 2D scoreline-probability heatmap (home × away goals).
@@ -426,6 +447,7 @@ export type Poisson2DScene = {
   lambdaAway?: number;
   size?: number; // goals axis 0..size (default 5)
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 // End card: result recap + animated wordmark + follow CTA.
@@ -438,6 +460,7 @@ export type OutroScene2 = {
   wordmark?: string; // default "vektor"
   tagline?: string;
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 // Minimal method pipeline (vertical nodes + connector + pulse).
@@ -450,6 +473,7 @@ export type FlowScene = {
   accentWords?: string[];
   steps?: string[];
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 // A brief "here's the maths" beat: a formula shown big with a plain-language gloss.
@@ -462,6 +486,7 @@ export type FormulaScene = {
   gloss?: string; // plain-language explanation
   note?: string;
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
   kicker?: string;
   kickerRight?: string;
   footerRight?: string;
@@ -483,6 +508,7 @@ export type GuessRevealScene = {
   payoff?: string; // the twist/takeaway line
   commentPrompt?: string; // baked-in participation, e.g. "Comment your guess 👇"
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 // Bar-chart race: entities' values animate across time steps; bars reorder by rank.
@@ -497,6 +523,7 @@ export type BarRaceScene = {
   suffix?: string;
   caption?: string;
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 // Animated xG shot map: a vertical attacking-third pitch; shots plot in (staggered),
@@ -514,6 +541,7 @@ export type ShotMapScene = {
   team?: string; // label under the total
   caption?: string;
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 // Radar / spider chart — a subject's profile across 6-8 metrics (each a 0-100 percentile),
@@ -529,6 +557,7 @@ export type RadarScene = {
   axes: Array<{label: string; pct: number; display?: string}>; // pct 0-100
   caption?: string;
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 // Horizontal animated bar chart — multi-stat comparisons (BarsScene.tsx).
@@ -590,6 +619,7 @@ export type AsciiFieldScene = {
   };
   vo?: string;
   transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
 export type Scene =
@@ -643,6 +673,7 @@ export type VideoJson = {
   // Americana Cut v1.0 (locked 2026-07-04): ink chrome bar + flat fields +
   // Tektur/Workbench type + ascii dark beats. Spec: vektor/canon/americana-tokens.json.
   skin?: 'vmax' | 'americana';
+  brand?: BrandOverrides; // per-video CSS-var overrides (token references — see TokenRef)
   chrome?: ChromeConfig; // when set, one persistent bar set replaces per-scene bars
   scenes: Scene[];
   audio?: {

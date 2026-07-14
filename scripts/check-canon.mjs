@@ -19,6 +19,7 @@ import {promisify} from 'node:util';
 import {createRequire} from 'node:module';
 import {resolveBrand} from '../lib/brand.mjs';
 import {readingFloorFrames, CPS} from './lib/reading-time.mjs';
+import {loadTokenNames, loadFrozenSlugs, validateVideoTokens, FROZEN_MESSAGE} from './lib/validate-tokens.mjs';
 
 const execFileP = promisify(execFile);
 const require = createRequire(import.meta.url);
@@ -70,6 +71,14 @@ const main = async () => {
   const args = parseArgs();
   const brand = resolveBrand(args.brand);
   process.chdir(brand.brandRoot);
+
+  // Legacy freeze (canon-resolver step 5): frozen pre-canon-resolver videos are
+  // exempt from the gate — they are never re-rendered (render-video refuses),
+  // so gating their raw style values would only produce noise.
+  if (loadFrozenSlugs('.').has(args.slug)) {
+    console.log(`\ncanon gate · ${brand.name} · ${args.slug} — SKIPPED (${FROZEN_MESSAGE(args.slug)})`);
+    return;
+  }
 
   const canon = YAML.load(fs.readFileSync(path.join('canon', 'canon.yml'), 'utf8'));
   const video = JSON.parse(fs.readFileSync(path.join('data', args.slug, 'video.json'), 'utf8'));
@@ -233,6 +242,21 @@ const main = async () => {
       } else {
         results.push(R(true, vm.severity ?? 'warn', 'videoModel.shape', `shape='${shape ?? `${vm.shapeDefault} (default)`}' — reminder: a series/part-N must set concept.json shape:"series"`));
       }
+    }
+  }
+
+  // token-name enforcement (canon-resolver step 5) — the SAME implementation
+  // render-video.mjs runs (scripts/lib/validate-tokens.mjs): no raw hex/font
+  // values in video.json; token references + `field` names must be members of
+  // the generated name lists (src/generated/token-names.json).
+  {
+    const tokenNames = loadTokenNames('.');
+    if (tokenNames) {
+      const tokenErrors = validateVideoTokens(video, tokenNames);
+      results.push(R(tokenErrors.length === 0, canon.tokens?.severity ?? 'blocker', 'tokens.values',
+        tokenErrors.length ? tokenErrors.join(' | ') : 'no raw style values — token references resolve'));
+    } else {
+      results.push(R(false, 'warn', 'tokens.values', 'no src/generated/token-names.json — run npm run canon:tokens'));
     }
   }
 

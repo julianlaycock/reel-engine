@@ -109,7 +109,8 @@ export type FontName =
   | 'workbench'
   | 'labelSans'
   | 'labelEmoji'
-  | 'interTight';
+  | 'interTight'
+  | 'plexMonoUi';
 
 export const FIELD_NAMES = ['orchid', 'aqua', 'cream', 'fog', 'ink', 'signal'] as const;
 export const ACCENT_NAMES = ['acid', 'paper', 'blueMeta', 'caretTeal'] as const;

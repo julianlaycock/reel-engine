@@ -124,4 +124,5 @@ export const FONTS = {
   labelSans: 'var(--label-font), sans-serif',
   labelEmoji: 'var(--label-font), "Noto Color Emoji", sans-serif',
   interTight: '"Inter Tight", sans-serif',
+  plexMonoUi: '"IBM Plex Mono", ui-monospace, monospace',
 } as const;
