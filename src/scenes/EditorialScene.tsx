@@ -223,7 +223,7 @@ export const EditorialScene: React.FC<{
   // lines) overflow the footer at 3 rows; scale the stage so the last row always clears it.
   // Scales from the top so the bottom lifts up (see transformOrigin below). No-op elsewhere.
   const panelRows = scene.panel && !scene.panel.image ? scene.panel.body?.length ?? 0 : 0;
-  const isMethod = scene.amBeat === 'method';
+  const isMethod = (scene as {amBeat?: string}).amBeat === 'method';
   const fit = isMethod && panelRows >= 3 ? 0.84 : isMethod && panelRows === 2 ? 0.93 : 1;
 
   // RECEIPT BAND FIT (wireframes v2 — 2026-07-09): the eyebrow+headline+plate
