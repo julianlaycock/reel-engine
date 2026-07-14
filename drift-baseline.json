@@ -1,6 +1,0 @@
-{
-  "$comment": "Drift ratchet baseline for scripts/check-drift.mjs — raw style literals in src/ (hex colors in .ts/.tsx, hex in style.css, font-family literals outside fonts.ts). Counts may only go DOWN (lower these numbers in the same commit that removes raw values); when all reach zero, DELETE this file — check-drift then enforces zero-tolerance. Measured 2026-07-14.",
-  "hexTs": 0,
-  "hexCss": 0,
-  "fontFamilyTs": 0
-}
