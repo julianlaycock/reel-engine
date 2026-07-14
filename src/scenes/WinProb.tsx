@@ -2,6 +2,7 @@ import React from 'react';
 import {AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {WinProbScene as WinProbSceneType} from '../video-schema';
 import {countUp, springIn} from '../animation';
+import {COLORS, FONTS} from '@tokens/tokens';
 
 // Broadcast-analyst win-probability panel: a glassmorphism card with animated
 // bars + count-up numbers (model vs market). The "broadcast graphics" identity.
@@ -29,12 +30,12 @@ export const WinProb: React.FC<{scene: WinProbSceneType; hideChrome?: boolean}> 
         }}
       >
         {scene.title ? (
-          <div style={{fontFamily: 'var(--mono)', fontSize: 24, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 8}}>
+          <div style={{fontFamily: FONTS.mono, fontSize: 24, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 8}}>
             {scene.title}
           </div>
         ) : null}
         {scene.sub ? (
-          <div style={{fontFamily: 'var(--label-font, var(--mono))', fontSize: 30, fontWeight: 600, color: 'var(--fg)', marginBottom: 30}}>
+          <div style={{fontFamily: FONTS.label, fontSize: 30, fontWeight: 600, color: 'var(--fg)', marginBottom: 30}}>
             {scene.sub}
           </div>
         ) : null}
@@ -51,8 +52,8 @@ export const WinProb: React.FC<{scene: WinProbSceneType; hideChrome?: boolean}> 
           return (
             <div key={i} style={{opacity: op, marginTop: i ? 26 : 6}}>
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12}}>
-                <span style={{fontFamily: 'var(--mono)', fontSize: 22, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--fg)'}}>{r.label}</span>
-                <span style={{fontFamily: 'var(--label-font, var(--mono))', fontWeight: 800, fontSize: 56, lineHeight: 1, color: col}}>
+                <span style={{fontFamily: FONTS.mono, fontSize: 22, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--fg)'}}>{r.label}</span>
+                <span style={{fontFamily: FONTS.label, fontWeight: 800, fontSize: 56, lineHeight: 1, color: col}}>
                   {r.display ?? `${Math.round(n)}${suffix}`}
                 </span>
               </div>
@@ -63,7 +64,7 @@ export const WinProb: React.FC<{scene: WinProbSceneType; hideChrome?: boolean}> 
                     height: '100%',
                     borderRadius: 10,
                     background: r.accent
-                      ? 'linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, #000), var(--accent))'
+                      ? `linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, ${COLORS.black}), var(--accent))`
                       : 'linear-gradient(90deg, rgba(255,255,255,0.18), var(--muted))',
                   }}
                 />
@@ -72,7 +73,7 @@ export const WinProb: React.FC<{scene: WinProbSceneType; hideChrome?: boolean}> 
           );
         })}
         {scene.caption ? (
-          <div style={{fontFamily: 'var(--mono)', fontSize: 18, color: 'var(--muted)', marginTop: 30, letterSpacing: '0.03em'}}>{scene.caption}</div>
+          <div style={{fontFamily: FONTS.mono, fontSize: 18, color: 'var(--muted)', marginTop: 30, letterSpacing: '0.03em'}}>{scene.caption}</div>
         ) : null}
       </div>
     </AbsoluteFill>

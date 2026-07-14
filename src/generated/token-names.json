@@ -94,7 +94,11 @@
     "splitDark",
     "splitRed",
     "splitMutedBlue",
-    "teal"
+    "teal",
+    "vmaxBlue",
+    "vmaxMint",
+    "vmaxBgTop",
+    "vmaxBgBot"
   ],
   "fonts": [
     "display",
@@ -102,6 +106,9 @@
     "label",
     "anton",
     "plexMono",
-    "workbench"
+    "workbench",
+    "labelSans",
+    "labelEmoji",
+    "interTight"
   ]
 }

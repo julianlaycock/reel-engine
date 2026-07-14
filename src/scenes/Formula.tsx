@@ -3,6 +3,7 @@ import {AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig} from 'remoti
 import type {FormulaScene as FormulaSceneType} from '../video-schema';
 import {springIn} from '../animation';
 import {KatexMath} from './KatexMath';
+import {FONTS} from '@tokens/tokens';
 
 // Render a math string with ^(...) / ^x as superscripts.
 export const renderMath = (s: string): React.ReactNode[] => {
@@ -40,7 +41,7 @@ export const Formula: React.FC<{scene: FormulaSceneType; hideChrome?: boolean}> 
   return (
     <AbsoluteFill style={{alignItems: 'center', justifyContent: 'center', padding: '0 60px', textAlign: 'center'}}>
       {scene.eyebrow ? (
-        <div style={{fontFamily: 'var(--mono)', fontSize: 24, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 30, ...springIn(frame, 2, fps)}}>
+        <div style={{fontFamily: FONTS.mono, fontSize: 24, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 30, ...springIn(frame, 2, fps)}}>
           {scene.eyebrow}
         </div>
       ) : null}
@@ -48,12 +49,12 @@ export const Formula: React.FC<{scene: FormulaSceneType; hideChrome?: boolean}> 
         <KatexMath latex={scene.formula} fontSize={60} color="var(--fg)" />
       </div>
       {scene.gloss ? (
-        <div style={{opacity: glossOp, fontFamily: 'var(--label-font, var(--mono))', fontWeight: 600, fontSize: 38, lineHeight: 1.18, color: 'var(--fg)', marginTop: 36, maxWidth: 820}}>
+        <div style={{opacity: glossOp, fontFamily: FONTS.label, fontWeight: 600, fontSize: 38, lineHeight: 1.18, color: 'var(--fg)', marginTop: 36, maxWidth: 820}}>
           {scene.gloss}
         </div>
       ) : null}
       {scene.note ? (
-        <div style={{opacity: glossOp, fontFamily: 'var(--mono)', fontSize: 20, color: 'var(--muted)', marginTop: 18, letterSpacing: '0.03em'}}>{scene.note}</div>
+        <div style={{opacity: glossOp, fontFamily: FONTS.mono, fontSize: 20, color: 'var(--muted)', marginTop: 18, letterSpacing: '0.03em'}}>{scene.note}</div>
       ) : null}
     </AbsoluteFill>
   );

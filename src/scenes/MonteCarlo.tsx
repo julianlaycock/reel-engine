@@ -2,6 +2,7 @@ import React, {useMemo} from 'react';
 import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from 'remotion';
 import type {MonteCarloScene as MonteCarloSceneType} from '../video-schema';
 import {SpecimenOverlay} from './_overlay';
+import {FONTS} from '@tokens/tokens';
 
 const rnd = (n: number) => {
   const x = Math.sin(n * 12.9898) * 43758.5453;
@@ -51,7 +52,7 @@ export const MonteCarlo: React.FC<{scene: MonteCarloSceneType; hideChrome?: bool
   return (
     <AbsoluteFill>
       <div style={{position: 'absolute', left: 70, right: 70, top: '41%', height: '44%'}}>
-        <div style={{fontFamily: 'var(--mono)', fontSize: 36, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em', marginBottom: 16}}>
+        <div style={{fontFamily: FONTS.mono, fontSize: 36, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em', marginBottom: 16}}>
           {Math.floor(n).toLocaleString('en-US')}
           <span style={{color: 'var(--muted)'}}> / {total.toLocaleString('en-US')} sims</span>
         </div>

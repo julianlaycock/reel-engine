@@ -2,6 +2,7 @@ import React, {useMemo} from 'react';
 import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from 'remotion';
 import type {ShotMapScene as ShotMapSceneType} from '../video-schema';
 import {renderAccent} from '../accent';
+import {FONTS} from '@tokens/tokens';
 
 const rnd = (n: number) => {
   const x = Math.sin(n * 12.9898) * 43758.5453;
@@ -42,13 +43,13 @@ export const ShotMap: React.FC<{scene: ShotMapSceneType; hideChrome?: boolean}> 
     <AbsoluteFill>
       <div style={{position: 'absolute', left: 60, right: 60, top: '11%'}}>
         {scene.eyebrow ? (
-          <div style={{fontFamily: 'var(--mono)', fontSize: 26, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: titleOp, marginBottom: 10}}>{scene.eyebrow}</div>
+          <div style={{fontFamily: FONTS.mono, fontSize: 26, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: titleOp, marginBottom: 10}}>{scene.eyebrow}</div>
         ) : null}
         {scene.headline ? (
-          <div style={{fontFamily: 'var(--label-font), sans-serif', fontWeight: 800, fontSize: 52, lineHeight: 1.05, color: 'var(--fg)', letterSpacing: '-0.02em', opacity: titleOp, marginBottom: 18}}>{renderAccent(scene.headline, scene.accentWords)}</div>
+          <div style={{fontFamily: FONTS.labelSans, fontWeight: 800, fontSize: 52, lineHeight: 1.05, color: 'var(--fg)', letterSpacing: '-0.02em', opacity: titleOp, marginBottom: 18}}>{renderAccent(scene.headline, scene.accentWords)}</div>
         ) : null}
         {/* running total */}
-        <div style={{display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums', marginBottom: 14}}>
+        <div style={{display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', fontFamily: FONTS.mono, fontVariantNumeric: 'tabular-nums', marginBottom: 14}}>
           <div style={{fontSize: 30, color: 'var(--muted)', letterSpacing: '0.08em'}}>{N} SHOTS</div>
           <div style={{fontSize: 64, fontWeight: 800, color: 'var(--accent)'}}>{shownXg.toFixed(2)}<span style={{fontSize: 30, color: 'var(--muted)'}}> xG</span></div>
         </div>
@@ -69,7 +70,7 @@ export const ShotMap: React.FC<{scene: ShotMapSceneType; hideChrome?: boolean}> 
             return <circle key={k} cx={s.gx} cy={s.gy} r={r} fill={big ? 'var(--accent)' : 'var(--muted)'} opacity={big ? 0.9 : 0.32} stroke={big ? 'var(--accent)' : 'none'} strokeWidth={2} />;
           })}
         </svg>
-        {scene.caption ? <div style={{marginTop: 16, fontFamily: 'var(--mono)', fontSize: 26, color: 'var(--muted)', textAlign: 'center'}}>{scene.caption}</div> : null}
+        {scene.caption ? <div style={{marginTop: 16, fontFamily: FONTS.mono, fontSize: 26, color: 'var(--muted)', textAlign: 'center'}}>{scene.caption}</div> : null}
       </div>
     </AbsoluteFill>
   );

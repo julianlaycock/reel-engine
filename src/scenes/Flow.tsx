@@ -3,6 +3,7 @@ import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from 'remotion';
 import type {FlowScene as FlowSceneType} from '../video-schema';
 import {easeOutExpo, interp} from '../motion';
 import {SpecimenOverlay} from './_overlay';
+import {COLORS, FONTS} from '@tokens/tokens';
 
 const DEFAULTS = ['team strength · Elo', 'expected goals', 'every scoreline · Poisson', '50,000 simulations', 'win probability'];
 
@@ -26,7 +27,7 @@ export const Flow: React.FC<{scene: FlowSceneType; hideChrome?: boolean}> = ({sc
               height: 800,
               border: '3px solid var(--fg)',
               borderRadius: 56,
-              background: 'var(--panel-card, #ffffff)',
+              background: `var(--panel-card, ${COLORS.white})`,
               boxShadow: '0 40px 90px rgba(0,0,0,0.16)',
               padding: '30px 34px',
               position: 'relative',
@@ -34,8 +35,8 @@ export const Flow: React.FC<{scene: FlowSceneType; hideChrome?: boolean}> = ({sc
               transform: `translateY(${(1 - phoneIn) * 18}px)`,
             }}
           >
-            <div style={{width: 130, height: 9, borderRadius: 6, background: 'var(--panel-dot, #ccc)', margin: '0 auto 30px'}} />
-            <div style={{fontFamily: 'var(--mono)', fontSize: 22, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--panel-title, var(--muted))', borderBottom: '1px solid var(--panel-border, var(--hairline))', paddingBottom: 16, marginBottom: 30}}>
+            <div style={{width: 130, height: 9, borderRadius: 6, background: `var(--panel-dot, ${COLORS.fallbackLightHairline})`, margin: '0 auto 30px'}} />
+            <div style={{fontFamily: FONTS.mono, fontSize: 22, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--panel-title, var(--muted))', borderBottom: '1px solid var(--panel-border, var(--hairline))', paddingBottom: 16, marginBottom: 30}}>
               {phoneTitle}
             </div>
             {steps.map((s, i) => {
@@ -52,18 +53,18 @@ export const Flow: React.FC<{scene: FlowSceneType; hideChrome?: boolean}> = ({sc
                       flex: 'none',
                       background: isLast ? 'var(--accent)' : 'transparent',
                       border: '3px solid var(--accent)',
-                      color: isLast ? 'var(--panel-card, #fff)' : 'var(--accent)',
+                      color: isLast ? `var(--panel-card, ${COLORS.white})` : 'var(--accent)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontFamily: 'var(--mono)',
+                      fontFamily: FONTS.mono,
                       fontSize: 20,
                       fontWeight: 700,
                     }}
                   >
                     {i + 1}
                   </div>
-                  <div style={{fontFamily: 'var(--display)', fontSize: 33, fontWeight: isLast ? 700 : 500, color: 'var(--panel-doc, var(--fg))', lineHeight: 1.2}}>
+                  <div style={{fontFamily: FONTS.display, fontSize: 33, fontWeight: isLast ? 700 : 500, color: 'var(--panel-doc, var(--fg))', lineHeight: 1.2}}>
                     {s.replace(/^\d+\s*·\s*/, '')}
                   </div>
                 </div>
@@ -71,7 +72,7 @@ export const Flow: React.FC<{scene: FlowSceneType; hideChrome?: boolean}> = ({sc
             })}
           </div>
           {(scene as {sub?: string}).sub ? (
-            <div style={{marginTop: 30, fontFamily: 'var(--mono)', fontSize: 26, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', opacity: interp(frame, [60, 76], [0, 1])}}>
+            <div style={{marginTop: 30, fontFamily: FONTS.mono, fontSize: 26, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', opacity: interp(frame, [60, 76], [0, 1])}}>
               {(scene as {sub?: string}).sub}
             </div>
           ) : null}
@@ -104,7 +105,7 @@ export const Flow: React.FC<{scene: FlowSceneType; hideChrome?: boolean}> = ({sc
             const isLast = i === N - 1;
             return (
               <g key={i} opacity={op}>
-                <circle cx={x} cy={y} r={isLast ? 18 : 13} fill={isLast ? 'var(--accent)' : '#ffffff'} stroke="var(--accent)" strokeWidth={4} />
+                <circle cx={x} cy={y} r={isLast ? 18 : 13} fill={isLast ? 'var(--accent)' : COLORS.white} stroke="var(--accent)" strokeWidth={4} />
                 <text x={x + 46} y={y + 13} fontSize={42} fill="var(--fg)" fontFamily="var(--label-font, var(--mono))" fontWeight={isLast ? 700 : 500}>
                   {s}
                 </text>

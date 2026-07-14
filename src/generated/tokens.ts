@@ -107,6 +107,10 @@ export const COLORS = {
   splitRed: '#E0431F',
   splitMutedBlue: '#cdd3e6',
   teal: '#2BD4B5',
+  vmaxBlue: '#1E5A8C',
+  vmaxMint: '#CFF3EC',
+  vmaxBgTop: '#0b1117',
+  vmaxBgBot: '#06090c',
 } as const;
 
 // Font stacks / font var references (canon/tokens-pending.json fonts).
@@ -117,4 +121,7 @@ export const FONTS = {
   anton: '"Anton", sans-serif',
   plexMono: '"IBM Plex Mono", monospace',
   workbench: '"Workbench", "IBM Plex Mono", monospace',
+  labelSans: 'var(--label-font), sans-serif',
+  labelEmoji: 'var(--label-font), "Noto Color Emoji", sans-serif',
+  interTight: '"Inter Tight", sans-serif',
 } as const;

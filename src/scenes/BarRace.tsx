@@ -1,6 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from 'remotion';
 import type {BarRaceScene as BarRaceSceneType} from '../video-schema';
+import {FONTS} from '@tokens/tokens';
 
 // Bar-chart race: each entity's value animates across time steps; bars reorder by rank
 // and the step label ("year") advances. Built-in "who wins?" open loop. Frame-deterministic.
@@ -34,10 +35,10 @@ export const BarRace: React.FC<{scene: BarRaceSceneType; hideChrome?: boolean}> 
     <AbsoluteFill>
       <div style={{position: 'absolute', left: 64, right: 64, top: '16%'}}>
         {scene.title ? (
-          <div style={{fontFamily: 'var(--mono)', fontSize: 26, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8}}>{scene.title}</div>
+          <div style={{fontFamily: FONTS.mono, fontSize: 26, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8}}>{scene.title}</div>
         ) : null}
         {/* the advancing step label — the "clock" of the race */}
-        <div style={{fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums', fontSize: 88, fontWeight: 700, color: 'var(--accent)', lineHeight: 1, marginBottom: 24}}>
+        <div style={{fontFamily: FONTS.mono, fontVariantNumeric: 'tabular-nums', fontSize: 88, fontWeight: 700, color: 'var(--accent)', lineHeight: 1, marginBottom: 24}}>
           {steps[Math.round(t)] ?? ''}
         </div>
 
@@ -48,8 +49,8 @@ export const BarRace: React.FC<{scene: BarRaceSceneType; hideChrome?: boolean}> 
             return (
               <div key={c.idx} style={{position: 'absolute', left: 0, right: 0, top: r * rowH, height: rowH - 16}}>
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8}}>
-                  <span style={{fontFamily: 'var(--label-font), "Noto Color Emoji", sans-serif', fontWeight: 600, fontSize: 34, color: 'var(--fg)'}}>{c.label}</span>
-                  <span style={{fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 36, color: c.accent ? 'var(--accent)' : 'var(--fg)'}}>{fmt(c.value)}</span>
+                  <span style={{fontFamily: FONTS.labelEmoji, fontWeight: 600, fontSize: 34, color: 'var(--fg)'}}>{c.label}</span>
+                  <span style={{fontFamily: FONTS.mono, fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 36, color: c.accent ? 'var(--accent)' : 'var(--fg)'}}>{fmt(c.value)}</span>
                 </div>
                 <div style={{height: 26, borderRadius: 8, background: 'var(--track, rgba(0,0,0,0.08))'}}>
                   <div style={{width: `${w}%`, height: '100%', borderRadius: 8, background: 'var(--accent)', opacity: c.accent ? 1 : 0.4}} />
@@ -60,7 +61,7 @@ export const BarRace: React.FC<{scene: BarRaceSceneType; hideChrome?: boolean}> 
         </div>
 
         {scene.caption ? (
-          <div style={{marginTop: 24, fontFamily: 'var(--mono)', fontSize: 26, color: 'var(--muted)'}}>{scene.caption}</div>
+          <div style={{marginTop: 24, fontFamily: FONTS.mono, fontSize: 26, color: 'var(--muted)'}}>{scene.caption}</div>
         ) : null}
       </div>
     </AbsoluteFill>

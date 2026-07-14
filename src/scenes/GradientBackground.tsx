@@ -1,5 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame, useVideoConfig} from 'remotion';
+import {COLORS} from '@tokens/tokens';
 
 // Living gradient-mesh background (ShaderGradient-inspired) — soft brand-colour
 // blobs drifting over a dark base. Frame-driven → deterministic; pure DOM → no
@@ -10,7 +11,7 @@ export const GradientBackground: React.FC<{
   accent2?: string;
   bgTop?: string;
   bgBot?: string;
-}> = ({accent = '#2BD4B5', accent2 = '#1E5A8C', bgTop = '#0b1117', bgBot = '#06090c'}) => {
+}> = ({accent = COLORS.teal, accent2 = COLORS.vmaxBlue, bgTop = COLORS.vmaxBgTop, bgBot = COLORS.vmaxBgBot}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const t = frame / fps;

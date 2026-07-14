@@ -94,7 +94,11 @@ export type ColorName =
   | 'splitDark'
   | 'splitRed'
   | 'splitMutedBlue'
-  | 'teal';
+  | 'teal'
+  | 'vmaxBlue'
+  | 'vmaxMint'
+  | 'vmaxBgTop'
+  | 'vmaxBgBot';
 
 export type FontName =
   | 'display'
@@ -102,7 +106,10 @@ export type FontName =
   | 'label'
   | 'anton'
   | 'plexMono'
-  | 'workbench';
+  | 'workbench'
+  | 'labelSans'
+  | 'labelEmoji'
+  | 'interTight';
 
 export const FIELD_NAMES = ['orchid', 'aqua', 'cream', 'fog', 'ink', 'signal'] as const;
 export const ACCENT_NAMES = ['acid', 'paper', 'blueMeta', 'caretTeal'] as const;

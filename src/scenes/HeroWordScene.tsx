@@ -3,6 +3,7 @@ import {AbsoluteFill, useCurrentFrame} from 'remotion';
 import {easeIn, easeOutExpo, easePhysical, interp, STAGGER} from '../motion';
 import {Chrome} from './Chrome';
 import '../style.css';
+import {FONTS} from '@tokens/tokens';
 
 // Doctrine S4 "standard→hero" moment (the 'provable.' beat), canon v1.5.0 trial.
 // The prelude line rises in (KineticLine grammar), exits up+out, then ONE word
@@ -69,7 +70,7 @@ export const HeroWordScene: React.FC<{scene: any; hideChrome?: boolean}> = ({sce
             <div style={{height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
               <div
                 style={{
-                  fontFamily: 'var(--display)',
+                  fontFamily: FONTS.display,
                   fontSize: fitFont,
                   fontWeight: 700,
                   letterSpacing: '-0.03em',
