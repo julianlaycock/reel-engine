@@ -13,6 +13,7 @@
   },
   "bin": {
     "reel-build-concept": "scripts/build-concept.mjs",
+    "reel-gen-tokens": "scripts/gen-tokens.mjs",
     "reel-render-video": "scripts/render-video.mjs",
     "reel-render-doctrine": "scripts/render-doctrine.mjs",
     "reel-render-doctrine-film": "scripts/render-doctrine-film.mjs",
