@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import {withEngineAlias} from './_engine.mjs';
+import {loadRegistry, engineRoot} from '../lib/brand.mjs';
 import {bundle} from '@remotion/bundler';
 import {getCompositions, renderMedia} from '@remotion/renderer';
 import {execFile} from 'node:child_process';
@@ -288,6 +289,15 @@ const main = async () => {
   await fs.mkdir(path.dirname(args.output), {recursive: true});
 
   const hasAudio = Boolean(video.audio?.voSrc || video.audio?.musicSrc);
+
+  // Regenerate the brand's canon tokens (src/generated/, the '@tokens' alias
+  // target) so the bundle always renders from current canon, never a stale copy.
+  const brandName = Object.entries(loadRegistry().brands ?? {}).find(
+    ([, rel]) => path.resolve(engineRoot, rel) === path.resolve(root),
+  )?.[0];
+  if (brandName) {
+    await execFileP('node', [path.join(engineRoot, 'scripts', 'gen-tokens.mjs'), '--brand', brandName]);
+  }
 
   const serveUrl = await bundle({entryPoint: path.join(root, 'src/index.ts'), webpackOverride: withEngineAlias});
   const comps = await getCompositions(serveUrl, {inputProps: {video}});

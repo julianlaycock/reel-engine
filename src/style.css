@@ -1,3 +1,9 @@
+/* Brand tokens (:root custom properties) — GENERATED from canon by
+   reel-engine/scripts/gen-tokens.mjs into <brand>/src/generated/tokens.css
+   (webpack alias '@tokens'). Never re-declare :root vars here; a per-video
+   `brand` object (set on the root in Video.tsx) overrides them at runtime. */
+@import '@tokens/tokens.css';
+
 @font-face {
   font-family: "Inter Tight";
   src: url("file:///C:/Users/julia/projects/reel-engine/assets/fonts/inter-tight-latin.woff2") format("woff2");
@@ -14,61 +20,6 @@
   font-family: "IBM Plex Mono";
   src: url("file:///C:/Users/julia/projects/reel-engine/assets/fonts/ibm-plex-mono-500.woff2") format("woff2");
   font-weight: 500;
-}
-
-/* Brand tokens — defaults are Caelith Labs. A per-video `brand` object (set on the
-   root in Video.tsx) overrides these, so the same engine renders any brand. */
-:root {
-  --accent: #d62828;
-  /* display / headline typeface — a per-video brand can override to reskin all
-     non-mono type (defaults to the Inter Tight grotesk stack). */
-  --display: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
-  --fg: #f4f2ec;
-  --bg-top: #161616;
-  --bg-mid: #0b0b0b;
-  --bg-bot: #070707;
-  --mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --cap-pill: rgba(7, 7, 7, 0.62);
-  --mark-w: 20px;
-  --mark-h: 20px;
-  --label-font: var(--display);
-  --muted: #8a8a86;
-  /* furniture (chrome labels): Labs defaults = tracked uppercase Inter Tight. */
-  --meta-font: var(--label-font);
-  --meta-transform: uppercase;
-  --meta-spacing: 0.14em;
-  --hairline: #2a2a2a;
-  --node-bg: #0d0d0d;
-  --ng-edge: #5a5a56;
-  /* editorial panel card — dark by default; a light brand overrides these via brandVars */
-  --panel-card: #0e0e0e;
-  --panel-border: #34343a;
-  --panel-bar: #151515;
-  --panel-bar-border: #262626;
-  --panel-dot: #33333a;
-  --panel-title: #9a9a96;
-  --panel-doc: #cfcfca;
-  --console-head: #111111;
-  --console-body: #181818;
-  --console-line: #2a2a2a;
-  --orb2: #e8a87c;
-  /* agent console — defaults preserve the original teal look so existing videos
-     re-render identically; a brand can retheme via brand.vars (e.g. Labs dark:
-     ink surfaces, red flag, zero radius per the Pure Programme). */
-  --ag-accent: #5fb5a3;
-  --ag-ok: #5fb5a3;
-  --ag-flag: #c99a2e;
-  --ag-glow: rgba(95, 181, 163, 0.06);
-  --ag-bg: #161c1d;
-  --ag-head: #11171a;
-  --ag-border: #2a3133;
-  --ag-bubble: #1d2527;
-  --ag-text: #b9c0bd;
-  --ag-bright: #eceeea;
-  --ag-muted: #8a9290;
-  --ag-radius: 24px;
-  --ag-radius-sm: 20px;
-  --ag-radius-pill: 999px;
 }
 
 * {

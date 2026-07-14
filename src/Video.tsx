@@ -48,20 +48,15 @@ import {TerminalScene} from './scenes/TerminalScene';
 import {GradientBackground} from './scenes/GradientBackground';
 import {Captions} from './Captions';
 import {AsciiFieldScene} from './scenes/AsciiFieldScene';
+import {FIELDS, type FieldTokens} from '@tokens/tokens';
 import './fonts';
 import './style.css';
 
 // Americana Cut skin (Vektor, locked 2026-07-04) — flat field colors per beat.
 // The video.json author sets a per-scene `"field"`; light fields carry ink text,
-// signal/ink fields carry paper text. Spec: vektor/canon/americana-tokens.json.
-export const AM_FIELDS: Record<string, {bg: string; fg: string; muted: string; hairline: string}> = {
-  orchid: {bg: '#C77BC9', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.28)'},
-  aqua: {bg: '#8FC5C9', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.28)'},
-  cream: {bg: '#F4EFDF', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.24)'},
-  fog: {bg: '#E8ECEA', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.24)'},
-  ink: {bg: '#101010', fg: '#EFEADD', muted: 'rgba(239,234,221,0.6)', hairline: 'rgba(239,234,221,0.25)'},
-  signal: {bg: '#1B4FA0', fg: '#EFEADD', muted: '#BFD9FF', hairline: 'rgba(191,217,255,0.3)'},
-};
+// signal/ink fields carry paper text. Values are GENERATED from the canon
+// (vektor/canon/americana-tokens.json → gen-tokens.mjs → @tokens/tokens).
+export const AM_FIELDS: Record<string, FieldTokens> = FIELDS;
 
 export const amFieldVars = (field?: string): React.CSSProperties => {
   const f = AM_FIELDS[field ?? ''];
