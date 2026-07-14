@@ -2,6 +2,7 @@ import React from 'react';
 import {AbsoluteFill, Img, interpolate, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {BrollScene as BrollSceneType} from '../video-schema';
 import {SpecimenOverlay} from './_overlay';
+import {COLORS} from '@tokens/tokens';
 
 const IS_IMG = /\.(jpg|jpeg|png|webp|avif)$/i;
 
@@ -21,7 +22,7 @@ export const Broll: React.FC<{scene: BrollSceneType; hideChrome?: boolean}> = ({
   const ov = scene.overlay ?? 0.5;
   const top = Math.min(0.78, ov * 1.05);
   return (
-    <AbsoluteFill style={{overflow: 'hidden', backgroundColor: '#000'}}>
+    <AbsoluteFill style={{overflow: 'hidden', backgroundColor: COLORS.black}}>
       <AbsoluteFill style={{transform: `translateY(${panY}%) scale(${zoom})`}}>
         {IS_IMG.test(scene.src) ? (
           // Full-bleed PHOTO cover (Ken-Burns push). objectPosition lets a portrait
@@ -48,7 +49,7 @@ export const Broll: React.FC<{scene: BrollSceneType; hideChrome?: boolean}> = ({
       {/* subtle brand tint to bind the footage to the palette */}
       <AbsoluteFill style={{background: 'var(--accent)', opacity: 0.06, mixBlendMode: 'soft-light'}} />
       {/* footage overlays always render light + bright accent for contrast on the clip */}
-      <div style={{position: 'absolute', inset: 0, ['--fg' as string]: '#ffffff', ['--muted' as string]: 'rgba(255,255,255,0.82)', ['--accent' as string]: 'var(--accent-foot, #2BD4B5)'} as React.CSSProperties}>
+      <div style={{position: 'absolute', inset: 0, ['--fg' as string]: COLORS.white, ['--muted' as string]: 'rgba(255,255,255,0.82)', ['--accent' as string]: `var(--accent-foot, ${COLORS.teal})`} as React.CSSProperties}>
         <SpecimenOverlay
           eyebrow={scene.eyebrow}
           headline={scene.headline}

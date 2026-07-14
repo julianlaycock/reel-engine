@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {AbsoluteFill, continueRender, delayRender, Easing, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {AsciiFieldScene as AsciiFieldSceneType} from '../video-schema';
+import {ACCENTS, COLORS, FIELDS, GRADIENTS} from '@tokens/tokens';
 import '../style.css';
 
 // Americana Cut — the ASCII field pass (locked v1.0, ported from the design
@@ -189,7 +190,7 @@ const TypeOnWordmark: React.FC<{text: string; frame: number}> = ({text, frame}) 
                 bottom: '0.06em',
                 width: '0.6em',
                 height: '0.74em',
-                background: '#0E9C86',
+                background: ACCENTS.caretTeal,
                 opacity: caretOn ? 1 : 0,
               }}
             />
@@ -204,9 +205,9 @@ const TypeOnWordmark: React.FC<{text: string; frame: number}> = ({text, frame}) 
 // (±10px) at low opacity and SNAP into register over ~20 frames on a spring;
 // the plates fade as they converge, leaving the normal paper wordmark.
 const REG_PLATES: Array<{color: string; ox: number; oy: number}> = [
-  {color: '#D97757', ox: -10, oy: -7}, // coral
-  {color: '#B8E62E', ox: 9, oy: -5}, // acid
-  {color: '#101010', ox: -6, oy: 9}, // ink
+  {color: COLORS.coral, ox: -10, oy: -7}, // coral
+  {color: COLORS.mascotAcid, ox: 9, oy: -5}, // acid
+  {color: FIELDS.ink.bg, ox: -6, oy: 9}, // ink
 ];
 const RegistrationWordmark: React.FC<{text: string; frame: number; fps: number}> = ({text, frame, fps}) => {
   const start = 4;
@@ -280,7 +281,7 @@ const DecodeWordmark: React.FC<{text: string; frame: number}> = ({text, frame}) 
                   top: 0,
                   transform: 'translateX(-50%)',
                   opacity: noiseOp,
-                  color: 'var(--am-acid, #39FF35)',
+                  color: `var(--am-acid, ${ACCENTS.acid})`,
                 }}
               >
                 {glyph}
@@ -322,7 +323,7 @@ const PressWipeWordmark: React.FC<{text: string; frame: number}> = ({text, frame
             bottom: '2%',
             left: `${(barX - barW / 2).toFixed(2)}%`,
             width: `${barW}%`,
-            background: 'repeating-linear-gradient(115deg, #101010 0px 14px, #39FF35 14px 19px)',
+            background: `repeating-linear-gradient(115deg, ${FIELDS.ink.bg} 0px 14px, ${ACCENTS.acid} 14px 19px)`,
             boxShadow: '0 0 18px rgba(16,16,16,0.5)',
           }}
         />
@@ -343,7 +344,7 @@ const EndcardWordmark: React.FC<{text: string; motion: WordmarkMotion; frame: nu
 // a highlight travels smoothly around the four face buttons. Deterministic —
 // driven only by useCurrentFrame (no Math.random; frames render out of order).
 const MotionGamepad: React.FC<{frame: number; fps: number}> = ({frame, fps}) => {
-  const acid = '#39FF35';
+  const acid = ACCENTS.acid;
   const period = Math.max(4, Math.round(fps * 1.4)); // one lap around the 4 buttons
   const t = (frame % period) / period; // 0..1
   const glow = (center: number) => {
@@ -501,7 +502,7 @@ export const AsciiFieldScene: React.FC<{scene: AsciiFieldSceneType; hideChrome?:
   return (
     <AbsoluteFill className="am-ascii-scene">
       {/* signal-blue gradient + (non-pre only) blurred source ghost + veil */}
-      <AbsoluteFill style={{background: 'linear-gradient(165deg,#1B4FA0 0%,#2B6BC4 60%,#153A78 100%)'}} />
+      <AbsoluteFill style={{background: GRADIENTS.signalBlue}} />
       {imgUrl && !pre ? (
         <AbsoluteFill style={{opacity: 0.28, filter: 'blur(26px)'}}>
           <img src={imgUrl} style={{width: '100%', height: '100%', objectFit: 'cover'}} />

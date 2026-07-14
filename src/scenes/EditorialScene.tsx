@@ -238,7 +238,7 @@ export const EditorialScene: React.FC<{
 
   // editorial-statement.v2 (founder RENDER→SEE→LOCK 2026-07-13): the optional acid
   // Jacquard verdict word — same top-left stamp grammar as VersusScene's vs-jacquard
-  // and the end-card's .am-jacquard. Acid #39FF35 (glow) on dark fields (ink/signal);
+  // and the end-card's .am-jacquard. Acid green (glow) on dark fields (ink/signal);
   // ink on light fields — the acid-on-dark law. Decorative accent over the centered
   // statement, fades+rises in. Absent ⇒ editorial-statement.v1 renders as before.
   const sc = scene as EditorialSceneType & {jacquardWord?: string; field?: string};

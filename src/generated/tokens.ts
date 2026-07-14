@@ -100,6 +100,13 @@ export const COLORS = {
   fallbackDarkFg: '#eee',
   fallbackDarkMuted: '#999',
   fallbackDarkHairline: '#333',
+  coral: '#D97757',
+  mascotAcid: '#B8E62E',
+  mascotNavy: '#2A3350',
+  splitDark: '#0C0E18',
+  splitRed: '#E0431F',
+  splitMutedBlue: '#cdd3e6',
+  teal: '#2BD4B5',
 } as const;
 
 // Font stacks / font var references (canon/tokens-pending.json fonts).
@@ -107,4 +114,7 @@ export const FONTS = {
   display: 'var(--display)',
   mono: 'var(--mono)',
   label: 'var(--label-font, var(--mono))',
+  anton: '"Anton", sans-serif',
+  plexMono: '"IBM Plex Mono", monospace',
+  workbench: '"Workbench", "IBM Plex Mono", monospace',
 } as const;

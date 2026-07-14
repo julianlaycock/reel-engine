@@ -87,12 +87,22 @@ export type ColorName =
   | 'fallbackLightHairline'
   | 'fallbackDarkFg'
   | 'fallbackDarkMuted'
-  | 'fallbackDarkHairline';
+  | 'fallbackDarkHairline'
+  | 'coral'
+  | 'mascotAcid'
+  | 'mascotNavy'
+  | 'splitDark'
+  | 'splitRed'
+  | 'splitMutedBlue'
+  | 'teal';
 
 export type FontName =
   | 'display'
   | 'mono'
-  | 'label';
+  | 'label'
+  | 'anton'
+  | 'plexMono'
+  | 'workbench';
 
 export const FIELD_NAMES = ['orchid', 'aqua', 'cream', 'fog', 'ink', 'signal'] as const;
 export const ACCENT_NAMES = ['acid', 'paper', 'blueMeta', 'caretTeal'] as const;

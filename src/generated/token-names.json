@@ -87,11 +87,21 @@
     "fallbackLightHairline",
     "fallbackDarkFg",
     "fallbackDarkMuted",
-    "fallbackDarkHairline"
+    "fallbackDarkHairline",
+    "coral",
+    "mascotAcid",
+    "mascotNavy",
+    "splitDark",
+    "splitRed",
+    "splitMutedBlue",
+    "teal"
   ],
   "fonts": [
     "display",
     "mono",
-    "label"
+    "label",
+    "anton",
+    "plexMono",
+    "workbench"
   ]
 }
