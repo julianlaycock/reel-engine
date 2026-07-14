@@ -9,7 +9,8 @@
   },
   "scripts": {
     "start": "remotion studio src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:drift": "node scripts/check-drift.mjs"
   },
   "bin": {
     "reel-build-concept": "scripts/build-concept.mjs",
