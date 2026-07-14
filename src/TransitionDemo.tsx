@@ -6,6 +6,7 @@ import {slide} from '@remotion/transitions/slide';
 import {CameraMotionBlur} from '@remotion/motion-blur';
 import type {Scene, VideoProps} from './video-schema';
 import {SceneBody, amFieldVars, AM_FIELDS} from './Video';
+import {ACCENTS, COLORS} from '@tokens/tokens';
 import {easeOutExpo} from './motion';
 import './fonts';
 import './style.css';
@@ -25,7 +26,7 @@ export type TransitionVariant = 'spring-slide' | 'whip' | 'luma-wipe' | 'oversho
 export const DEMO_A = 66;
 export const DEMO_B = 66;
 
-const FIELD_BG = (field?: string) => AM_FIELDS[field ?? '']?.bg ?? '#EFEADD';
+const FIELD_BG = (field?: string) => AM_FIELDS[field ?? '']?.bg ?? ACCENTS.paper;
 
 // Map the per-video brand object → CSS custom properties (the subset the
 // editorial/field beats consume). Mirrors the mapping inside <Video/>.
@@ -69,7 +70,7 @@ const LumaWipe: React.FC<{presentationProgress: number; presentationDirection: s
   const p = presentationProgress;
   const feather = 24;
   const edge = -feather + p * (100 + feather * 2);
-  const mask = `linear-gradient(112deg, #000 ${edge - feather}%, transparent ${edge}%)`;
+  const mask = `linear-gradient(112deg, ${COLORS.black} ${edge - feather}%, transparent ${edge}%)`;
   return <AbsoluteFill style={{WebkitMaskImage: mask, maskImage: mask}}>{children}</AbsoluteFill>;
 };
 const lumaWipe = (): TransitionPresentation<Record<string, unknown>> => ({
@@ -168,7 +169,7 @@ export const TransitionDemo: React.FC<DemoProps> = ({video, variant}) => {
   return (
     <AbsoluteFill
       className="skin-americana"
-      style={{backgroundColor: brand?.bgBot ?? '#EFEADD', ...brandToVars(brand)}}
+      style={{backgroundColor: brand?.bgBot ?? ACCENTS.paper, ...brandToVars(brand)}}
     >
       {blur ? (
         <CameraMotionBlur shutterAngle={220} samples={12}>

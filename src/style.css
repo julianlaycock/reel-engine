@@ -148,7 +148,7 @@
   display: inline-block;
   width: 0.12em;
   height: 0.98em;
-  background: var(--caret, #0E9C86);
+  background: var(--caret, var(--am-caret-teal));
   margin-left: 0.14em;
   flex: none;
 }
@@ -207,7 +207,7 @@
 
 .hr {
   height: 2px;
-  background: #3a3a38;
+  background: var(--frame-line);
   width: 100%;
 }
 
@@ -399,7 +399,7 @@
    the left-anchor concession for the mascot slot is gone). The block shrinks
    to its widest line and centers; lines stay left-aligned to each other so the
    diff reads as a diff. minus = muted ink struck through, plus = caret-teal
-   (#0E9C86 — the acid law keeps acid off light fields). */
+   (caret-teal — the acid law keeps acid off light fields). */
 .vs-lines {
   position: absolute;
   left: 50%;
@@ -424,14 +424,14 @@
 }
 
 .vs-line-add {
-  color: #0e9c86;
+  color: var(--am-caret-teal);
   font-weight: 500;
 }
 
 .vs-div {
   font-size: 44px;
   font-weight: 500;
-  color: #6a6a66;
+  color: var(--vs-divider);
   font-style: italic;
   flex: none;
 }
@@ -459,10 +459,10 @@
 .screen-panel {
   width: 100%;
   max-height: 78%;
-  border: 1px solid #3a3a38;
+  border: 1px solid var(--frame-line);
   border-radius: 22px;
   overflow: hidden;
-  background: #0b0b0b;
+  background: var(--bg-mid);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
   transform-origin: 50% 50%;
 }
@@ -545,7 +545,7 @@
 
 .bars-track {
   height: 44px;
-  background: #1a1a1a;
+  background: var(--bars-track);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -585,8 +585,8 @@
 .decode-grid {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(#1c1c1c 1px, transparent 1px),
-    linear-gradient(90deg, #1c1c1c 1px, transparent 1px);
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 64px 64px;
   opacity: 0.32;
 }
@@ -1122,12 +1122,12 @@
   align-items: center;
   justify-content: center;
   gap: 26px;
-  border: 1px solid #34343a;
+  border: 1px solid var(--panel-border);
   border-radius: 18px;
   padding: 48px 52px;
   min-width: 320px;
   min-height: 210px;
-  background: #0d0d0d;
+  background: var(--node-bg);
 }
 
 .outro-logo {
@@ -1408,7 +1408,7 @@
 }
 
 .fg-check.s-flag {
-  color: #c99a2e;
+  color: var(--ag-flag);
 }
 
 /* ---- field grid (live Annex IV field matrix) ---- */
@@ -1442,7 +1442,7 @@
 }
 
 .grid-flag {
-  color: #c99a2e;
+  color: var(--ag-flag);
 }
 
 .grid-cells {
@@ -1463,8 +1463,8 @@
 }
 
 .grid-cell.flag {
-  border-color: #c99a2e;
-  background: #c99a2e;
+  border-color: var(--ag-flag);
+  background: var(--ag-flag);
 }
 
 .grid-seal {
@@ -1645,7 +1645,7 @@
    Selected per video via `"skin": "americana"`; everything below is scoped to
    .skin-americana so the VMAX default renders byte-identical without it.
    Spec: vektor/canon/americana-tokens.json + brand/design-system handoff.
-   Laws: flat fields carry the texture (no grain/orbs) · acid #39FF35 only on
+   Laws: flat fields carry the texture (no grain/orbs) · acid green only on
    ink/signal-blue · mono never below 22px · rail 44px · chrome 100px ·
    footer 56px · hard steps only.
    ========================================================================= */
@@ -1666,12 +1666,8 @@
   font-weight: 400;
 }
 
-.skin-americana {
-  --am-acid: #39ff35;
-  --am-paper: #efeadd;
-  --am-blue-meta: #bfd9ff;
-  --am-ink: #101010;
-}
+/* --am-* field/accent custom properties are canon-derived and generated into
+   @tokens/tokens.css :root by gen-tokens.mjs (canon/americana-tokens.json). */
 
 /* PLATFORM SAFE ZONE (2026-07-05, founder — after the NO.004 TikTok upload).
    TikTok/IG aspect-fill 9:16 onto ~9:19.5 screens (crops ~100px per side) and
@@ -1965,7 +1961,7 @@
 }
 .skin-americana .am-beat-receipt .ed-panel {
   width: 780px;
-  background: #ffffff;
+  background: var(--paper-white);
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -2057,7 +2053,7 @@
   line-height: 1.3;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: #c77bc9; /* orchid verdict chip */
+  background: var(--am-orchid); /* orchid verdict chip */
   color: var(--am-ink);
   padding: 14px 24px;
   margin-top: 26px;
@@ -2086,7 +2082,7 @@
   z-index: 3;
 }
 .skin-americana .vs-jacquard--ink {
-  color: #101010;
+  color: var(--am-ink);
   text-shadow: none;
 }
 /* editorial-statement.v2 (2026-07-13): the same acid Jacquard verdict word applied
@@ -2097,7 +2093,7 @@
   z-index: 3;
 }
 .skin-americana .ed-jacquard--ink {
-  color: #101010;
+  color: var(--am-ink);
   text-shadow: none;
 }
 .skin-americana .am-dark-stage {
@@ -2177,7 +2173,7 @@
   width: 16px;
   height: 108px;
   margin-left: 22px;
-  background: #0e9c86; /* BRAND.md: the caret is ALWAYS teal */
+  background: var(--am-caret-teal); /* BRAND.md: the caret is ALWAYS teal */
   vertical-align: baseline;
 }
 .skin-americana .am-cta {
@@ -2273,8 +2269,8 @@
   flex: none;
 }
 .term-caret-block { width: 18px; }
-.term-caret-acid { background: #39FF35; box-shadow: 0 0 10px rgba(57, 255, 53, 0.55); }
-.term-caret-ed { background: #0E9C86; }
+.term-caret-acid { background: var(--am-acid); box-shadow: 0 0 10px rgba(57, 255, 53, 0.55); }
+.term-caret-ed { background: var(--am-caret-teal); }
 
 /* A · LIVE — the terminal IS the frame (no card); near-black field carries it */
 .term-stage-live { justify-content: flex-start; }
@@ -2282,7 +2278,7 @@
   width: 100%;
   max-width: 800px;
   font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  color: #d8dccf;
+  color: var(--term-text);
   font-size: 36px;
   line-height: 1.5;
   display: flex;
@@ -2296,10 +2292,10 @@
   color: rgba(216, 220, 207, 0.4);
   margin-bottom: 12px;
 }
-.term-usr-caret { color: #39FF35; font-weight: 500; }
-.term-usr { color: #f0f2ea; }
+.term-usr-caret { color: var(--am-acid); font-weight: 500; }
+.term-usr { color: var(--term-bright); }
 .term-head-live { color: rgba(216, 220, 207, 0.9); }
-.term-dot-live { color: #39FF35; margin-right: 10px; }
+.term-dot-live { color: var(--am-acid); margin-right: 10px; }
 .term-row-live {
   display: flex;
   gap: 18px;
@@ -2311,12 +2307,12 @@
 .term-rn-live { color: rgba(57, 255, 53, 0.8); width: 22px; flex: none; }
 .term-rp-live { color: rgba(216, 220, 207, 0.82); flex: none; }
 .term-note-live { color: rgba(216, 220, 207, 0.42); flex: none; }
-.term-confirm-live { color: #f0f2ea; margin-top: 6px; }
+.term-confirm-live { color: var(--term-bright); margin-top: 6px; }
 
 /* A · LIVE — GENERIC TYPED-LINE session (plan / grep / diff). Dims nudged one
    step brighter than the plan-form greys for phone-size legibility (founder). */
 .term-l-prompt { font-size: 34px; }
-.term-l-confirm { font-size: 32px; color: #f4f6ee; margin-top: 8px; }
+.term-l-confirm { font-size: 32px; color: var(--term-confirm); margin-top: 8px; }
 .term-l-thinking { font-size: 30px; align-items: baseline; gap: 12px; }
 .term-l-think-dot { color: rgba(57, 255, 53, 0.85); flex: none; }
 .term-l-think-tx { color: rgba(222, 226, 214, 0.82); }
@@ -2338,16 +2334,16 @@
   flex-wrap: nowrap;
 }
 .term-l-res-loc { color: rgba(228, 233, 219, 0.74); flex: none; }
-.term-l-res-code { color: #eef1e7; flex: none; }
-.term-l-add { font-size: 29px; color: #39FF35; white-space: nowrap; text-shadow: 0 0 8px rgba(57, 255, 53, 0.25); }
+.term-l-res-code { color: var(--term-code); flex: none; }
+.term-l-add { font-size: 29px; color: var(--am-acid); white-space: nowrap; text-shadow: 0 0 8px rgba(57, 255, 53, 0.25); }
 .term-l-del { font-size: 29px; color: rgba(224, 122, 112, 0.82); white-space: nowrap; }
 .term-l-context { font-size: 26px; color: rgba(200, 206, 190, 0.66); font-style: italic; }
 
 /* B/C · the premium paper card (offset ink shadow, americana window chrome) */
 .term-card {
   width: 748px;
-  background: #ffffff;
-  border: 2px solid #101010;
+  background: var(--paper-white);
+  border: 2px solid var(--am-ink);
   border-radius: 10px;
   box-shadow: 14px 14px 0 rgba(16, 16, 16, 0.9);
   overflow: hidden;
@@ -2358,8 +2354,8 @@
   align-items: center;
   gap: 12px;
   padding: 20px 26px;
-  border-bottom: 2px solid #101010;
-  background: #f4efdf;
+  border-bottom: 2px solid var(--am-ink);
+  background: var(--am-cream);
 }
 .term-tl {
   width: 15px;
@@ -2368,9 +2364,9 @@
   border: 1.5px solid rgba(16, 16, 16, 0.45);
   flex: none;
 }
-.term-tl-r { background: #e0655b; }
-.term-tl-y { background: #e4b95b; }
-.term-tl-g { background: #7fb77e; }
+.term-tl-r { background: var(--term-tl-r); }
+.term-tl-y { background: var(--term-tl-y); }
+.term-tl-g { background: var(--term-tl-g); }
 .term-card-title {
   margin-left: 14px;
   font-size: 24px;
@@ -2382,14 +2378,14 @@
   display: flex;
   flex-direction: column;
   gap: 17px;
-  color: #101010;
+  color: var(--am-ink);
   font-size: 33px;
   line-height: 1.4;
 }
-.term-usr-caret.ed { color: #0E9C86; font-weight: 500; }
-.term-usr.ed { color: #101010; }
+.term-usr-caret.ed { color: var(--am-caret-teal); font-weight: 500; }
+.term-usr.ed { color: var(--am-ink); }
 .term-head-ed { color: rgba(16, 16, 16, 0.78); font-size: 28px; display: flex; gap: 12px; align-items: baseline; }
-.term-dot-ed { color: #0E9C86; flex: none; }
+.term-dot-ed { color: var(--am-caret-teal); flex: none; }
 .term-row-ed {
   display: flex;
   gap: 14px;
@@ -2398,10 +2394,10 @@
   padding-left: 30px;
   white-space: nowrap;
 }
-.term-rn-ed { color: #0E9C86; width: 20px; flex: none; font-weight: 500; }
-.term-rp-ed { color: #101010; flex: none; }
+.term-rn-ed { color: var(--am-caret-teal); width: 20px; flex: none; font-weight: 500; }
+.term-rp-ed { color: var(--am-ink); flex: none; }
 .term-note-ed { color: rgba(16, 16, 16, 0.5); flex: none; }
-.term-confirm-ed { color: #101010; margin-top: 4px; }
+.term-confirm-ed { color: var(--am-ink); margin-top: 4px; }
 
 /* C · KINETIC — the ✗→✓ resolve + row sweep + scan bar */
 .term-state-wrap {
@@ -2420,8 +2416,8 @@
   font-weight: 600;
   letter-spacing: 0.02em;
 }
-.term-state-no { color: #c0392b; }
-.term-state-ok { color: #0E9C86; }
+.term-state-no { color: var(--term-no); }
+.term-state-ok { color: var(--am-caret-teal); }
 .term-state-mark { font-size: 36px; }
 .term-row-kin {
   position: relative;
@@ -2438,9 +2434,9 @@
   left: 0;
   top: 0;
   bottom: 0;
-  background: #0E9C86;
+  background: var(--am-caret-teal);
 }
-.term-rn-kin { color: #0E9C86; width: 20px; flex: none; font-weight: 600; position: relative; }
-.term-rp-kin { color: #101010; position: relative; flex: none; }
+.term-rn-kin { color: var(--am-caret-teal); width: 20px; flex: none; font-weight: 600; position: relative; }
+.term-rp-kin { color: var(--am-ink); position: relative; flex: none; }
 .term-note-kin { color: rgba(16, 16, 16, 0.5); position: relative; flex: none; }
-.term-confirm-kin { color: #101010; font-weight: 500; margin-top: 6px; }
+.term-confirm-kin { color: var(--am-ink); font-weight: 500; margin-top: 6px; }

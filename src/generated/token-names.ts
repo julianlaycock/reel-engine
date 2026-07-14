@@ -57,7 +57,42 @@ export type CssVarName =
   | '--ag-muted'
   | '--ag-radius'
   | '--ag-radius-sm'
-  | '--ag-radius-pill';
+  | '--ag-radius-pill'
+  | '--frame-line'
+  | '--vs-divider'
+  | '--bars-track'
+  | '--grid-line'
+  | '--paper-white'
+  | '--term-text'
+  | '--term-bright'
+  | '--term-confirm'
+  | '--term-code'
+  | '--term-tl-r'
+  | '--term-tl-y'
+  | '--term-tl-g'
+  | '--term-no';
+
+export type GradientName =
+  | 'signalBlue';
+
+export type ColorName =
+  | 'white'
+  | 'black'
+  | 'photoPaper'
+  | 'morphDarkBg'
+  | 'morphDarkGrid'
+  | 'morphLightHairline'
+  | 'fallbackLightFg'
+  | 'fallbackLightMuted'
+  | 'fallbackLightHairline'
+  | 'fallbackDarkFg'
+  | 'fallbackDarkMuted'
+  | 'fallbackDarkHairline';
+
+export type FontName =
+  | 'display'
+  | 'mono'
+  | 'label';
 
 export const FIELD_NAMES = ['orchid', 'aqua', 'cream', 'fog', 'ink', 'signal'] as const;
 export const ACCENT_NAMES = ['acid', 'paper', 'blueMeta', 'caretTeal'] as const;

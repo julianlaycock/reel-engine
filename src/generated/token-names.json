@@ -57,6 +57,41 @@
     "--ag-muted",
     "--ag-radius",
     "--ag-radius-sm",
-    "--ag-radius-pill"
+    "--ag-radius-pill",
+    "--frame-line",
+    "--vs-divider",
+    "--bars-track",
+    "--grid-line",
+    "--paper-white",
+    "--term-text",
+    "--term-bright",
+    "--term-confirm",
+    "--term-code",
+    "--term-tl-r",
+    "--term-tl-y",
+    "--term-tl-g",
+    "--term-no"
+  ],
+  "gradients": [
+    "signalBlue"
+  ],
+  "colors": [
+    "white",
+    "black",
+    "photoPaper",
+    "morphDarkBg",
+    "morphDarkGrid",
+    "morphLightHairline",
+    "fallbackLightFg",
+    "fallbackLightMuted",
+    "fallbackLightHairline",
+    "fallbackDarkFg",
+    "fallbackDarkMuted",
+    "fallbackDarkHairline"
+  ],
+  "fonts": [
+    "display",
+    "mono",
+    "label"
   ]
 }

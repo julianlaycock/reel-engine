@@ -66,4 +66,45 @@ export const CSS_VARS = {
   '--ag-radius': '24px',
   '--ag-radius-sm': '20px',
   '--ag-radius-pill': '999px',
+  '--frame-line': '#3a3a38',
+  '--vs-divider': '#6a6a66',
+  '--bars-track': '#1a1a1a',
+  '--grid-line': '#1c1c1c',
+  '--paper-white': '#ffffff',
+  '--term-text': '#d8dccf',
+  '--term-bright': '#f0f2ea',
+  '--term-confirm': '#f4f6ee',
+  '--term-code': '#eef1e7',
+  '--term-tl-r': '#e0655b',
+  '--term-tl-y': '#e4b95b',
+  '--term-tl-g': '#7fb77e',
+  '--term-no': '#c0392b',
+} as const;
+
+// Gradient fields from canon color.fields (composed CSS gradient strings).
+export const GRADIENTS = {
+  signalBlue: 'linear-gradient(165deg,#1B4FA0 0%,#2B6BC4 60%,#153A78 100%)',
+} as const;
+
+// Extra named colors pending canonization (canon/tokens-pending.json colors).
+export const COLORS = {
+  white: '#ffffff',
+  black: '#000000',
+  photoPaper: '#E7E0D0',
+  morphDarkBg: '#0F1220',
+  morphDarkGrid: '#1A2033',
+  morphLightHairline: '#D3C9B5',
+  fallbackLightFg: '#111',
+  fallbackLightMuted: '#777',
+  fallbackLightHairline: '#ccc',
+  fallbackDarkFg: '#eee',
+  fallbackDarkMuted: '#999',
+  fallbackDarkHairline: '#333',
+} as const;
+
+// Font stacks / font var references (canon/tokens-pending.json fonts).
+export const FONTS = {
+  display: 'var(--display)',
+  mono: 'var(--mono)',
+  label: 'var(--label-font, var(--mono))',
 } as const;

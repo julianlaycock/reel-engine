@@ -1,6 +1,7 @@
 import React, {useMemo} from 'react';
 import {AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {CaptionWord} from './video-schema';
+import {COLORS, FONTS} from '@tokens/tokens';
 
 type Line = {
   startMs: number;
@@ -126,7 +127,7 @@ const KeywordCaptions: React.FC<{words: CaptionWord[]}> = ({words}) => {
           background: 'rgba(0,0,0,0.42)',
           backdropFilter: 'blur(6px)',
           WebkitBackdropFilter: 'blur(6px)',
-          fontFamily: 'var(--label-font, var(--mono))',
+          fontFamily: FONTS.label,
           fontWeight: 800,
           fontSize: 78,
           lineHeight: 1,
@@ -138,7 +139,7 @@ const KeywordCaptions: React.FC<{words: CaptionWord[]}> = ({words}) => {
         }}
       >
         {active.words.map((w, i) => (
-          <span key={i} style={{color: i === active!.keyIndex ? 'var(--accent)' : '#ffffff'}}>
+          <span key={i} style={{color: i === active!.keyIndex ? 'var(--accent)' : COLORS.white}}>
             {w}
           </span>
         ))}

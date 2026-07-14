@@ -2,6 +2,7 @@ import React from 'react';
 import {AbsoluteFill, useCurrentFrame, interpolate, Easing} from 'remotion';
 import {easePhysical, interp} from '../motion';
 import {KatexMath} from './KatexMath';
+import {FONTS} from '@tokens/tokens';
 
 // Shared text overlay for the R3F scenes — eyebrow + headline (top) and an
 // optional caption/sub (bottom), in brand type via CSS vars. Accent words get
@@ -65,11 +66,11 @@ export const SpecimenOverlay: React.FC<{
     >
       {figure ? (
         <div style={{marginBottom: 10}}>
-          <div style={{fontFamily: 'var(--display)', fontSize: 200, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 0.95, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums'}}>
+          <div style={{fontFamily: FONTS.display, fontSize: 200, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 0.95, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums'}}>
             {figure}
           </div>
           {figureLabel ? (
-            <div style={{...rise(6), fontFamily: 'var(--mono)', fontSize: 26, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)', marginTop: 8}}>
+            <div style={{...rise(6), fontFamily: FONTS.mono, fontSize: 26, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)', marginTop: 8}}>
               {figureLabel}
             </div>
           ) : null}
@@ -79,7 +80,7 @@ export const SpecimenOverlay: React.FC<{
         <div
           style={{
             ...rise(0),
-            fontFamily: 'var(--mono)',
+            fontFamily: FONTS.mono,
             fontSize: 25,
             fontWeight: 500,
             letterSpacing: '0.26em',
@@ -95,7 +96,7 @@ export const SpecimenOverlay: React.FC<{
         <div
           style={{
             ...rise(0),
-            fontFamily: 'var(--label-font, var(--mono))',
+            fontFamily: FONTS.label,
             fontWeight: 700,
             fontSize: textCenter ? 94 : 78,
             lineHeight: 1.02,
@@ -150,7 +151,7 @@ export const SpecimenOverlay: React.FC<{
             right: 70,
             bottom: 180,
             ...rise(16),
-            fontFamily: 'var(--mono)',
+            fontFamily: FONTS.mono,
             fontSize: 28,
             lineHeight: 1.4,
             color: 'var(--muted)',

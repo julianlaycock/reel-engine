@@ -43,4 +43,29 @@
   --ag-radius: 24px;
   --ag-radius-sm: 20px;
   --ag-radius-pill: 999px;
+  --frame-line: #3a3a38;
+  --vs-divider: #6a6a66;
+  --bars-track: #1a1a1a;
+  --grid-line: #1c1c1c;
+  --paper-white: #ffffff;
+  --term-text: #d8dccf;
+  --term-bright: #f0f2ea;
+  --term-confirm: #f4f6ee;
+  --term-code: #eef1e7;
+  --term-tl-r: #e0655b;
+  --term-tl-y: #e4b95b;
+  --term-tl-g: #7fb77e;
+  --term-no: #c0392b;
+
+  /* canon-derived field/accent colors (americana-tokens.json) */
+  --am-orchid: #C77BC9;
+  --am-aqua: #8FC5C9;
+  --am-cream: #F4EFDF;
+  --am-fog: #E8ECEA;
+  --am-ink: #101010;
+  --am-signal: #1B4FA0;
+  --am-acid: #39FF35;
+  --am-paper: #EFEADD;
+  --am-blue-meta: #BFD9FF;
+  --am-caret-teal: #0E9C86;
 }

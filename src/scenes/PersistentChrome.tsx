@@ -2,7 +2,7 @@ import React from 'react';
 import {AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {ChromeConfig} from '../video-schema';
 import {drawX} from '../animation';
-import {hexLerp} from '../palettes';
+import {hexLerp} from '../color';
 import '../style.css';
 
 // Color-morph support: the chrome sits OUTSIDE the per-scene dark-vars wrapper,

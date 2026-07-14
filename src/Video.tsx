@@ -38,7 +38,7 @@ import {Poisson2D} from './scenes/Poisson2D';
 import {Outro} from './scenes/Outro';
 import {Flow} from './scenes/Flow';
 import {GradeOverlay} from './scenes/GradeOverlay';
-import {hexLerp} from './palettes';
+import {hexLerp} from './color';
 import {ClaudeMascot, type MascotConfig} from './scenes/ClaudeMascot';
 import {HeroWordScene} from './scenes/HeroWordScene';
 import {PosterScene} from './scenes/PosterScene';
@@ -48,7 +48,7 @@ import {TerminalScene} from './scenes/TerminalScene';
 import {GradientBackground} from './scenes/GradientBackground';
 import {Captions} from './Captions';
 import {AsciiFieldScene} from './scenes/AsciiFieldScene';
-import {FIELDS, type FieldTokens} from '@tokens/tokens';
+import {FIELDS, COLORS, CSS_VARS, FONTS, type FieldTokens} from '@tokens/tokens';
 import './fonts';
 import './style.css';
 
@@ -330,7 +330,7 @@ const SceneEnvelope: React.FC<{frames: number; first: boolean; enter?: string; m
     const p = interpolate(frame, [0, inN + 8], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: easeInOut});
     const feather = 22;
     const edge = -feather + p * (100 + feather * 2);
-    const mask = `linear-gradient(112deg, #000 ${edge - feather}%, transparent ${edge}%)`;
+    const mask = `linear-gradient(112deg, ${COLORS.black} ${edge - feather}%, transparent ${edge}%)`;
     const opOut = interpolate(frame, [frames - outN, frames], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
     return <AbsoluteFill style={{opacity: opOut, WebkitMaskImage: mask, maskImage: mask}}>{children}</AbsoluteFill>;
   }
@@ -505,7 +505,7 @@ export const Video: React.FC<VideoProps> = ({video}) => {
         ...(brand.panelDot ? {'--panel-dot': brand.panelDot} : {}),
         ...(brand.panelTitle ? {'--panel-title': brand.panelTitle} : {}),
         ...(brand.panelDoc ? {'--panel-doc': brand.panelDoc} : {}),
-        // Generic escape hatch: brand.vars = {"ag-flag": "#d62828", ...} sets any
+        // Generic escape hatch: brand.vars = {"ag-flag": "<color>", ...} sets any
         // --custom-property without needing a named key here.
         ...((brand as unknown as {vars?: Record<string, string>}).vars
           ? Object.fromEntries(
@@ -585,11 +585,11 @@ export const Video: React.FC<VideoProps> = ({video}) => {
 
   return (
     <AbsoluteFill
-      style={{backgroundColor: brand?.bgBot ?? '#070707', ...brandVars, ...(orb2 ? {['--orb2' as string]: orb2} : {})}}
+      style={{backgroundColor: brand?.bgBot ?? CSS_VARS['--bg-bot'], ...brandVars, ...(orb2 ? {['--orb2' as string]: orb2} : {})}}
       className={[fx?.orbs || fx?.grain ? 'fx-on' : '', fx?.grid ? 'grid-on' : '', (video as {layout?: string}).layout ? 'layout-' + (video as {layout?: string}).layout : '', americana ? 'skin-americana' : ''].filter(Boolean).join(' ') || undefined}
     >
       {fx?.morph && darkRanges.length ? (
-        <MorphCanvas ranges={darkRanges} lightBg={brand?.bgMid ?? '#E7E0D0'} darkBg={darkTokens?.bg ?? '#0F1220'} />
+        <MorphCanvas ranges={darkRanges} lightBg={brand?.bgMid ?? COLORS.photoPaper} darkBg={darkTokens?.bg ?? COLORS.morphDarkBg} />
       ) : null}
       {fx?.grid ? (
         fx?.morph && darkRanges.length ? (
@@ -598,8 +598,8 @@ export const Video: React.FC<VideoProps> = ({video}) => {
           // line color toward a near-bg dark tone with the same dm ramp.
           <MorphGrid
             ranges={darkRanges}
-            light={brand?.hairline ?? '#D3C9B5'}
-            dark={(darkTokens as {grid?: string} | undefined)?.grid ?? '#1A2033'}
+            light={brand?.hairline ?? COLORS.morphLightHairline}
+            dark={(darkTokens as {grid?: string} | undefined)?.grid ?? COLORS.morphDarkGrid}
           />
         ) : (
           <AbsoluteFill className="vk-grid" />
@@ -725,7 +725,7 @@ export const Video: React.FC<VideoProps> = ({video}) => {
       {/* Cockpit layout: a composed source/context strip anchoring the lower frame. */}
       {(video as {layout?: string}).layout === 'cockpit' && (video as {sourceLine?: string}).sourceLine ? (
         <AbsoluteFill style={{pointerEvents: 'none'}}>
-          <div style={{position: 'absolute', left: 64, right: 64, bottom: 172, borderTop: '2px solid var(--hairline)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--mono)', fontSize: 23, letterSpacing: '0.08em', color: 'var(--muted)', textTransform: 'uppercase'}}>
+          <div style={{position: 'absolute', left: 64, right: 64, bottom: 172, borderTop: '2px solid var(--hairline)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', fontFamily: FONTS.mono, fontSize: 23, letterSpacing: '0.08em', color: 'var(--muted)', textTransform: 'uppercase'}}>
             <span>{(video as {sourceLine?: string}).sourceLine}</span><span>vektor.fm</span>
           </div>
         </AbsoluteFill>
@@ -745,8 +745,8 @@ export const Video: React.FC<VideoProps> = ({video}) => {
             fx?.morph && darkRanges.length && darkTokens
               ? {
                   ranges: darkRanges,
-                  light: {fg: brand?.fg ?? '#111', muted: brand?.muted ?? '#777', hairline: brand?.hairline ?? '#ccc'},
-                  dark: {fg: darkTokens.fg ?? '#eee', muted: darkTokens.muted ?? '#999', hairline: darkTokens.hairline ?? '#333'},
+                  light: {fg: brand?.fg ?? COLORS.fallbackLightFg, muted: brand?.muted ?? COLORS.fallbackLightMuted, hairline: brand?.hairline ?? COLORS.fallbackLightHairline},
+                  dark: {fg: darkTokens.fg ?? COLORS.fallbackDarkFg, muted: darkTokens.muted ?? COLORS.fallbackDarkMuted, hairline: darkTokens.hairline ?? COLORS.fallbackDarkHairline},
                 }
               : undefined
           }

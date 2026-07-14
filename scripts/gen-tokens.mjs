@@ -71,8 +71,26 @@ for (const [name, v] of Object.entries(canon.color.accents ?? {})) {
   if (typeof v === 'string') accents[name] = v;
 }
 
+// ── gradient fields from canon (composed to a CSS gradient string) ───────────
+const gradients = {};
+for (const [name, v] of Object.entries(canon.color.fields ?? {})) {
+  if (v && typeof v === 'object' && v.type === 'linear-gradient') {
+    gradients[name] = `linear-gradient(${v.angle},${v.stops.join(',')})`;
+  }
+}
+
 // ── css :root vars from pending (engine style.css defaults, source order) ────
 const cssVars = pending.cssRoot ?? {};
+
+// ── extra named colors + font stacks from pending (step-4 migration ledger) ──
+const colors = pending.colors ?? {};
+const fonts = pending.fonts ?? {};
+
+// canon-derived :root custom properties (--am-*) for style.css consumption.
+const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+const amVars = {};
+for (const [name, f] of Object.entries(fields)) amVars[`--am-${kebab(name)}`] = f.bg;
+for (const [name, v] of Object.entries(accents)) amVars[`--am-${kebab(name)}`] = v;
 
 // ── emitters ─────────────────────────────────────────────────────────────────
 const q = (s) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
@@ -101,12 +119,30 @@ const tokensTs = [
   ...Object.entries(cssVars).map(([name, v]) => `  ${q(name)}: ${q(v)},`),
   '} as const;',
   '',
+  '// Gradient fields from canon color.fields (composed CSS gradient strings).',
+  'export const GRADIENTS = {',
+  ...Object.entries(gradients).map(([name, v]) => `  ${name}: ${q(v)},`),
+  '} as const;',
+  '',
+  '// Extra named colors pending canonization (canon/tokens-pending.json colors).',
+  'export const COLORS = {',
+  ...Object.entries(colors).map(([name, v]) => `  ${name}: ${q(v)},`),
+  '} as const;',
+  '',
+  '// Font stacks / font var references (canon/tokens-pending.json fonts).',
+  'export const FONTS = {',
+  ...Object.entries(fonts).map(([name, v]) => `  ${name}: ${q(v)},`),
+  '} as const;',
+  '',
 ].join('\n');
 
 const tokensCss = [
   `/* ${BANNER} */`,
   ':root {',
   ...Object.entries(cssVars).map(([name, v]) => `  ${name}: ${v};`),
+  '',
+  '  /* canon-derived field/accent colors (americana-tokens.json) */',
+  ...Object.entries(amVars).map(([name, v]) => `  ${name}: ${v};`),
   '}',
   '',
 ].join('\n');
@@ -124,6 +160,15 @@ const tokenNamesTs = [
   'export type CssVarName =',
   union(Object.keys(cssVars)) + ';',
   '',
+  'export type GradientName =',
+  union(Object.keys(gradients)) + ';',
+  '',
+  'export type ColorName =',
+  union(Object.keys(colors)) + ';',
+  '',
+  'export type FontName =',
+  union(Object.keys(fonts)) + ';',
+  '',
   `export const FIELD_NAMES = [${Object.keys(fields).map(q).join(', ')}] as const;`,
   `export const ACCENT_NAMES = [${Object.keys(accents).map(q).join(', ')}] as const;`,
   '',
@@ -136,6 +181,9 @@ const tokenNamesJson =
       fields: Object.keys(fields),
       accents: Object.keys(accents),
       cssVars: Object.keys(cssVars),
+      gradients: Object.keys(gradients),
+      colors: Object.keys(colors),
+      fonts: Object.keys(fonts),
     },
     null,
     2,
