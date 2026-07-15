@@ -211,6 +211,21 @@ const main = async () => {
     const s0 = (video.scenes || [])[0] || {};
     if (fz.requireFirstSceneVo) results.push(R(Boolean(s0.vo && s0.vo.trim()), fz.severity, 'frameZero.vo', s0.vo ? 'VO at frame 0' : 'scene[0] has no VO'));
     if (fz.requireFirstSceneInstant) results.push(R(s0.instant === true, fz.severity, 'frameZero.instant', s0.instant === true ? 'payoff instant' : 'scene[0] not instant (static hold risk)'));
+    // Hook-headline size (canon v1.15.0). GENERIC: only fires when the brand's
+    // canon.yml declares the cap AND scene[0] actually has a headline (templates
+    // without a hook headline are exempt). The frame-0 hook must stay short/punchy
+    // and leave the mascot's vetted slot clear — a long headline both reads weak
+    // and wraps down into the mascot (NO.013). MaxWords is the primary guard (it
+    // catches a single source line that wraps); MaxLines stops short lines stacking.
+    if ((fz.hookHeadlineMaxWords != null || fz.hookHeadlineMaxLines != null) && typeof s0.headline === 'string' && s0.headline.trim()) {
+      const lines = s0.headline.split('\n').filter((l) => l.trim());
+      const words = s0.headline.split(/\s+/).filter(Boolean);
+      const over = [];
+      if (fz.hookHeadlineMaxLines != null && lines.length > fz.hookHeadlineMaxLines) over.push(`${lines.length} lines > ${fz.hookHeadlineMaxLines}`);
+      if (fz.hookHeadlineMaxWords != null && words.length > fz.hookHeadlineMaxWords) over.push(`${words.length} words > ${fz.hookHeadlineMaxWords}`);
+      results.push(R(over.length === 0, fz.severity, 'frameZero.hookHeadline',
+        over.length ? `scene[0].headline too big (${over.join(', ')}) — short/punchy hook that clears the mascot slot` : `hook headline ${lines.length} line(s), ${words.length} word(s) — punchy`));
+    }
   }
 
   // transition grammar (canon v1.12) — every scene's `transition` (when set) must be
