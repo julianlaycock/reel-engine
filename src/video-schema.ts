@@ -367,6 +367,11 @@ export type BrollScene = {
   src: string; // path under public/, e.g. "clips/spain-celebration.mp4"
   startFromMs?: number; // trim into the clip
   muted?: boolean; // default true
+  keepChrome?: boolean; // repo/tool-spotlight: keep the persistent masthead over the full-bleed clip (founder 2026-07-16)
+  fit?: 'cover' | 'bleed'; // 'bleed' = full-bleed clip filling everything below the black masthead band (founder 2026-07-16); default cover
+  clipTop?: number; // fit:'bleed' — px height of the reserved top black masthead band; default 300
+  clipBottom?: number; // fit:'bleed' — px height of a reserved bottom black band (keeps the footer off the footage); default 0
+  focus?: string; // objectPosition for the clip crop (e.g. 'center top', 'left top'); default 'center top' in bleed mode
   eyebrow?: string;
   headline?: string;
   accentWords?: string[];
@@ -622,8 +627,68 @@ export type AsciiFieldScene = {
   field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
+// KINETIC TYPOGRAPHY hook (BlockHook.tsx). The `headline` is split on '\n' into
+// stacked color-blocked bands (ink → orchid → ink…), Tektur 900 uppercase, left-
+// aligned, auto-fit to the hook envelope. `instant: true` composes fully at frame
+// 0 (frame-zero cliff law); else the bands mask-rise in, staggered.
+export type BlockHookScene = {
+  kind: 'block-hook';
+  headline: string; // '\n' between bands
+  durationInFrames: number;
+  template?: string;
+  transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
+  amBeat?: string;
+  marker?: string;
+  beatNo?: string;
+  vo?: string;
+  caption?: string;
+  voTag?: string;
+  variant?: string;
+  mascot?: unknown;
+  instant?: boolean;
+  reveal?: string;
+  kicker?: string;
+  kickerRight?: string;
+  footerRight?: string;
+  eyebrow?: string; // small kicker line rendered above the bands (fills the hook grammar)
+};
+
+// ROSTER STAGGER (RosterStagger.tsx). A numbered list whose rows snap in one-by-
+// one (chevron › + number + label). `atFrame` per item syncs a reveal to the VO.
+export type RosterStaggerItem = {
+  n: string; // the number/index glyph (accent colored)
+  label: string; // Tektur 900 uppercase row label (var(--fg))
+  atFrame?: number; // reveal frame override (default 12 + i*10) — sync to VO
+};
+
+export type RosterStaggerScene = {
+  kind: 'roster-stagger';
+  items: RosterStaggerItem[];
+  ruleTitle?: string; // optional Workbench kicker heading above the rows
+  durationInFrames: number;
+  template?: string;
+  transition?: string;
+  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
+  amBeat?: string;
+  marker?: string;
+  beatNo?: string;
+  vo?: string;
+  caption?: string;
+  voTag?: string;
+  variant?: string;
+  mascot?: unknown;
+  instant?: boolean;
+  reveal?: string;
+  kicker?: string;
+  kickerRight?: string;
+  footerRight?: string;
+};
+
 export type Scene =
   | AsciiFieldScene
+  | BlockHookScene
+  | RosterStaggerScene
   | GenerativeScene
   | Heatmap3DScene
   | BrollScene

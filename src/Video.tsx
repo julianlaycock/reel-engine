@@ -11,6 +11,8 @@ import {ScreenScene} from './scenes/ScreenScene';
 import {CounterScene} from './scenes/CounterScene';
 import {VersusScene} from './scenes/VersusScene';
 import {EditorialScene} from './scenes/EditorialScene';
+import {BlockHook} from './scenes/BlockHook';
+import {RosterStagger} from './scenes/RosterStagger';
 import {NodeGraphScene} from './scenes/NodeGraphScene';
 import {OutroScene} from './scenes/OutroScene';
 import {BarsScene} from './scenes/BarsScene';
@@ -180,6 +182,12 @@ export const SceneBody: React.FC<{scene: Scene; frames: number; hideChrome: bool
   }
   if (scene.kind === 'timeline') {
     return <TimelineScene scene={scene} hideChrome={hideChrome} />;
+  }
+  if (scene.kind === 'block-hook') {
+    return <BlockHook scene={scene} hideChrome={hideChrome} />;
+  }
+  if (scene.kind === 'roster-stagger') {
+    return <RosterStagger scene={scene} hideChrome={hideChrome} />;
   }
   return <AnimatedCard card={scene.card} sceneDuration={frames} hideChrome={hideChrome} />;
 };
@@ -434,8 +442,12 @@ export const Video: React.FC<VideoProps> = ({video: rawVideo}) => {
       const f = sceneFrames(s);
       // Founder 2026-07-06: the black masthead shows on EVERY slide (incl. blue/dark
       // asciiField beats) for consistency — hidden only on full-bleed broll + the end card.
+      // Founder 2026-07-16: a repo/tool-spotlight broll may OPT BACK IN to the masthead
+      // (`keepChrome: true`) so a full-bleed repo-scroll clip keeps the top section
+      // (wordmark + section marker) — the clip runs full-bleed underneath it.
       const isEndcard = Boolean((s as {endCard?: unknown}).endCard);
-      if (s.kind === 'broll' || isEndcard) chromeHideRanges.push([acc, acc + f]);
+      const keepChrome = s.kind === 'broll' && (s as {keepChrome?: boolean}).keepChrome;
+      if ((s.kind === 'broll' || isEndcard) && !keepChrome) chromeHideRanges.push([acc, acc + f]);
       acc += f;
     }
   }
