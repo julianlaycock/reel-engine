@@ -12,6 +12,36 @@ const IS_IMG = /\.(jpg|jpeg|png|webp|avif)$/i;
 export const Broll: React.FC<{scene: BrollSceneType; hideChrome?: boolean}> = ({scene}) => {
   const frame = useCurrentFrame();
   const {fps, durationInFrames} = useVideoConfig();
+
+  // Repo / tool-spotlight mode (founder 2026-07-16): a landscape screen-recording
+  // (e.g. a GitHub repo scrolling) runs FULL-BLEED — it fills the entire frame
+  // edge-to-edge BELOW the top black masthead section (the only reserved band).
+  // The clip cover-fills the region under the masthead (no dead space); pairs
+  // with `keepChrome: true` so the wordmark + section marker sit on the black band.
+  if ((scene as {fit?: string}).fit === 'bleed') {
+    const trimW = scene.startFromMs ? Math.round((scene.startFromMs / 1000) * fps) : undefined;
+    const topPx = (scene as {clipTop?: number}).clipTop ?? 300; // bottom of the black masthead band
+    const bottomPx = (scene as {clipBottom?: number}).clipBottom ?? 0; // reserved bottom black band (holds the footer off the footage)
+    const kbBase = scene.zoom ?? 1.0;
+    const kbTo = scene.kenburns === false ? kbBase : kbBase + 0.05;
+    const kb = interpolate(frame, [0, durationInFrames], [kbBase, kbTo], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+    return (
+      <AbsoluteFill style={{overflow: 'hidden', backgroundColor: COLORS.black}}>
+        {/* full-bleed clip filling everything between the top masthead band and the reserved bottom band */}
+        <div style={{position: 'absolute', top: topPx, left: 0, right: 0, bottom: bottomPx, overflow: 'hidden'}}>
+          <OffthreadVideo
+            src={staticFile(scene.src)}
+            muted={scene.muted ?? true}
+            trimBefore={trimW}
+            style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: (scene as {focus?: string}).focus ?? 'center top', transform: `scale(${kb})`}}
+          />
+        </div>
+        {/* subtle brand tint binds the footage to the palette */}
+        <AbsoluteFill style={{background: 'var(--accent)', opacity: 0.05, mixBlendMode: 'soft-light', pointerEvents: 'none'}} />
+      </AbsoluteFill>
+    );
+  }
+
   // Crop in (default 1.22) so broadcast scoreboards/tickers at the frame edges are
   // pushed out; panY nudges the framing vertically.
   const base = scene.zoom ?? 1.22;
