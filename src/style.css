@@ -2483,59 +2483,6 @@
 .term-note-kin { color: rgba(16, 16, 16, 0.5); position: relative; flex: none; }
 .term-confirm-kin { color: var(--am-ink); font-weight: 500; margin-top: 6px; }
 
-/* ===== block-hook (BlockHook.tsx): kinetic-typography color-blocked hook ===== */
-/* Hook envelope: x150 y360, w780 h560 (within the americana content band). Bands
-   are left-aligned, stacked, and hug their own text (inline-block color blocks). */
-.bh-stage {
-  position: absolute;
-  left: 150px;
-  top: 360px;
-  width: 780px;
-  height: 560px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.bh-fit {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  transform-origin: 0% 50%;
-}
-.bh-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-family: "Workbench", var(--display);
-  font-size: 26px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  margin-bottom: 22px;
-}
-.bh-eyebrow-rule {
-  display: inline-block;
-  width: 64px;
-  height: 6px;
-}
-/* per-band mask so the band rises from behind a clip edge (no reflow) */
-.bh-mask {
-  display: block;
-  overflow: hidden;
-}
-.bh-band {
-  display: inline-block;
-  font-family: "Tektur", var(--display);
-  font-weight: 900;
-  text-transform: uppercase;
-  line-height: 1;
-  letter-spacing: 0;
-  padding: 0.06em 0.16em;
-  white-space: nowrap;
-}
-.bh-chev {
-  margin-right: 0.14em;
-}
-
 /* ===== roster-stagger (RosterStagger.tsx): numbered snap-in list ===== */
 .rs-stage {
   position: absolute;

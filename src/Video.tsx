@@ -11,7 +11,6 @@ import {ScreenScene} from './scenes/ScreenScene';
 import {CounterScene} from './scenes/CounterScene';
 import {VersusScene} from './scenes/VersusScene';
 import {EditorialScene} from './scenes/EditorialScene';
-import {BlockHook} from './scenes/BlockHook';
 import {RosterStagger} from './scenes/RosterStagger';
 import {NodeGraphScene} from './scenes/NodeGraphScene';
 import {OutroScene} from './scenes/OutroScene';
@@ -182,9 +181,6 @@ export const SceneBody: React.FC<{scene: Scene; frames: number; hideChrome: bool
   }
   if (scene.kind === 'timeline') {
     return <TimelineScene scene={scene} hideChrome={hideChrome} />;
-  }
-  if (scene.kind === 'block-hook') {
-    return <BlockHook scene={scene} hideChrome={hideChrome} />;
   }
   if (scene.kind === 'roster-stagger') {
     return <RosterStagger scene={scene} hideChrome={hideChrome} />;
