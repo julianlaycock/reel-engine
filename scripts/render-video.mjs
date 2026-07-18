@@ -276,6 +276,43 @@ const validateVideo = (video) => {
   });
 };
 
+// Pre-flight asset existence. Every file referenced by video.json must exist
+// under public/ BEFORE the expensive bundle + render. A missing musicSrc / voSrc
+// / clip otherwise only surfaces as a mid-render MediaError at frame N (a bad
+// music path once died at frame 5), wasting a whole render cycle. Collect every
+// asset reference, resolve it against the staticFile root (public/), and throw
+// one aggregated, human-readable list if any are missing.
+const checkAssets = async (video, publicDir) => {
+  const refs = [];
+  const add = (val, where) => {
+    if (typeof val === 'string' && val.length) refs.push({rel: val.replace(/^\//, ''), where});
+  };
+  add(video.audio?.voSrc, 'audio.voSrc');
+  add(video.audio?.musicSrc, 'audio.musicSrc');
+  (video.scenes ?? []).forEach((scene, i) => {
+    const at = `scenes[${i}] (${scene.kind})`;
+    add(scene.src, `${at}.src`); // broll / screen clips
+    add(scene.image, `${at}.image`); // quote / photo scenes
+    add(scene.thumb, `${at}.thumb`); // quote receipt thumb
+    add(scene.panel?.image, `${at}.panel.image`); // editorial screenshot
+  });
+
+  const missing = [];
+  for (const {rel, where} of refs) {
+    const abs = path.join(publicDir, rel);
+    try {
+      await fs.access(abs);
+    } catch {
+      missing.push(`${where}: ${rel}  (looked in ${path.relative(root, abs)})`);
+    }
+  }
+  if (missing.length) {
+    throw new Error(
+      `pre-flight asset check failed (${missing.length} missing file(s)) — fix before rendering:\n  - ${missing.join('\n  - ')}`,
+    );
+  }
+};
+
 const main = async () => {
   const args = parseArgs();
 
@@ -296,6 +333,7 @@ const main = async () => {
   }
 
   validateVideo(video);
+  await checkAssets(video, path.join(root, 'public'));
 
   // Regenerate the brand's canon tokens (src/generated/, the '@tokens' alias
   // target) so validation AND the bundle always run from current canon, never
