@@ -1,5 +1,5 @@
 import React from 'react';
-import {AbsoluteFill, Img, interpolate, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
+import {AbsoluteFill, Easing, Img, interpolate, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {BrollScene as BrollSceneType} from '../video-schema';
 import {SpecimenOverlay} from './_overlay';
 import {COLORS} from '@tokens/tokens';
@@ -22,9 +22,26 @@ export const Broll: React.FC<{scene: BrollSceneType; hideChrome?: boolean}> = ({
     const trimW = scene.startFromMs ? Math.round((scene.startFromMs / 1000) * fps) : undefined;
     const topPx = (scene as {clipTop?: number}).clipTop ?? 300; // bottom of the black masthead band
     const bottomPx = (scene as {clipBottom?: number}).clipBottom ?? 0; // reserved bottom black band (holds the footer off the footage)
-    const kbBase = scene.zoom ?? 1.0;
-    const kbTo = scene.kenburns === false ? kbBase : kbBase + 0.05;
-    const kb = interpolate(frame, [0, durationInFrames], [kbBase, kbTo], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+    // Zoom, two modes (the AI editor picks per beat, 2026-07-18):
+    //  · keyframed `zooms` = the dynamic cinematic push-in — eased scale + focal
+    //    point ride the video INSIDE the reserved region (overflow clips it, so the
+    //    footer band stays clean). Use for detail walkthroughs.
+    //  · else the calm single Ken-Burns drift (existing) — overview/ambient beats.
+    const zooms = Array.isArray((scene as {zooms?: {at: number; scale: number; xPct?: number; yPct?: number}[]}).zooms) && (scene as {zooms?: unknown[]}).zooms!.length
+      ? (scene as {zooms: {at: number; scale: number; xPct?: number; yPct?: number}[]}).zooms
+      : null;
+    const ease = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic)} as const;
+    let videoTransform: string;
+    let videoOrigin: string | undefined;
+    if (zooms) {
+      videoTransform = `scale(${interpolate(frame, zooms.map((z) => z.at), zooms.map((z) => z.scale), ease)})`;
+      videoOrigin = `${interpolate(frame, zooms.map((z) => z.at), zooms.map((z) => z.xPct ?? 50), ease)}% ${interpolate(frame, zooms.map((z) => z.at), zooms.map((z) => z.yPct ?? 50), ease)}%`;
+    } else {
+      const kbBase = scene.zoom ?? 1.0;
+      const kbTo = scene.kenburns === false ? kbBase : kbBase + 0.05;
+      videoTransform = `scale(${interpolate(frame, [0, durationInFrames], [kbBase, kbTo], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})})`;
+      videoOrigin = undefined;
+    }
     return (
       <AbsoluteFill style={{overflow: 'hidden', backgroundColor: COLORS.black}}>
         {/* full-bleed clip filling everything between the top masthead band and the reserved bottom band */}
@@ -33,7 +50,7 @@ export const Broll: React.FC<{scene: BrollSceneType; hideChrome?: boolean}> = ({
             src={staticFile(scene.src)}
             muted={scene.muted ?? true}
             trimBefore={trimW}
-            style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: (scene as {focus?: string}).focus ?? 'center top', transform: `scale(${kb})`}}
+            style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: (scene as {focus?: string}).focus ?? 'center top', transform: videoTransform, transformOrigin: videoOrigin}}
           />
         </div>
         {/* subtle brand tint binds the footage to the palette */}
