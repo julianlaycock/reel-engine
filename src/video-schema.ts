@@ -627,33 +627,6 @@ export type AsciiFieldScene = {
   field?: SceneField; // Americana field token name (generated union — no freestyle colors)
 };
 
-// KINETIC TYPOGRAPHY hook (BlockHook.tsx). The `headline` is split on '\n' into
-// stacked color-blocked bands (ink → orchid → ink…), Tektur 900 uppercase, left-
-// aligned, auto-fit to the hook envelope. `instant: true` composes fully at frame
-// 0 (frame-zero cliff law); else the bands mask-rise in, staggered.
-export type BlockHookScene = {
-  kind: 'block-hook';
-  headline: string; // '\n' between bands
-  durationInFrames: number;
-  template?: string;
-  transition?: string;
-  field?: SceneField; // Americana field token name (generated union — no freestyle colors)
-  amBeat?: string;
-  marker?: string;
-  beatNo?: string;
-  vo?: string;
-  caption?: string;
-  voTag?: string;
-  variant?: string;
-  mascot?: unknown;
-  instant?: boolean;
-  reveal?: string;
-  kicker?: string;
-  kickerRight?: string;
-  footerRight?: string;
-  eyebrow?: string; // small kicker line rendered above the bands (fills the hook grammar)
-};
-
 // ROSTER STAGGER (RosterStagger.tsx). A numbered list whose rows snap in one-by-
 // one (chevron › + number + label). `atFrame` per item syncs a reveal to the VO.
 export type RosterStaggerItem = {
@@ -687,7 +660,6 @@ export type RosterStaggerScene = {
 
 export type Scene =
   | AsciiFieldScene
-  | BlockHookScene
   | RosterStaggerScene
   | GenerativeScene
   | Heatmap3DScene
