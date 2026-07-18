@@ -32,6 +32,18 @@ export type CardScene = {
   durationInFrames?: number;
 };
 
+// A targeted cinematic zoom keyframe over a screen recording (SPIKE 2026-07-18).
+// The Screen-Studio effect done in-engine: at frame `at`, the clip is at `scale`
+// focused on (xPct,yPct). Keyframes are interpolated (eased) so the camera pushes
+// into a click region, holds, and pulls back out. Frames are relative to the
+// scene start.
+export type ScreenZoom = {
+  at: number; // keyframe frame within the scene (0 = scene start)
+  scale: number; // 1 = full clip, 1.8 = punched in
+  xPct?: number; // focal point across the clip, 0..100 (default 50)
+  yPct?: number; // focal point down the clip, 0..100 (default 50)
+};
+
 // A real screen recording (Screen Studio / n8n build) embedded full-bleed
 // inside the brand frame — this is where trust comes from, per the master plan.
 export type ScreenScene = {
@@ -44,6 +56,19 @@ export type ScreenScene = {
   label?: string; // optional lower-third caption over the clip
   startFromMs?: number; // trim: where in the source clip to start
   muted?: boolean; // default true — VO carries the audio
+  // Targeted cinematic zoom keyframes. When set, replaces the default gentle
+  // Ken Burns with an eased push-in/pull-out focused on click regions.
+  zooms?: ScreenZoom[];
+  // Americana skin fields (2026-07-18). When the video is skin:americana with a
+  // chrome block, the global PersistentChrome supplies the masthead/footer and
+  // the scene's own Caelith bars auto-hide (hideChrome). These let the screen
+  // beat carry the americana furniture like any other americana scene: `field`
+  // is the mat the framed recording sits on; marker/beatNo/caption feed the
+  // masthead section marker, footer folio, and receipts line (read by amBeats).
+  field?: SceneField; // americana field behind/around the recording
+  marker?: string; // top-right section marker
+  beatNo?: string; // footer progress (e.g. "04")
+  caption?: string; // receipts line at y1300
 };
 
 // A big animated number that rolls up to its value — for data beats that should
