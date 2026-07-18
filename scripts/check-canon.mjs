@@ -134,6 +134,42 @@ const main = async () => {
     const hasBlock = video.chrome && typeof video.chrome === 'object' && Object.keys(video.chrome).length > 0;
     const missing = (c.requireFields || []).filter((k) => !video.chrome || !video.chrome[k]);
     results.push(R(hasBlock && missing.length === 0, c.severity, 'chrome', hasBlock ? (missing.length ? `missing fields: ${missing.join(', ')}` : 'present') : 'no chrome block'));
+
+    // Edition-number agreement (2026-07-18): the edition number (NO.<n>) is shown
+    // in more than one on-screen furniture field — the every-slide `footerLeft`
+    // and the end-card `issue` line (nested in the outro scene). A stale renumber
+    // that updates one but not the other ships a video whose footer contradicts
+    // its end card — a NO.014 footer under a NO.016 masthead slipped past every
+    // other gate once (caught only by eye, after a wasted render). Collect every
+    // NO.<n> across the masthead/footer/end-card furniture fields (wherever
+    // nested) and require them all to name the same edition.
+    const editionNo = (s) => {
+      const m = typeof s === 'string' ? s.match(/no\.?\s*0*(\d+)/i) : null;
+      return m ? m[1] : null;
+    };
+    const EDITION_FURNITURE = new Set(['issue', 'footerLeft', 'footerRight', 'topLeft', 'topRight']);
+    const editions = new Map(); // "16" -> ["chrome.footerLeft", "scenes.5.endCard.issue"]
+    const collect = (node, pathStr) => {
+      if (node && typeof node === 'object') {
+        for (const k of Object.keys(node)) collect(node[k], pathStr ? `${pathStr}.${k}` : k);
+      } else if (typeof node === 'string' && EDITION_FURNITURE.has(pathStr.split('.').pop())) {
+        const n = editionNo(node);
+        if (n) {
+          if (!editions.has(n)) editions.set(n, []);
+          editions.get(n).push(pathStr);
+        }
+      }
+    };
+    collect(video, '');
+    if (editions.size >= 1) {
+      const detail = [...editions.entries()]
+        .map(([n, paths]) => `NO. ${n} (${paths.join(', ')})`)
+        .join('  vs  ');
+      results.push(R(editions.size === 1, c.severity, 'chrome.editionAgreement',
+        editions.size === 1
+          ? `all edition labels agree — ${detail}`
+          : `edition numbers DISAGREE across on-screen furniture — ${detail} — renumber all to match`));
+    }
   }
 
   // audio / VO
