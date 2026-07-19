@@ -507,28 +507,19 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       solid.push({x: c.x, y: c.y, h: 1});
       px.push(<rect key={`k${ci}`} x={c.x} y={c.y} width={1} height={1} fill={CORAL} />);
     });
-    // The ball itself — a chunky 5x5 pixel CIRCLE (corners cut, classic
-    // truncated-icosahedron dark patch), ink-outlined via the solid pass,
-    // ~half the mascot's height — unmistakably a football in its sprite grammar.
-    const ballX = -5.4 + kickBall.bx;
-    const ballY = BODY.length - 3.6 + kickBall.by;
-    const BALL5 = [
-      '.XXX.',
-      'XXXXX',
-      'XXPXX', // P = the dark pentagon patch
-      'XXXXX',
-      '.XXX.',
-    ];
-    BALL5.forEach((row, ry) => {
-      row.split('').forEach((ch, rx) => {
-        if (ch === '.') return;
-        const f = ch === 'P' || (ry === 1 && rx === 2) ? INK : COLORS.white;
-        solid.push({x: ballX + rx, y: ballY + ry, h: 1});
-        px.push(
-          <rect key={`kb${ry}-${rx}`} x={ballX + rx} y={ballY + ry} width={1} height={1} fill={f} />,
-        );
-      });
-    });
+    // The ball itself — a TRUE circle (crisp-edged, ink outline like the
+    // mascot's own outline pass, single centered dark patch), ~half the
+    // mascot's height. Circle primitive instead of grid cells: the sprite
+    // grid's cells are non-square, so a cell-drawn "circle" renders as an
+    // oval blob (founder catch, NO.017).
+    const ballCX = -3.2 + kickBall.bx;
+    const ballCY = BODY.length - 1.0 + kickBall.by;
+    const ballR = 2.1;
+    px.push(
+      <circle key="kb-out" cx={ballCX} cy={ballCY} r={ballR + 0.45} fill={INK} />,
+      <circle key="kb-body" cx={ballCX} cy={ballCY} r={ballR} fill={COLORS.white} />,
+      <circle key="kb-patch" cx={ballCX} cy={ballCY} r={0.75} fill={INK} />,
+    );
   }
   // Waving arm: two pixels off the right shoulder, hard-stepping between two
   // positions every 8 frames (pixel-art cadence, no easing).
