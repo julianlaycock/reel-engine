@@ -126,6 +126,7 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
   let waving = false;
   let bubbleOn = false;
   let kickStep: 'stance' | 'wind' | 'swing' | 'through' | null = null; // kicking-leg phase (drawn below)
+  let kickBall: {bx: number; by: number} = {bx: 0, by: 0}; // pixel ball offset from its rest spot at the strike foot
   if (t < 0 && pose !== 'walk' && pose !== 'roam' && pose !== 'dash') return null;
   const fromX = -((xPct / 100) * 1080 + size); // off-screen left
   if (pose === 'walk') {
@@ -272,6 +273,19 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
         sy *= 0.88; // landing squash-and-stretch
         sx *= 1.09;
       }
+    }
+    // The pixel ball: rests at the strike foot, gets PUNTED up-left through the
+    // follow-through (hard-stepped, wave-arm cadence), back at the foot for the
+    // next stance (cartoon reset). Drawn with the kicking leg below.
+    const flightStart = KICK_WIND + KICK_SWING;
+    if (local >= flightStart && local < flightStart + KICK_FOLLOW) {
+      const fp = (local - flightStart) / KICK_FOLLOW;
+      const hop = [
+        {bx: -1.8, by: -1.6},
+        {bx: -3.6, by: -2.8},
+        {bx: -5.2, by: -3.6},
+      ];
+      kickBall = hop[Math.min(Math.floor(fp * 3), 2)];
     }
   }
 
@@ -492,6 +506,20 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
     cells.forEach((c, ci) => {
       solid.push({x: c.x, y: c.y, h: 1});
       px.push(<rect key={`k${ci}`} x={c.x} y={c.y} width={1} height={1} fill={CORAL} />);
+    });
+    // The ball itself — 2x2 pixel-art (white + one ink patch cell, ink-outlined
+    // via the solid pass), matching the mascot's sprite grammar.
+    const ballX = -2.8 + kickBall.bx;
+    const ballY = BODY.length - 0.2 + kickBall.by;
+    const ballCells = [
+      {x: ballX, y: ballY, f: COLORS.white},
+      {x: ballX + 1, y: ballY, f: COLORS.white},
+      {x: ballX, y: ballY + 1, f: COLORS.white},
+      {x: ballX + 1, y: ballY + 1, f: INK},
+    ];
+    ballCells.forEach((c, ci) => {
+      solid.push({x: c.x, y: c.y, h: 1});
+      px.push(<rect key={`kb${ci}`} x={c.x} y={c.y} width={1} height={1} fill={c.f} />);
     });
   }
   // Waving arm: two pixels off the right shoulder, hard-stepping between two
