@@ -512,13 +512,12 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
     // mascot's height. Circle primitive instead of grid cells: the sprite
     // grid's cells are non-square, so a cell-drawn "circle" renders as an
     // oval blob (founder catch, NO.017).
-    const ballCX = -3.2 + kickBall.bx;
-    const ballCY = BODY.length - 1.0 + kickBall.by;
-    const ballR = 2.1;
+    const ballCX = -1.6 + kickBall.bx;
+    const ballCY = BODY.length - 0.4 + kickBall.by;
+    const ballR = 1.7;
     px.push(
-      <circle key="kb-out" cx={ballCX} cy={ballCY} r={ballR + 0.45} fill={INK} />,
+      <circle key="kb-out" cx={ballCX} cy={ballCY} r={ballR + 0.4} fill={INK} />,
       <circle key="kb-body" cx={ballCX} cy={ballCY} r={ballR} fill={COLORS.white} />,
-      <circle key="kb-patch" cx={ballCX} cy={ballCY} r={0.75} fill={INK} />,
     );
   }
   // Waving arm: two pixels off the right shoulder, hard-stepping between two
