@@ -507,18 +507,9 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       solid.push({x: c.x, y: c.y, h: 1});
       px.push(<rect key={`k${ci}`} x={c.x} y={c.y} width={1} height={1} fill={CORAL} />);
     });
-    // The ball itself — a TRUE circle (crisp-edged, ink outline like the
-    // mascot's own outline pass, single centered dark patch), ~half the
-    // mascot's height. Circle primitive instead of grid cells: the sprite
-    // grid's cells are non-square, so a cell-drawn "circle" renders as an
-    // oval blob (founder catch, NO.017).
-    const ballCX = -1.6 + kickBall.bx;
-    const ballCY = BODY.length - 0.4 + kickBall.by;
-    const ballR = 1.7;
-    px.push(
-      <circle key="kb-out" cx={ballCX} cy={ballCY} r={ballR + 0.4} fill={INK} />,
-      <circle key="kb-body" cx={ballCX} cy={ballCY} r={ballR} fill={COLORS.white} />,
-    );
+    // (The ball itself renders on a separate untransformed layer — see
+    // ballLayer at the return — so the body's squash/rot/lunge never deforms
+    // it or bends its flight path. Founder catch, NO.017.)
   }
   // Waving arm: two pixels off the right shoulder, hard-stepping between two
   // positions every 8 frames (pixel-art cadence, no easing).
@@ -607,7 +598,32 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
 
   const bubbleW = size * 0.62;
   const bubbleH = size * 0.34;
+  // The kick ball: TRUE circle on its own untransformed layer at the same
+  // anchor — immune to the body's rot/scale/lunge, so it stays round and its
+  // punt path (up-left) is exactly the authored offsets.
+  const ballLayer = kickStep ? (
+    <div
+      style={{
+        position: 'absolute',
+        left: `${xPct}%`,
+        top: `${yPct}%`,
+        width: size,
+        height,
+        marginLeft: -size / 2,
+        marginTop: -height / 2,
+        pointerEvents: 'none',
+        opacity: Math.min(1, enter * 1.4),
+      }}
+    >
+      <svg width="100%" height="100%" viewBox={`0 0 ${COLS} ${ROWS}`} shapeRendering="crispEdges" style={{overflow: 'visible'}}>
+        <circle cx={-1.6 + kickBall.bx} cy={BODY.length - 0.4 + kickBall.by} r={2.1} fill={INK} />
+        <circle cx={-1.6 + kickBall.bx} cy={BODY.length - 0.4 + kickBall.by} r={1.7} fill={COLORS.white} />
+      </svg>
+    </div>
+  ) : null;
   return (
+    <>
+    {ballLayer}
     <div
       style={{
         position: 'absolute',
@@ -666,5 +682,6 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
         {px}
       </svg>
     </div>
+    </>
   );
 };
