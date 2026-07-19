@@ -42,16 +42,20 @@ export const Broll: React.FC<{scene: BrollSceneType; hideChrome?: boolean}> = ({
       videoTransform = `scale(${interpolate(frame, [0, durationInFrames], [kbBase, kbTo], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})})`;
       videoOrigin = undefined;
     }
+    // Full-bleed also accepts a STATIC image (2026-07-19) — a screenshot fills the
+    // frame edge-to-edge like a recording, with the same zoom pushing into the
+    // readable part (e.g. a repo's star count). Same style so images and clips
+    // are interchangeable in fit:'bleed'.
+    const mediaStyle = {width: '100%', height: '100%', objectFit: 'cover' as const, objectPosition: (scene as {focus?: string}).focus ?? 'center top', transform: videoTransform, transformOrigin: videoOrigin};
     return (
       <AbsoluteFill style={{overflow: 'hidden', backgroundColor: COLORS.black}}>
-        {/* full-bleed clip filling everything between the top masthead band and the reserved bottom band */}
+        {/* full-bleed media filling everything between the top masthead band and the reserved bottom band */}
         <div style={{position: 'absolute', top: topPx, left: 0, right: 0, bottom: bottomPx, overflow: 'hidden'}}>
-          <OffthreadVideo
-            src={staticFile(scene.src)}
-            muted={scene.muted ?? true}
-            trimBefore={trimW}
-            style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: (scene as {focus?: string}).focus ?? 'center top', transform: videoTransform, transformOrigin: videoOrigin}}
-          />
+          {IS_IMG.test(scene.src) ? (
+            <Img src={staticFile(scene.src)} style={mediaStyle} />
+          ) : (
+            <OffthreadVideo src={staticFile(scene.src)} muted={scene.muted ?? true} trimBefore={trimW} style={mediaStyle} />
+          )}
         </div>
         {/* subtle brand tint binds the footage to the palette */}
         <AbsoluteFill style={{background: 'var(--accent)', opacity: 0.05, mixBlendMode: 'soft-light', pointerEvents: 'none'}} />
