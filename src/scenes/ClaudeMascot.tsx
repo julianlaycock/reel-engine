@@ -125,7 +125,7 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
   let walking = false;
   let waving = false;
   let bubbleOn = false;
-  let kickStep: 'wind' | 'swing' | 'through' | null = null; // kicking-leg phase (drawn below)
+  let kickStep: 'stance' | 'wind' | 'swing' | 'through' | null = null; // kicking-leg phase (drawn below)
   if (t < 0 && pose !== 'walk' && pose !== 'roam' && pose !== 'dash') return null;
   const fromX = -((xPct / 100) * 1080 + size); // off-screen left
   if (pose === 'walk') {
@@ -223,41 +223,53 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       rot = Math.sin(local / 4) * 3;
     }
   } else if (pose === 'kick') {
-    // KICK (founder pick, 2026-07-18, NO.017 end card): plant → wind-up
-    // (back-lean, leg cocked behind) → fast swing THROUGH toward the LEFT
-    // (the end-card ball sits left of the sprite) → little recoil hop +
-    // landing squash on follow-through, then a beat of idle and repeat.
-    // Aim the eyes at the ball with `lookAt` from the caller.
+    // KICK (founder pick, 2026-07-18, NO.017 end card; exaggerated 2026-07-19 —
+    // v1 read as a symmetric wobble at 100px): footballer stance → wind-up
+    // (strong back-lean, leg cocked far behind) → fast swing THROUGH toward the
+    // LEFT-AND-SLIGHTLY-UP (the end-card ball sits up-left) with a forward
+    // LUNGE of the whole body → hop BACK on follow-through with the leg held
+    // high → asymmetric stance pause, repeat every ~1.5s. The silhouette is
+    // NEVER bilaterally symmetric: the kicking leg holds a forward-foot stance
+    // (plus a slight lean) even between kicks. Aim the eyes at the ball with
+    // `lookAt` from the caller.
     sx = sy = enter;
     const KICK_WIND = 12;
-    const KICK_SWING = 5;
-    const KICK_FOLLOW = 16;
-    const kickEvery = 84; // one kick then a natural pause before the next
-    const settleF = 18; // land the pop-in before the first kick
+    const KICK_SWING = 6;
+    const KICK_FOLLOW = 12;
+    const kickEvery = 46; // wind 12 + swing 6 + follow 12 + stance pause 16 (~1.5s at 30fps)
+    const settleF = 12; // land the pop-in (in stance) before the first kick
     const local = t > settleF ? (t - settleF) % kickEvery : kickEvery;
+    kickStep = 'stance'; // default between kicks — foot-forward, never symmetric
+    rot = -3; // stance lean toward the ball
     if (local < KICK_WIND) {
-      // wind-up: weight onto the plant leg, lean back AWAY from the ball
+      // wind-up: crouch, weight onto the plant leg, strong back-lean AWAY from
+      // the ball, kicking leg cocked far behind — unmistakably one-sided
       const p = local / KICK_WIND;
-      rot = 9 * p;
-      tx += p * unit * 0.5;
+      rot = -3 + 17 * p; // → +14
+      tx += p * unit * 0.9;
+      sy *= 1 - 0.07 * p; // load the kick
       kickStep = 'wind';
     } else if (local < KICK_WIND + KICK_SWING) {
-      // swing: snap INTO the kick — lean flips forward, leg sweeps through
+      // swing: snap INTO the kick — lean whips forward past vertical and the
+      // whole body LUNGES left toward the ball while the leg sweeps through
       const p = (local - KICK_WIND) / KICK_SWING;
-      rot = 9 - 22 * p;
-      tx += (0.5 - 1.4 * p) * unit;
+      rot = 14 - 32 * p; // → -18
+      tx += (0.9 - 3.1 * p) * unit; // forward lunge (~2.2 cells left at contact)
+      sy *= 1.05; // slight stretch through the strike
+      sx *= 0.97;
       kickStep = 'swing';
     } else if (local < KICK_WIND + KICK_SWING + KICK_FOLLOW) {
-      // follow-through: leg held high, small recoil hop, landing squash
+      // follow-through: hop BACK off the lunge, leg held high up-left, then
+      // landing squash into the stance
       const p = (local - KICK_WIND - KICK_SWING) / KICK_FOLLOW;
-      rot = -13 * (1 - p);
-      tx += -0.9 * unit * (1 - p);
-      if (p < 0.6) {
-        ty -= Math.sin((p / 0.6) * Math.PI) * unit * 1.3; // recoil hop
+      rot = -18 + 15 * p; // recover toward the stance lean
+      tx += (-2.2 + 2.2 * p) * unit; // hop back to the stance mark
+      if (p < 0.55) {
+        ty -= Math.sin((p / 0.55) * Math.PI) * unit * 1.6; // recoil hop
         kickStep = 'through';
       } else {
-        sy *= 0.9; // landing squash-and-stretch
-        sx *= 1.07;
+        sy *= 0.88; // landing squash-and-stretch
+        sx *= 1.09;
       }
     }
   }
@@ -446,26 +458,36 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       />,
     );
   });
-  // Kicking leg: two pixel cells hard-stepping through three positions (no
-  // easing — the wave-arm sprite cadence): cocked behind on the wind-up,
-  // sweeping low through the ball line on the swing, held high toward the
-  // upper-LEFT (where the ball flies) on the follow-through.
+  // Kicking leg: pixel cells hard-stepping through four positions (no easing —
+  // the wave-arm sprite cadence). Every position is one-sided so the silhouette
+  // never reads bilaterally symmetric: foot-forward stance between kicks,
+  // cocked far behind on the wind-up, a LONG extension toward the ball
+  // (left-and-slightly-up) on the swing, held high up-left on follow-through.
   if (kickStep) {
     const cells =
-      kickStep === 'wind'
+      kickStep === 'stance'
         ? [
-            {x: 3.4, y: BODY.length + 0.8},
-            {x: 4.3, y: BODY.length + 0.2}, // foot raised behind
+            {x: 1.1, y: BODY.length + 0.1}, // leg ahead of its column…
+            {x: 0.3, y: BODY.length + 0.9}, // …foot planted forward-left
           ]
-        : kickStep === 'swing'
+        : kickStep === 'wind'
           ? [
-              {x: 1.0, y: BODY.length + 0.8},
-              {x: -0.1, y: BODY.length + 0.8}, // extended low-left, at the ball line
+              {x: 3.5, y: BODY.length + 0.9},
+              {x: 4.5, y: BODY.length + 0.4},
+              {x: 5.4, y: BODY.length - 0.1}, // shin rising far behind
             ]
-          : [
-              {x: 0.5, y: BODY.length - 0.2},
-              {x: -0.6, y: BODY.length - 0.9}, // leg high toward the upper-left
-            ];
+          : kickStep === 'swing'
+            ? [
+                {x: 1.0, y: BODY.length + 0.3},
+                {x: 0.0, y: BODY.length - 0.1},
+                {x: -1.0, y: BODY.length - 0.5},
+                {x: -1.9, y: BODY.length - 0.9}, // long strike, left-and-slightly-up
+              ]
+            : [
+                {x: 0.9, y: BODY.length - 0.7},
+                {x: 0.0, y: BODY.length - 1.5},
+                {x: -0.9, y: BODY.length - 2.2}, // leg held high toward the upper-left
+              ];
     cells.forEach((c, ci) => {
       solid.push({x: c.x, y: c.y, h: 1});
       px.push(<rect key={`k${ci}`} x={c.x} y={c.y} width={1} height={1} fill={CORAL} />);
