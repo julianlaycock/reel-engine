@@ -22,7 +22,7 @@ import {ACCENTS, COLORS, FIELDS, FONTS} from '@tokens/tokens';
 // celebrate / gasp — 3-phase anticipate → action → settle, spring-driven,
 // with lagged ears/legs for follow-through). All frame-deterministic.
 export type MascotConfig = {
-  pose?: 'walk' | 'peek' | 'pop' | 'hop' | 'wave' | 'roam' | 'dash';
+  pose?: 'walk' | 'peek' | 'pop' | 'hop' | 'wave' | 'roam' | 'dash' | 'kick';
   xPct?: number; // sprite center, 0..100 of stage width
   yPct?: number; // sprite center, 0..100 of stage height
   size?: number; // sprite width in px (height follows the grid aspect)
@@ -125,6 +125,7 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
   let walking = false;
   let waving = false;
   let bubbleOn = false;
+  let kickStep: 'wind' | 'swing' | 'through' | null = null; // kicking-leg phase (drawn below)
   if (t < 0 && pose !== 'walk' && pose !== 'roam' && pose !== 'dash') return null;
   const fromX = -((xPct / 100) * 1080 + size); // off-screen left
   if (pose === 'walk') {
@@ -220,6 +221,44 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       }
       waving = true;
       rot = Math.sin(local / 4) * 3;
+    }
+  } else if (pose === 'kick') {
+    // KICK (founder pick, 2026-07-18, NO.017 end card): plant → wind-up
+    // (back-lean, leg cocked behind) → fast swing THROUGH toward the LEFT
+    // (the end-card ball sits left of the sprite) → little recoil hop +
+    // landing squash on follow-through, then a beat of idle and repeat.
+    // Aim the eyes at the ball with `lookAt` from the caller.
+    sx = sy = enter;
+    const KICK_WIND = 12;
+    const KICK_SWING = 5;
+    const KICK_FOLLOW = 16;
+    const kickEvery = 84; // one kick then a natural pause before the next
+    const settleF = 18; // land the pop-in before the first kick
+    const local = t > settleF ? (t - settleF) % kickEvery : kickEvery;
+    if (local < KICK_WIND) {
+      // wind-up: weight onto the plant leg, lean back AWAY from the ball
+      const p = local / KICK_WIND;
+      rot = 9 * p;
+      tx += p * unit * 0.5;
+      kickStep = 'wind';
+    } else if (local < KICK_WIND + KICK_SWING) {
+      // swing: snap INTO the kick — lean flips forward, leg sweeps through
+      const p = (local - KICK_WIND) / KICK_SWING;
+      rot = 9 - 22 * p;
+      tx += (0.5 - 1.4 * p) * unit;
+      kickStep = 'swing';
+    } else if (local < KICK_WIND + KICK_SWING + KICK_FOLLOW) {
+      // follow-through: leg held high, small recoil hop, landing squash
+      const p = (local - KICK_WIND - KICK_SWING) / KICK_FOLLOW;
+      rot = -13 * (1 - p);
+      tx += -0.9 * unit * (1 - p);
+      if (p < 0.6) {
+        ty -= Math.sin((p / 0.6) * Math.PI) * unit * 1.3; // recoil hop
+        kickStep = 'through';
+      } else {
+        sy *= 0.9; // landing squash-and-stretch
+        sx *= 1.07;
+      }
     }
   }
 
@@ -392,6 +431,7 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
     }
   });
   LEG_COLS.forEach((x, i) => {
+    if (kickStep && i === 0) return; // the kicking (left) leg is drawn separately below
     const up = walking && i % 2 === legPhase ? 0.45 : 0;
     const ly = BODY.length - up + lag; // legs follow through on the lag
     solid.push({x, y: ly, h: LEG_ROWS});
@@ -406,6 +446,31 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       />,
     );
   });
+  // Kicking leg: two pixel cells hard-stepping through three positions (no
+  // easing — the wave-arm sprite cadence): cocked behind on the wind-up,
+  // sweeping low through the ball line on the swing, held high toward the
+  // upper-LEFT (where the ball flies) on the follow-through.
+  if (kickStep) {
+    const cells =
+      kickStep === 'wind'
+        ? [
+            {x: 3.4, y: BODY.length + 0.8},
+            {x: 4.3, y: BODY.length + 0.2}, // foot raised behind
+          ]
+        : kickStep === 'swing'
+          ? [
+              {x: 1.0, y: BODY.length + 0.8},
+              {x: -0.1, y: BODY.length + 0.8}, // extended low-left, at the ball line
+            ]
+          : [
+              {x: 0.5, y: BODY.length - 0.2},
+              {x: -0.6, y: BODY.length - 0.9}, // leg high toward the upper-left
+            ];
+    cells.forEach((c, ci) => {
+      solid.push({x: c.x, y: c.y, h: 1});
+      px.push(<rect key={`k${ci}`} x={c.x} y={c.y} width={1} height={1} fill={CORAL} />);
+    });
+  }
   // Waving arm: two pixels off the right shoulder, hard-stepping between two
   // positions every 8 frames (pixel-art cadence, no easing).
   if (waving && !armsUp) {
