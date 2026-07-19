@@ -281,9 +281,9 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
     if (local >= flightStart && local < flightStart + KICK_FOLLOW) {
       const fp = (local - flightStart) / KICK_FOLLOW;
       const hop = [
-        {bx: -1.8, by: -1.6},
-        {bx: -3.6, by: -2.8},
-        {bx: -5.2, by: -3.6},
+        {bx: -2.2, by: -2.0},
+        {bx: -4.4, by: -3.4},
+        {bx: -6.4, by: -4.4},
       ];
       kickBall = hop[Math.min(Math.floor(fp * 3), 2)];
     }
@@ -507,19 +507,27 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       solid.push({x: c.x, y: c.y, h: 1});
       px.push(<rect key={`k${ci}`} x={c.x} y={c.y} width={1} height={1} fill={CORAL} />);
     });
-    // The ball itself — 2x2 pixel-art (white + one ink patch cell, ink-outlined
-    // via the solid pass), matching the mascot's sprite grammar.
-    const ballX = -2.8 + kickBall.bx;
-    const ballY = BODY.length - 0.2 + kickBall.by;
-    const ballCells = [
-      {x: ballX, y: ballY, f: COLORS.white},
-      {x: ballX + 1, y: ballY, f: COLORS.white},
-      {x: ballX, y: ballY + 1, f: COLORS.white},
-      {x: ballX + 1, y: ballY + 1, f: INK},
+    // The ball itself — a chunky 5x5 pixel CIRCLE (corners cut, classic
+    // truncated-icosahedron dark patch), ink-outlined via the solid pass,
+    // ~half the mascot's height — unmistakably a football in its sprite grammar.
+    const ballX = -5.4 + kickBall.bx;
+    const ballY = BODY.length - 3.6 + kickBall.by;
+    const BALL5 = [
+      '.XXX.',
+      'XXXXX',
+      'XXPXX', // P = the dark pentagon patch
+      'XXXXX',
+      '.XXX.',
     ];
-    ballCells.forEach((c, ci) => {
-      solid.push({x: c.x, y: c.y, h: 1});
-      px.push(<rect key={`kb${ci}`} x={c.x} y={c.y} width={1} height={1} fill={c.f} />);
+    BALL5.forEach((row, ry) => {
+      row.split('').forEach((ch, rx) => {
+        if (ch === '.') return;
+        const f = ch === 'P' || (ry === 1 && rx === 2) ? INK : COLORS.white;
+        solid.push({x: ballX + rx, y: ballY + ry, h: 1});
+        px.push(
+          <rect key={`kb${ry}-${rx}`} x={ballX + rx} y={ballY + ry} width={1} height={1} fill={f} />,
+        );
+      });
     });
   }
   // Waving arm: two pixels off the right shoulder, hard-stepping between two
