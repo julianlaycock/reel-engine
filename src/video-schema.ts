@@ -56,19 +56,6 @@ export type ScreenScene = {
   label?: string; // optional lower-third caption over the clip
   startFromMs?: number; // trim: where in the source clip to start
   muted?: boolean; // default true — VO carries the audio
-  // Targeted cinematic zoom keyframes. When set, replaces the default gentle
-  // Ken Burns with an eased push-in/pull-out focused on click regions.
-  zooms?: ScreenZoom[];
-  // Americana skin fields (2026-07-18). When the video is skin:americana with a
-  // chrome block, the global PersistentChrome supplies the masthead/footer and
-  // the scene's own Caelith bars auto-hide (hideChrome). These let the screen
-  // beat carry the americana furniture like any other americana scene: `field`
-  // is the mat the framed recording sits on; marker/beatNo/caption feed the
-  // masthead section marker, footer folio, and receipts line (read by amBeats).
-  field?: SceneField; // americana field behind/around the recording
-  marker?: string; // top-right section marker
-  beatNo?: string; // footer progress (e.g. "04")
-  caption?: string; // receipts line at y1300
 };
 
 // A big animated number that rolls up to its value — for data beats that should
@@ -411,6 +398,15 @@ export type BrollScene = {
   kicker?: string;
   kickerRight?: string;
   footerRight?: string;
+  marker?: string; // americana section marker (read by amBeats)
+  beatNo?: string; // americana footer folio progress
+  caption?: string; // americana receipts line
+  // Keyframed cinematic zoom (2026-07-18): the dynamic AI push-in for screencast
+  // walkthroughs, over fit:'bleed'. When set, replaces the single Ken-Burns
+  // `zoom` drift. Reuses the ScreenZoom keyframe shape. The AI editor
+  // (auto-zoom.mjs) decides per beat whether to emit these (detail walkthrough)
+  // or leave them off (calm overview).
+  zooms?: ScreenZoom[];
 };
 
 // Broadcast win-probability panel (glassmorphism): animated bars + count-up
