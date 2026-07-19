@@ -253,8 +253,9 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       // swing: snap INTO the kick — lean whips forward past vertical and the
       // whole body LUNGES left toward the ball while the leg sweeps through
       const p = (local - KICK_WIND) / KICK_SWING;
-      rot = 14 - 32 * p; // → -18
-      tx += (0.9 - 3.1 * p) * unit; // forward lunge (~2.2 cells left at contact)
+      rot = 14 - 40 * p; // → -26 (steep tilt angles the strike leg up toward the ball)
+      tx += (0.9 - 5.3 * p) * unit; // forward lunge (~4.4 cells left at contact)
+      ty -= p * unit * 1.6; // airborne rise into contact — the strike is a dive at the ball
       sy *= 1.05; // slight stretch through the strike
       sx *= 0.97;
       kickStep = 'swing';
@@ -262,10 +263,10 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       // follow-through: hop BACK off the lunge, leg held high up-left, then
       // landing squash into the stance
       const p = (local - KICK_WIND - KICK_SWING) / KICK_FOLLOW;
-      rot = -18 + 15 * p; // recover toward the stance lean
-      tx += (-2.2 + 2.2 * p) * unit; // hop back to the stance mark
+      rot = -26 + 23 * p; // recover toward the stance lean
+      tx += (-4.4 + 4.4 * p) * unit; // hop back to the stance mark
+      ty -= (1 - p) * unit * 1.6; // ease down from the airborne contact
       if (p < 0.55) {
-        ty -= Math.sin((p / 0.55) * Math.PI) * unit * 1.6; // recoil hop
         kickStep = 'through';
       } else {
         sy *= 0.88; // landing squash-and-stretch
