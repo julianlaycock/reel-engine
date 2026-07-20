@@ -277,6 +277,17 @@ const DecodeWordmark: React.FC<{text: string; frame: number}> = ({text, frame}) 
           easing: Easing.out(Easing.quad),
         });
         const blur = interpolate(frame, [noiseEnd, resolveEnd], [5, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+        // Once resolved, collapse to the SAME single-span structure fade settles
+        // into — the nested double-span laid out a few px wider (identical-
+        // static-state invariant; caught by the endcard-lockup golden on NO.019,
+        // 2026-07-20, same class as the registration fix).
+        if (frame >= resolveEnd) {
+          return (
+            <span key={i} style={{display: 'inline-block'}}>
+              {ch}
+            </span>
+          );
+        }
         return (
           <span key={i} style={{position: 'relative', display: 'inline-block'}}>
             <span style={{display: 'inline-block', opacity: realOp, filter: blur > 0.05 && realOp > 0 ? `blur(${blur.toFixed(1)}px)` : undefined}}>
