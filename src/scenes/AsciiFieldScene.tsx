@@ -234,7 +234,17 @@ const RegistrationWordmark: React.FC<{text: string; frame: number; fps: number}>
             </div>
           ))
         : null}
-      <div style={{position: 'relative', opacity: baseOp}}>{text}</div>
+      {/* Base rendered as the SAME per-letter span structure fade/decode settle
+          into — a raw text node lays out a few px off the span version (breaks
+          the identical-static-state invariant; caught by the endcard-lockup
+          golden on NO.018, 2026-07-20). */}
+      <div style={{position: 'relative', opacity: baseOp}}>
+        {text.split('').map((ch, i) => (
+          <span key={i} style={{display: 'inline-block'}}>
+            {ch === ' ' ? ' ' : ch}
+          </span>
+        ))}
+      </div>
     </div>
   );
 };
