@@ -22,7 +22,7 @@ import {ACCENTS, COLORS, FIELDS, FONTS} from '@tokens/tokens';
 // celebrate / gasp — 3-phase anticipate → action → settle, spring-driven,
 // with lagged ears/legs for follow-through). All frame-deterministic.
 export type MascotConfig = {
-  pose?: 'walk' | 'peek' | 'pop' | 'hop' | 'wave' | 'roam' | 'dash';
+  pose?: 'walk' | 'peek' | 'pop' | 'hop' | 'wave' | 'roam' | 'dash' | 'kick';
   xPct?: number; // sprite center, 0..100 of stage width
   yPct?: number; // sprite center, 0..100 of stage height
   size?: number; // sprite width in px (height follows the grid aspect)
@@ -125,6 +125,8 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
   let walking = false;
   let waving = false;
   let bubbleOn = false;
+  let kickStep: 'stance' | 'wind' | 'swing' | 'through' | null = null; // kicking-leg phase (drawn below)
+  let kickBall: {bx: number; by: number} = {bx: 0, by: 0}; // pixel ball offset from its rest spot at the strike foot
   if (t < 0 && pose !== 'walk' && pose !== 'roam' && pose !== 'dash') return null;
   const fromX = -((xPct / 100) * 1080 + size); // off-screen left
   if (pose === 'walk') {
@@ -220,6 +222,70 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       }
       waving = true;
       rot = Math.sin(local / 4) * 3;
+    }
+  } else if (pose === 'kick') {
+    // KICK (founder pick, 2026-07-18, NO.017 end card; exaggerated 2026-07-19 —
+    // v1 read as a symmetric wobble at 100px): footballer stance → wind-up
+    // (strong back-lean, leg cocked far behind) → fast swing THROUGH toward the
+    // LEFT-AND-SLIGHTLY-UP (the end-card ball sits up-left) with a forward
+    // LUNGE of the whole body → hop BACK on follow-through with the leg held
+    // high → asymmetric stance pause, repeat every ~1.5s. The silhouette is
+    // NEVER bilaterally symmetric: the kicking leg holds a forward-foot stance
+    // (plus a slight lean) even between kicks. Aim the eyes at the ball with
+    // `lookAt` from the caller.
+    sx = sy = enter;
+    const KICK_WIND = 12;
+    const KICK_SWING = 6;
+    const KICK_FOLLOW = 12;
+    const kickEvery = 46; // wind 12 + swing 6 + follow 12 + stance pause 16 (~1.5s at 30fps)
+    const settleF = 12; // land the pop-in (in stance) before the first kick
+    const local = t > settleF ? (t - settleF) % kickEvery : kickEvery;
+    kickStep = 'stance'; // default between kicks — foot-forward, never symmetric
+    rot = -3; // stance lean toward the ball
+    if (local < KICK_WIND) {
+      // wind-up: crouch, weight onto the plant leg, strong back-lean AWAY from
+      // the ball, kicking leg cocked far behind — unmistakably one-sided
+      const p = local / KICK_WIND;
+      rot = -3 + 17 * p; // → +14
+      tx += p * unit * 0.9;
+      sy *= 1 - 0.07 * p; // load the kick
+      kickStep = 'wind';
+    } else if (local < KICK_WIND + KICK_SWING) {
+      // swing: snap INTO the kick — lean whips forward past vertical and the
+      // whole body LUNGES left toward the ball while the leg sweeps through
+      const p = (local - KICK_WIND) / KICK_SWING;
+      rot = 14 - 40 * p; // → -26 (steep tilt angles the strike leg up toward the ball)
+      tx += (0.9 - 5.3 * p) * unit; // forward lunge (~4.4 cells left at contact)
+      ty -= p * unit * 1.6; // airborne rise into contact — the strike is a dive at the ball
+      sy *= 1.05; // slight stretch through the strike
+      sx *= 0.97;
+      kickStep = 'swing';
+    } else if (local < KICK_WIND + KICK_SWING + KICK_FOLLOW) {
+      // follow-through: hop BACK off the lunge, leg held high up-left, then
+      // landing squash into the stance
+      const p = (local - KICK_WIND - KICK_SWING) / KICK_FOLLOW;
+      rot = -26 + 23 * p; // recover toward the stance lean
+      tx += (-4.4 + 4.4 * p) * unit; // hop back to the stance mark
+      ty -= (1 - p) * unit * 1.6; // ease down from the airborne contact
+      if (p < 0.55) {
+        kickStep = 'through';
+      } else {
+        sy *= 0.88; // landing squash-and-stretch
+        sx *= 1.09;
+      }
+    }
+    // The pixel ball: rests at the strike foot, gets PUNTED up-left through the
+    // follow-through (hard-stepped, wave-arm cadence), back at the foot for the
+    // next stance (cartoon reset). Drawn with the kicking leg below.
+    const flightStart = KICK_WIND + KICK_SWING;
+    if (local >= flightStart && local < flightStart + KICK_FOLLOW) {
+      const fp = (local - flightStart) / KICK_FOLLOW;
+      const hop = [
+        {bx: -2.2, by: -2.0},
+        {bx: -4.4, by: -3.4},
+        {bx: -6.4, by: -4.4},
+      ];
+      kickBall = hop[Math.min(Math.floor(fp * 3), 2)];
     }
   }
 
@@ -392,6 +458,7 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
     }
   });
   LEG_COLS.forEach((x, i) => {
+    if (kickStep && i === 0) return; // the kicking (left) leg is drawn separately below
     const up = walking && i % 2 === legPhase ? 0.45 : 0;
     const ly = BODY.length - up + lag; // legs follow through on the lag
     solid.push({x, y: ly, h: LEG_ROWS});
@@ -406,6 +473,44 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
       />,
     );
   });
+  // Kicking leg: pixel cells hard-stepping through four positions (no easing —
+  // the wave-arm sprite cadence). Every position is one-sided so the silhouette
+  // never reads bilaterally symmetric: foot-forward stance between kicks,
+  // cocked far behind on the wind-up, a LONG extension toward the ball
+  // (left-and-slightly-up) on the swing, held high up-left on follow-through.
+  if (kickStep) {
+    const cells =
+      kickStep === 'stance'
+        ? [
+            {x: 1.1, y: BODY.length + 0.1}, // leg ahead of its column…
+            {x: 0.3, y: BODY.length + 0.9}, // …foot planted forward-left
+          ]
+        : kickStep === 'wind'
+          ? [
+              {x: 3.5, y: BODY.length + 0.9},
+              {x: 4.5, y: BODY.length + 0.4},
+              {x: 5.4, y: BODY.length - 0.1}, // shin rising far behind
+            ]
+          : kickStep === 'swing'
+            ? [
+                {x: 1.0, y: BODY.length + 0.3},
+                {x: 0.0, y: BODY.length - 0.1},
+                {x: -1.0, y: BODY.length - 0.5},
+                {x: -1.9, y: BODY.length - 0.9}, // long strike, left-and-slightly-up
+              ]
+            : [
+                {x: 0.9, y: BODY.length - 0.7},
+                {x: 0.0, y: BODY.length - 1.5},
+                {x: -0.9, y: BODY.length - 2.2}, // leg held high toward the upper-left
+              ];
+    cells.forEach((c, ci) => {
+      solid.push({x: c.x, y: c.y, h: 1});
+      px.push(<rect key={`k${ci}`} x={c.x} y={c.y} width={1} height={1} fill={CORAL} />);
+    });
+    // (The ball itself renders on a separate untransformed layer — see
+    // ballLayer at the return — so the body's squash/rot/lunge never deforms
+    // it or bends its flight path. Founder catch, NO.017.)
+  }
   // Waving arm: two pixels off the right shoulder, hard-stepping between two
   // positions every 8 frames (pixel-art cadence, no easing).
   if (waving && !armsUp) {
@@ -493,7 +598,32 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
 
   const bubbleW = size * 0.62;
   const bubbleH = size * 0.34;
+  // The kick ball: TRUE circle on its own untransformed layer at the same
+  // anchor — immune to the body's rot/scale/lunge, so it stays round and its
+  // punt path (up-left) is exactly the authored offsets.
+  const ballLayer = kickStep ? (
+    <div
+      style={{
+        position: 'absolute',
+        left: `${xPct}%`,
+        top: `${yPct}%`,
+        width: size,
+        height,
+        marginLeft: -size / 2,
+        marginTop: -height / 2,
+        pointerEvents: 'none',
+        opacity: Math.min(1, enter * 1.4),
+      }}
+    >
+      <svg width="100%" height="100%" viewBox={`0 0 ${COLS} ${ROWS}`} shapeRendering="crispEdges" style={{overflow: 'visible'}}>
+        <circle cx={-1.6 + kickBall.bx} cy={BODY.length - 0.4 + kickBall.by} r={2.1} fill={INK} />
+        <circle cx={-1.6 + kickBall.bx} cy={BODY.length - 0.4 + kickBall.by} r={1.7} fill={COLORS.white} />
+      </svg>
+    </div>
+  ) : null;
   return (
+    <>
+    {ballLayer}
     <div
       style={{
         position: 'absolute',
@@ -552,5 +682,6 @@ export const ClaudeMascot: React.FC<{config: MascotConfig; frames: number; scene
         {px}
       </svg>
     </div>
+    </>
   );
 };

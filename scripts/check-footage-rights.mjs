@@ -55,15 +55,18 @@ function main() {
     if (s.kind === 'broll' || (typeof src === 'string' && src.includes('clips/'))) {
       if (src) used.push(src);
     }
+    // GATE-HOLE FIX 2026-07-22: screens/ captures (receipt panels since NO.019)
+    // were never scanned — only images/ paths were collected.
+    const isImagery = (v) => typeof v === 'string' && (v.includes('images/') || v.includes('screens/'));
     const img = s.panel?.image;
-    if ((typeof img === 'string' && img.includes('images/')) || (typeof src === 'string' && src.includes('images/'))) {
-      used.push(img && img.includes('images/') ? img : src);
+    if (isImagery(img) || isImagery(src)) {
+      used.push(isImagery(img) ? img : src);
     }
     // splitvs screenshot pairs + photostat clippings are licensed imagery too
     // (gap found on NO.010's rb-* pairs, 2026-07-08).
     for (const key of ['topImg', 'botImg', 'img']) {
       const v = s[key];
-      if (typeof v === 'string' && v.includes('images/')) used.push(v);
+      if (isImagery(v)) used.push(v);
     }
   }
   // Background music is the #1 Content-ID strike risk — gate it too.
