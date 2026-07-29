@@ -730,7 +730,10 @@ export type VideoJson = {
   // the field keeps every existing video byte-identical. 'americana' = the
   // Americana Cut v1.0 (locked 2026-07-04): ink chrome bar + flat fields +
   // Tektur/Workbench type + ascii dark beats. Spec: vektor/canon/americana-tokens.json.
-  skin?: 'vmax' | 'americana';
+  // 'letterpress' = canon 2.0 (founder-designed 2026-07-29): two-colour ink/cream
+  // letterpress system, Unique/Printvetica type, hard-steps motion recipes.
+  // Spec: vektor/canon/letterpress-tokens.json.
+  skin?: 'vmax' | 'americana' | 'letterpress';
   brand?: BrandOverrides; // per-video CSS-var overrides (token references — see TokenRef)
   chrome?: ChromeConfig; // when set, one persistent bar set replaces per-scene bars
   scenes: Scene[];

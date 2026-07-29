@@ -1666,6 +1666,36 @@
   font-weight: 400;
 }
 
+/* ============================================================================
+   LETTERPRESS — Vektor canon 2.0 skin (founder-designed, Claude Design 2026-07-29).
+   Selected per video via `"skin": "letterpress"`; scoped to .skin-letterpress —
+   ADDITIVE beside americana, never edits it. Spec: vektor/canon/letterpress-tokens.json.
+   Laws: two colours (ink / cream, values in letterpress-tokens.json) via generated --lp-* vars only ·
+   no gradients, no blur (deboss = hard 0-blur offset shadows) · radius 0 ·
+   steps() motion only · furniture rail 44px / chrome 100px / footer 56px while
+   CONTENT keeps the platform safe zone (hybrid law, founder 2026-07-29).
+   Scene-kind styling lands with the letterpress templates (RENDER→SEE→LOCK).
+   ========================================================================= */
+
+@font-face {
+  font-family: "Unique";
+  src: url("file:///C:/Users/julia/projects/reel-engine/assets/fonts/unique-vf.ttf") format("truetype-variations");
+  font-weight: 100 700; /* the wght axis tops at 700 — the design's "900" intent pins there */
+}
+@font-face {
+  font-family: "Printvetica";
+  src: url("file:///C:/Users/julia/projects/reel-engine/assets/fonts/printvetica-400.otf") format("opentype");
+  font-weight: 400;
+}
+
+/* base frame: flat two-colour fields, Printvetica as the working face; scene
+   components flip ink/cream per beat (negative-print alternation). */
+.skin-letterpress .frame {
+  background: var(--lp-ink);
+  color: var(--lp-ink-fg);
+  font-family: "Printvetica", "Helvetica Neue", Arial, sans-serif;
+}
+
 /* --am-* field/accent custom properties are canon-derived and generated into
    @tokens/tokens.css :root by gen-tokens.mjs (canon/americana-tokens.json). */
 

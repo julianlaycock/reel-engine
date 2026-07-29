@@ -215,6 +215,71 @@ const tmplCountLine = Object.entries(tmplCounts)
 // Wireframe zone summary (a light pointer, not exhaustive).
 const wfKinds = wireframes.kinds ? Object.keys(wireframes.kinds) : [];
 
+// ── CANON 2.0 — letterpress skin section (additive; rendered only when the
+//    skin is declared in canon.yml#skin.tokens and its token file exists) ─────
+const lpPathRel = (canon.skin && canon.skin.tokens && canon.skin.tokens.letterpress) || null;
+const lpTokens = lpPathRel ? readJson(path.join(path.dirname(canonDir), lpPathRel)) : null;
+let letterpressHtml = '';
+if (lpTokens) {
+  const lpFields = (lpTokens.color && lpTokens.color.fields) || {};
+  const lpTextMap = (lpTokens.color && lpTokens.color.fieldText) || {};
+  const lpSwatches = Object.entries(lpFields)
+    .map(([n, v]) => {
+      const t = lpTextMap[n] || {};
+      return fieldSwatch(n, v) + (t.fg ? `<div class="sw"><span class="chip" style="background:${esc(t.fg)}"></span><span class="swname">${esc(n)}.fg</span><span class="swval">${esc(t.fg)}</span></div>` : '');
+    })
+    .join('\n');
+  const lpLaws = ((lpTokens.color && lpTokens.color.laws) || []).map((l) => `<li>${esc(l)}</li>`).join('');
+  const lpTy = lpTokens.type || {};
+  const lpTypeRows = ['display', 'text', 'wordmarkOnly']
+    .filter((r) => lpTy[r])
+    .map((r) => {
+      const t = lpTy[r];
+      const roles = Array.isArray(t.roles) ? t.roles.join(', ') : t.law || t.note || '';
+      return `<tr><td class="rn">${esc(r)}</td><td><b>${esc(t.family || '—')}</b></td><td class="sum">${esc(roles)}</td></tr>`;
+    })
+    .join('\n');
+  const lpRecipeRows = Object.entries((lpTokens.motion && lpTokens.motion.recipes) || {})
+    .map(([n, r]) => `<tr><td class="rn">${esc(n)}</td><td class="sum">${esc(r.frames || '')}</td><td class="sum">${esc(r.law || r.use || '')}</td></tr>`)
+    .join('\n');
+  const lpBlockRows = Object.entries(lpTokens.blocks || {})
+    .filter(([k]) => k !== 'law')
+    .map(([k, v]) => `<tr><td class="rn">${esc(k)}</td><td class="sum">${Array.isArray(v) ? v.map((x) => esc(x)).join(' · ') : esc(v)}</td></tr>`)
+    .join('\n');
+  const lpZone = (lpTokens.layout && lpTokens.layout.platformSafeZone) || {};
+  const lpSurfaceRows = Object.entries(lpTokens.surfaces || {})
+    .map(([k, v]) => `<tr><td class="rn">${esc(k)}</td><td class="sum">${esc(v.law || v.value || '')}${v.value && v.law ? ' — ' + esc(v.value) : ''}</td></tr>`)
+    .join('\n');
+  letterpressHtml = `
+  <h2>Canon 2.0 — Letterpress Skin</h2>
+  <section>
+    <p class="lead"><b>${esc(lpTokens.name || 'Letterpress')}</b> v${esc(lpTokens.version || '?')} — ${esc(lpTokens.status || '')}</p>
+    <p class="note">${esc(lpTokens.basis || '')}</p>
+    <p class="note">${esc(lpTokens.coexistsWith || '')}</p>
+    <div class="meta-line">Fields (two colours, nothing else)</div>
+    <div class="swatches">${lpSwatches}</div>
+    ${lpLaws ? `<div class="meta-line">Colour laws</div><ul class="laws">${lpLaws}</ul>` : ''}
+    <div class="meta-line">Type</div>
+    <table><thead><tr><th>Role</th><th>Family</th><th>Used for</th></tr></thead><tbody>
+${lpTypeRows}
+    </tbody></table>
+    <div class="meta-line">Motion recipes (frames @ 30fps — steps() only, every loop rests on its finished frame)</div>
+    <table><thead><tr><th>Recipe</th><th>Frames</th><th>Law / use</th></tr></thead><tbody>
+${lpRecipeRows}
+    </tbody></table>
+    <div class="meta-line">Surfaces</div>
+    <table><thead><tr><th>Surface</th><th>Law</th></tr></thead><tbody>
+${lpSurfaceRows}
+    </tbody></table>
+    <div class="meta-line">The 36-block Library vocabulary (call blocks by name; one name = one implementation)</div>
+    <table><thead><tr><th>Section</th><th>Blocks</th></tr></thead><tbody>
+${lpBlockRows}
+    </tbody></table>
+    <p class="note"><b>Safe zone (hybrid, founder 2026-07-29):</b> content keeps top ${esc(lpZone.topPx)} / bottom ${esc(lpZone.bottomPx)} / sides ${esc(lpZone.sidePx)}px; furniture (${(lpZone.furnitureExempt || []).map((f) => `<code>${esc(f)}</code>`).join(' ')}) may ride the ${esc(lpZone.furnitureRailPx)}px rail / 56px footer line. Cover rule: hook + figure inside the centre ${esc((lpZone.coverRule || {}).centreCrop || '4:5')} crop, bottom ${esc((lpZone.coverRule || {}).bottomClearPx || 180)}px clear.</p>
+    <p class="note">Master: <code>${esc(lpPathRel)}</code> · letterpress templates enter via founder RENDER→SEE→LOCK (none registered yet).</p>
+  </section>`;
+}
+
 // ── page ─────────────────────────────────────────────────────────────────────
 const html = `<!doctype html>
 <html lang="en">
@@ -315,7 +380,7 @@ ${ruleRows}
   <h2>Transition Grammar</h2>
   <section>${transitionsHtml}</section>
 
-  <h2>Color Tokens</h2>
+  <h2>Color Tokens — Americana (skin v1)</h2>
   <section>
     <div class="meta-line">Fields</div>
     <div class="swatches">${fieldSwatches}</div>
@@ -324,7 +389,7 @@ ${ruleRows}
     ${colorLaws ? `<div class="meta-line">Laws</div><ul class="laws">${colorLaws}</ul>` : ''}
   </section>
 
-  <h2>Type Tokens</h2>
+  <h2>Type Tokens — Americana (skin v1)</h2>
   <section>
     <table>
       <thead><tr><th>Role</th><th>Family</th><th>Used for</th></tr></thead>
@@ -333,7 +398,7 @@ ${typeRows}
       </tbody>
     </table>
   </section>
-
+${letterpressHtml}
   <h2>The Template Menu — ${tmplCountLine}</h2>
   <section>
     <table>

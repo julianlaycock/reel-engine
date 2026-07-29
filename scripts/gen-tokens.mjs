@@ -105,11 +105,57 @@ const fonts = pending.fonts ?? {};
   }
 }
 
+// ── canon 2.0: letterpress skin (canon/letterpress-tokens.json) ──────────────
+// Additive second skin (canon.yml#skin.allowed). Its fields/fonts are emitted
+// into the SAME generated bundle under lp-prefixed names (fields.lpInk,
+// fonts.lpDisplay, --lp-* vars) so the @tokens alias, token-ref resolution,
+// validate-tokens vocabulary and check-canon's staleness diff stay single-file.
+// The file carries its own fieldText (born canonical — no pending ledger).
+const lpFields = {};
+const lpFonts = {};
+{
+  const lpPath = path.join(brand.brandRoot, 'canon', 'letterpress-tokens.json');
+  if (fs.existsSync(lpPath)) {
+    const lp = JSON.parse(fs.readFileSync(lpPath, 'utf8'));
+    const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+    for (const [name, bg] of Object.entries(lp.color?.fields ?? {})) {
+      if (typeof bg !== 'string') throw new Error(`letterpress field "${name}": bg must be a hex string`);
+      const txt = lp.color?.fieldText?.[name];
+      if (!txt) throw new Error(`letterpress field "${name}": missing color.fieldText entry`);
+      for (const k of ['fg', 'muted', 'hairline']) {
+        if (typeof txt[k] !== 'string') throw new Error(`letterpress field "${name}": missing fieldText.${k}`);
+      }
+      lpFields[`lp${cap(name)}`] = {bg, fg: txt.fg, muted: txt.muted, hairline: txt.hairline};
+    }
+    for (const [name, stack] of Object.entries(lp.type?.stacks ?? {})) {
+      if (name in fonts) throw new Error(`letterpress font stack "${name}" collides with tokens-pending fonts`);
+      lpFonts[name] = stack;
+    }
+  }
+}
+
 // canon-derived :root custom properties (--am-*) for style.css consumption.
 const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 const amVars = {};
 for (const [name, f] of Object.entries(fields)) amVars[`--am-${kebab(name)}`] = f.bg;
 for (const [name, v] of Object.entries(accents)) amVars[`--am-${kebab(name)}`] = v;
+
+// letterpress :root custom properties (--lp-*), incl. text roles — the
+// .skin-letterpress CSS block consumes ONLY these (check-drift zero-tolerance).
+const lpVars = {};
+for (const [name, f] of Object.entries(lpFields)) {
+  const base = `--lp-${kebab(name.replace(/^lp/, ''))}`;
+  lpVars[base] = f.bg;
+  lpVars[`${base}-fg`] = f.fg;
+  lpVars[`${base}-muted`] = f.muted;
+  lpVars[`${base}-hairline`] = f.hairline;
+}
+
+// merge lp names into the shared groups AFTER --am-* derivation (so lp fields
+// never mint --am-lp-* vars); token:fields.lpInk.* / token:fonts.lpDisplay
+// become part of the single validation vocabulary.
+Object.assign(fields, lpFields);
+Object.assign(fonts, lpFonts);
 
 // ── emitters ─────────────────────────────────────────────────────────────────
 const q = (s) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
@@ -162,6 +208,10 @@ const tokensCss = [
   '',
   '  /* canon-derived field/accent colors (americana-tokens.json) */',
   ...Object.entries(amVars).map(([name, v]) => `  ${name}: ${v};`),
+  ...(Object.keys(lpVars).length
+    ? ['', '  /* canon 2.0 letterpress skin (letterpress-tokens.json) */',
+       ...Object.entries(lpVars).map(([name, v]) => `  ${name}: ${v};`)]
+    : []),
   '}',
   '',
 ].join('\n');

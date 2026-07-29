@@ -427,6 +427,7 @@ export const Video: React.FC<VideoProps> = ({video: rawVideo}) => {
   const hasChrome = Boolean(chrome);
   const skin = video.skin ?? 'vmax';
   const americana = skin === 'americana';
+  const letterpress = skin === 'letterpress';
 
   // Frame ranges of B-roll scenes — the persistent chrome hides over footage so
   // the clip reads clean (only the per-scene headline/eyebrow remain). Americana
@@ -599,7 +600,7 @@ export const Video: React.FC<VideoProps> = ({video: rawVideo}) => {
   return (
     <AbsoluteFill
       style={{backgroundColor: brand?.bgBot ?? CSS_VARS['--bg-bot'], ...brandVars, ...(orb2 ? {['--orb2' as string]: orb2} : {})}}
-      className={[fx?.orbs || fx?.grain ? 'fx-on' : '', fx?.grid ? 'grid-on' : '', (video as {layout?: string}).layout ? 'layout-' + (video as {layout?: string}).layout : '', americana ? 'skin-americana' : ''].filter(Boolean).join(' ') || undefined}
+      className={[fx?.orbs || fx?.grain ? 'fx-on' : '', fx?.grid ? 'grid-on' : '', (video as {layout?: string}).layout ? 'layout-' + (video as {layout?: string}).layout : '', americana ? 'skin-americana' : '', letterpress ? 'skin-letterpress' : ''].filter(Boolean).join(' ') || undefined}
     >
       {fx?.morph && darkRanges.length ? (
         <MorphCanvas ranges={darkRanges} lightBg={brand?.bgMid ?? COLORS.photoPaper} darkBg={darkTokens?.bg ?? COLORS.morphDarkBg} />
