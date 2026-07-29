@@ -277,6 +277,16 @@ const validateVideo = (video) => {
       if (!Number.isInteger(scene.durationInFrames) || scene.durationInFrames < 30) {
         throw new Error(`${at}: durationInFrames must be an integer >= 30`);
       }
+    } else if (scene.kind === 'letterpress') {
+      if (typeof scene.lpBeat !== 'string' || scene.lpBeat.length === 0) {
+        throw new Error(`${at}: letterpress scene needs an "lpBeat"`);
+      }
+      if (scene.lpBeat === 'canvas' && !Array.isArray(scene.canvas?.elements)) {
+        throw new Error(`${at}: letterpress canvas scene needs canvas.elements`);
+      }
+      if (!Number.isInteger(scene.durationInFrames) || scene.durationInFrames < 30) {
+        throw new Error(`${at}: durationInFrames must be an integer >= 30`);
+      }
     } else {
       throw new Error(`${at}: unknown scene.kind "${scene.kind}"`);
     }

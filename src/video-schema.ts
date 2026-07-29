@@ -694,7 +694,43 @@ export type LpBeat =
   | 'number'
   | 'breakdown'
   | 'verdict'
-  | 'endCard';
+  | 'endCard'
+  | 'canvas';
+
+// One element of the evolving-canvas diagram (lpBeat 'canvas', lp-canvas.v1 —
+// EXPERIMENT 2026-07-29, pending RENDER→SEE→LOCK). Coordinates are absolute
+// 1080×1920 frame space; authoring keeps content inside the platform safe zone.
+// Elements present in consecutive scenes at identical coordinates render
+// pixel-identically, so `transition: "none"` seams read as one persistent
+// canvas (zero visible cuts). Elements listed in canvas.enter animate in
+// (hard steps); all others render settled from frame 0.
+export type LpCanvasEl = {
+  id: string;
+  el: 'box' | 'line' | 'label' | 'tag' | 'strike' | 'chip';
+  // box / tag / chip / strike / label anchor
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
+  // line endpoints
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
+  label?: string; // box title (caps, Printvetica)
+  sub?: string; // box sub-line under the title (muted)
+  list?: string[]; // box body rows (the "FOR EACH — BY HAND" checklist)
+  text?: string; // label/tag/chip text
+  tag?: string; // small inverted tag riding the box's top edge (ENDPOINT / MCP CLIENT)
+  innerTag?: string; // small outlined tag inside the box's bottom edge (THE MODEL)
+  dashed?: boolean; // line: dashed = the MCP connection grammar
+  hatched?: boolean; // box: hatched fill = pain/measured semantic
+  frameOnly?: boolean; // box: outline-only highlight (transparent, heavy border)
+  muted?: boolean; // 60% foreground (de-emphasis); tag: outlined variant vs inverted
+  display?: boolean; // label in the display face (Unique) vs Printvetica
+  size?: number; // label font-size px (display default 84 / text default 30)
+  align?: 'left' | 'center' | 'right'; // label text-align (default center on anchor)
+};
 
 // One ledger/exhibit/waterfall row — the per-beat subsets:
 //   claim     rows[{text, diff, struck}]  (Exhibit Panel body, struck = strikethrough)
@@ -760,6 +796,12 @@ export type LetterpressScene = {
   // mascot slot opt-in — renders the beat's placeholder slot box (halftone
   // treatment lands later; claim 84×84 avatar renders whenever the panel does)
   mascot?: boolean;
+  // canvas — "The Evolving Canvas" (lp-canvas.v1, experiment 2026-07-29)
+  canvas?: {
+    elements: LpCanvasEl[]; // the FULL diagram state during this scene
+    enter?: string[]; // ids animating in this scene, in stagger order
+    headline?: string; // top-band headline, typeOn + caret (display face)
+  };
   // endCard — no chrome bar / ledger strip; footer slug stays
   endCard?: {
     wordmark?: string; // large cream wordmark (~120px), default "vektor"

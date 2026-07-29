@@ -54,6 +54,23 @@ export const visibleChars = (scene) => {
   if (scene && scene.kind === 'terminal') {
     const {lines, rows, prompt, planHeader, confirm, ...rest} = scene;
     collect(rest, out, false);
+  } else if (scene && scene.kind === 'letterpress' && scene.canvas) {
+    // The evolving canvas (lpBeat 'canvas', 2026-07-29): ONE persistent diagram
+    // accretes across consecutive scenes — every scene's JSON carries the FULL
+    // standing state, but elements carried over were already read in the scene
+    // that introduced them. Counting the whole diagram each scene would demand
+    // minutes of dwell for an 80s reel. Fresh text per scene = the headline +
+    // the elements entering THIS scene (canvas.enter). Same class of exception
+    // as the terminal scanned-artifact rule above.
+    if (scene.canvas.headline) out.push(scene.canvas.headline);
+    const entering = new Set(scene.canvas.enter ?? []);
+    for (const el of scene.canvas.elements ?? []) {
+      if (!entering.has(el.id)) continue;
+      for (const v of [el.label, el.sub, el.text, el.tag]) {
+        if (typeof v === 'string') out.push(v);
+      }
+      if (Array.isArray(el.list)) out.push(...el.list);
+    }
   } else {
     collect(scene, out, false);
   }

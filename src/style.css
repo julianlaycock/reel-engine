@@ -2222,6 +2222,132 @@
   border-color: var(--lp-ink-hairline);
 }
 
+/* ---- canvas — "The Evolving Canvas" (lp-canvas.v1, EXPERIMENT 2026-07-29,
+   pending RENDER→SEE→LOCK). One persistent diagram across `transition: none`
+   seams; element coords are absolute 1080×1920 frame space (LpCanvasBeat.tsx).
+   Same laws as every lp beat: var(--lp-*) only, radius 0, no CSS animation. */
+.skin-letterpress .lp-cv {
+  position: absolute;
+  inset: 0;
+}
+.skin-letterpress .lp-cv-headline {
+  position: absolute;
+  top: 230px;
+  left: 150px;
+  right: 150px;
+  font-size: 58px;
+  line-height: 1.0;
+  text-align: center;
+}
+.skin-letterpress .lp-cv-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.skin-letterpress .lp-cv-box {
+  position: absolute;
+  background: var(--lp-field); /* opaque: boxes occlude the line fan beneath */
+  border: 3px solid var(--lp-field-fg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transform-origin: 50% 50%;
+}
+.skin-letterpress .lp-cv-box.lp-hatched {
+  background-color: var(--lp-field);
+  background-image: repeating-linear-gradient(135deg, var(--lp-field-hairline) 0 10px, transparent 10px 22px);
+}
+.skin-letterpress .lp-cv-box--frame {
+  background: transparent; /* highlight ring — must not hide what it rings */
+  border-width: 6px;
+}
+.skin-letterpress .lp-cv-box-label {
+  font-size: 30px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.skin-letterpress .lp-cv-box-sub {
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lp-field-muted);
+  text-align: center;
+}
+.skin-letterpress .lp-cv-list {
+  font-size: 24px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  line-height: 1.55;
+}
+.skin-letterpress .lp-cv-tag {
+  /* inverted tag riding the top edge (ENDPOINT / MCP CLIENT / MCP SERVER) */
+  position: absolute;
+  top: -22px;
+  left: 14px;
+  background: var(--lp-field-fg);
+  color: var(--lp-field);
+  font-size: 21px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 10px 14px;
+}
+.skin-letterpress .lp-cv-inner-tag {
+  /* outlined tag inside the bottom edge (THE MODEL) */
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  border: 2px solid var(--lp-field-muted);
+  color: var(--lp-field-muted);
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 7px 10px;
+}
+.skin-letterpress .lp-cv-label {
+  position: absolute;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.05;
+  white-space: pre-line;
+}
+.skin-letterpress .lp-cv-label--display {
+  letter-spacing: 0.005em;
+  background: var(--lp-field); /* counters stay readable over the line fan */
+  padding: 6px 24px;
+}
+.skin-letterpress .lp-cv-tag--free {
+  position: absolute;
+  transform: translateX(-50%);
+}
+.skin-letterpress .lp-cv-tag--outline {
+  background: transparent;
+  border: 2px solid var(--lp-field-muted);
+  color: var(--lp-field-muted);
+}
+.skin-letterpress .lp-cv-muted {
+  color: var(--lp-field-muted);
+  border-color: var(--lp-field-muted);
+}
+.skin-letterpress .lp-cv-caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.08em;
+  vertical-align: -0.12em;
+  background: var(--lp-field-fg);
+}
+.skin-letterpress .lp-cv-chip {
+  position: absolute;
+  align-self: auto;
+}
+
 /* --am-* field/accent custom properties are canon-derived and generated into
    @tokens/tokens.css :root by gen-tokens.mjs (canon/americana-tokens.json). */
 

@@ -15,6 +15,7 @@ import {
   typeOn,
   xeroxJitter,
 } from './lp-motion';
+import {LpCanvasBeat} from './LpCanvasBeat';
 import '../style.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -43,6 +44,7 @@ const BEAT_FIELD: Record<string, 'lpInk' | 'lpCream'> = {
   breakdown: 'lpInk',
   verdict: 'lpCream',
   endCard: 'lpInk',
+  canvas: 'lpCream', // the evolving canvas is a press sheet — ink on cream
 };
 
 const LP_FIELDS: Record<string, FieldTokens> = {lpInk: FIELDS.lpInk, lpCream: FIELDS.lpCream};
@@ -438,6 +440,7 @@ export const LetterpressScene: React.FC<{
         {scene.lpBeat === 'breakdown' ? <BreakdownBeat scene={scene} eff={eff} /> : null}
         {scene.lpBeat === 'verdict' ? <VerdictBeat scene={scene} eff={eff} /> : null}
         {scene.lpBeat === 'endCard' ? <EndCardBeat scene={scene} frame={frame} /> : null}
+        {scene.lpBeat === 'canvas' ? <LpCanvasBeat scene={scene} frame={frame} /> : null}
         <LpFurniture scene={scene} cream={cream} />
       </div>
     </AbsoluteFill>
