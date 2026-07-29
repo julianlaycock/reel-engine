@@ -6,7 +6,9 @@
     "cream",
     "fog",
     "ink",
-    "signal"
+    "signal",
+    "lpInk",
+    "lpCream"
   ],
   "accents": [
     "acid",
@@ -110,6 +112,8 @@
     "labelSans",
     "labelEmoji",
     "interTight",
-    "plexMonoUi"
+    "plexMonoUi",
+    "lpDisplay",
+    "lpText"
   ]
 }

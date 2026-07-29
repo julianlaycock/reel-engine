@@ -679,8 +679,105 @@ export type RosterStaggerScene = {
   footerRight?: string;
 };
 
+// Letterpress (Vektor canon 2.0, founder-designed 2026-07-29) — the two-colour
+// ink/cream skin. ONE scene kind dispatched on `lpBeat` to the 8 beat templates
+// of the master reel grammar (spec: vektor/docs/letterpress-build-spec.md +
+// canon/letterpress-tokens.json). `field` names an lp field token ('lpInk' |
+// 'lpCream'); omitted, the beat's canonical negative-print field applies
+// (hook=cream, claim=ink, … endCard=ink). All motion is hard-step frame math
+// (src/scenes/lp-motion.ts) — no easing, no CSS animation.
+export type LpBeat =
+  | 'hook'
+  | 'claim'
+  | 'method'
+  | 'divergence'
+  | 'number'
+  | 'breakdown'
+  | 'verdict'
+  | 'endCard';
+
+// One ledger/exhibit/waterfall row — the per-beat subsets:
+//   claim     rows[{text, diff, struck}]  (Exhibit Panel body, struck = strikethrough)
+//   method    rows[{label, value}]        (Ledger Rows)
+//   breakdown rows[{label, value, pct, hatched}] (Waterfall; hatched = the punchline)
+export type LpRow = {
+  text?: string; // claim: commit line, e.g. "feat: agent loop"
+  diff?: string; // claim: right-aligned diff, e.g. "+412"
+  struck?: boolean; // claim: strikethrough row (the reverted commits)
+  label?: string; // method/breakdown: caps label left
+  value?: string; // method/breakdown: value right (e.g. "16" / "21 min")
+  pct?: number; // breakdown: fill width 0..100
+  hatched?: boolean; // breakdown: hatched fill = "measured / waiting"
+};
+
+// One divergence column: solid = belief (up from the zero axis), hatched =
+// measured (down). `h` = bar height in px (spec: +20 ≈ 220, −19 ≈ 275).
+export type LpCol = {
+  value: string; // e.g. "+20" / "−19"
+  h: number; // bar height px from the zero axis
+  hatched?: boolean; // hatched bar (down from axis) vs solid (up)
+  label: string; // axis label, e.g. "What they believed"
+};
+
+export type LetterpressScene = {
+  kind: 'letterpress';
+  lpBeat: LpBeat;
+  template?: string; // e.g. "lp-hook.v1"
+  field?: string; // lp field token name: 'lpInk' | 'lpCream' (default = beat parity)
+  durationInFrames: number;
+  // Furniture data (chrome bar / ledger strip / footer slug render INSIDE the
+  // scene — PersistentChrome has no letterpress path). Passed via JSON rather
+  // than plumbed props: sceneNo is 1-based, sceneCount = total scenes.
+  sceneNo?: number; // this scene's 1-based index (ledger fill + "NN / 08" slug)
+  sceneCount?: number; // total scenes (ledger segment count + slug denominator)
+  slug?: string; // footer-slug left text, e.g. "vektor /// no. 008"
+  marker?: string; // chrome-bar right section marker, e.g. "No. 008 · the tax"
+  beatNo?: string; // folio progress override (defaults to "NN / 08" from sceneNo/sceneCount)
+  // hook — "The Hook Stack"
+  kicker?: string; // Printvetica kicker above the beat (hook/claim/…)
+  lines?: string[]; // headline stack, stamping in 4f apart
+  chip?: string; // stamp chip text (hook "Settled: wrong" / verdict "Would not trade on this")
+  jitter?: boolean; // xerox-jitter the body (hook beat only)
+  // claim — "The Exhibit Panel"
+  headline?: string; // lpDisplay headline (claim/method/number/breakdown/verdict)
+  panelTitle?: string; // exhibit header, e.g. "vektor-fm / receipts"
+  panelMeta?: string; // muted header meta, e.g. "main · 4 commits"
+  rows?: LpRow[]; // claim commit rows / method ledger rows / breakdown waterfall rows
+  terminalLine?: string; // muted terminal line, types on + block caret
+  footerLeft?: string; // panel footer bar left, e.g. "Net: −76 lines in four days"
+  footerRight?: string; // panel footer bar right, e.g. "Exhibit A"
+  // method — "The Ledger Rows"
+  note?: string; // 26px note under the ledger
+  // divergence — "The Divergence"
+  cols?: LpCol[]; // the two zero-axis columns
+  source?: string; // source line, e.g. "METR / randomised trial / F-0246.01"
+  invertAt?: number; // invertPulse opt-in: scene frame of the 2f full-frame invert (max 2/reel)
+  // number — "The Odometer"
+  odometer?: {values: string[]; suffix?: string}; // recount values (e.g. ["04","09","14","19"]) + "%"
+  subline?: string; // caps sub-line under the odometer, e.g. "Slower with it on"
+  // verdict — "The Rules"
+  rules?: string[]; // R1–R4 rows, stamp-in
+  // mascot slot opt-in — renders the beat's placeholder slot box (halftone
+  // treatment lands later; claim 84×84 avatar renders whenever the panel does)
+  mascot?: boolean;
+  // endCard — no chrome bar / ledger strip; footer slug stays
+  endCard?: {
+    wordmark?: string; // large cream wordmark (~120px), default "vektor"
+    wordmarkMotion?: 'decode' | 'fade' | 'registration'; // plays once (hard steps), then holds
+    cta?: string; // CTA stamp (cream bg / ink text), e.g. 'Comment "TAPE" for …'
+    issue?: string; // issue line override for the footer slug left
+    stat?: {value: string; label: string}; // hero stat, e.g. {value: "19%", label: "is the number to beat"}
+    ticker?: string; // marquee band text (duplicated for the seamless loop)
+  };
+  vo?: string;
+  caption?: string;
+  voTag?: string;
+  transition?: string; // seam INTO this scene ('shutter-wipe' = the letterpress coupled wipe)
+};
+
 export type Scene =
   | AsciiFieldScene
+  | LetterpressScene
   | RosterStaggerScene
   | GenerativeScene
   | Heatmap3DScene

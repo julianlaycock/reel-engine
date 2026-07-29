@@ -49,6 +49,7 @@ import {TerminalScene} from './scenes/TerminalScene';
 import {GradientBackground} from './scenes/GradientBackground';
 import {Captions} from './Captions';
 import {AsciiFieldScene} from './scenes/AsciiFieldScene';
+import {LetterpressScene} from './scenes/LetterpressScene';
 import {FIELDS, COLORS, CSS_VARS, FONTS, type FieldTokens} from '@tokens/tokens';
 import {resolveTokenRefsDeep} from './token-ref';
 import './fonts';
@@ -136,6 +137,9 @@ export const SceneBody: React.FC<{scene: Scene; frames: number; hideChrome: bool
   }
   if (scene.kind === 'asciiField') {
     return <AsciiFieldScene scene={scene} hideChrome={hideChrome} />;
+  }
+  if (scene.kind === 'letterpress') {
+    return <LetterpressScene scene={scene} hideChrome={hideChrome} />;
   }
   if ((scene as {kind: string}).kind === 'hero') {
     return <HeroWordScene scene={scene} hideChrome={hideChrome} />;
@@ -572,7 +576,7 @@ export const Video: React.FC<VideoProps> = ({video: rawVideo}) => {
   // Σ_{j<i} naturalFrames_j — identical to the old sequential `Series`, and the
   // total stays `totalFrames(video)`. The extra pad is exactly the tail the
   // outgoing scene needs to still be on-screen while the next one slides in.
-  const COUPLED: Record<string, TransitionVariant> = {'spring-slide': 'spring-slide', 'whip-real': 'whip'};
+  const COUPLED: Record<string, TransitionVariant> = {'spring-slide': 'spring-slide', 'whip-real': 'whip', 'shutter-wipe': 'shutter-wipe'};
   const scenePlan = video.scenes.map((scene, i) => {
     const variant = COUPLED[(scene as {transition?: string}).transition ?? ''];
     // A transition element sits BEFORE scene i (i≥1) when scene i asks for a coupled
@@ -680,7 +684,10 @@ export const Video: React.FC<VideoProps> = ({video: rawVideo}) => {
                           </div>
                         ))
                       : null}
-                    {(scene as {mascot?: MascotConfig}).mascot ? (
+                    {/* letterpress mascot slots render INSIDE LetterpressScene
+                        (per-beat layout slots; `mascot` is a boolean there, not
+                        a MascotConfig) — never the coral pixel mascot. */}
+                    {scene.kind !== 'letterpress' && (scene as {mascot?: MascotConfig}).mascot ? (
                       <ClaudeMascot
                         config={(scene as {mascot?: MascotConfig}).mascot!}
                         frames={natural}
