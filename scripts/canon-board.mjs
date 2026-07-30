@@ -246,6 +246,52 @@ if (lpTokens) {
     .filter(([k]) => k !== 'law')
     .map(([k, v]) => `<tr><td class="rn">${esc(k)}</td><td class="sum">${Array.isArray(v) ? v.map((x) => esc(x)).join(' · ') : esc(v)}</td></tr>`)
     .join('\n');
+  // Marks + contrast (canon 2.1). Both blocks are optional — older token files
+  // predate them and simply render nothing.
+  const lpMarks = (lpTokens.color && lpTokens.color.marks) || null;
+  const lpContrast = (lpTokens.color && lpTokens.color.contrast) || null;
+  // name → hex across neutrals + marks, so the contrast table can draw real specimens.
+  const inkMap = lpMarks
+    ? {...(lpMarks.neutrals || {}), ...(lpMarks.swatches || {})}
+    : {...lpFields};
+  let lpMarksHtml = '';
+  if (lpMarks) {
+    const exact = new Set((lpMarks.provenance || {}).sourceExact || []);
+    const chips = Object.entries(lpMarks.swatches || {})
+      .map(([n, hex]) => `<div class="sw"><span class="chip" style="background:${esc(hex)}"></span><span class="swname">${esc(n)}</span><span class="swval">${esc(hex)}${exact.has(n) ? '' : ' <b title="measured from reference footage, ±2 levels">≈</b>'}</span></div>`)
+      .join('\n');
+    const prov = lpMarks.provenance || {};
+    lpMarksHtml = `
+    <div class="meta-line">${esc((lpMarks.law || 'The six marks').replace(/^the /, '').replace(/^./, (c) => c.toUpperCase()))}</div>
+    <div class="swatches">${chips}</div>
+    ${prov.note ? `<p class="note"><b>≈</b> ${esc(prov.note)}</p>` : ''}
+    ${lpMarks.usage ? `<p class="note">${esc(lpMarks.usage)}</p>` : ''}`;
+  }
+  let lpContrastHtml = '';
+  if (lpContrast) {
+    // One specimen per legal pair: the foreground actually drawn on the ground.
+    const spec = (ground, fg, ratio, large) =>
+      `<span class="spec${large ? ' spec-lg' : ''}" style="background:${esc(inkMap[ground] || '#fff')};color:${esc(inkMap[fg] || '#000')}">Aa <b>${esc(fg)}</b> ${esc(ratio)}</span>`;
+    const rows = (lpContrast.table || [])
+      .map((r) => {
+        const any = (r.anyText || []).map((p) => spec(r.ground, p.fg, p.ratio, false)).join(' ');
+        const lg = (r.largeOnly || []).map((p) => spec(r.ground, p.fg, p.ratio, true)).join(' ');
+        return `<tr${r.warning ? ' class="blk"' : ''}>
+      <td class="rn"><span class="chip chip-sm" style="background:${esc(r.hex)}"></span> ${esc(r.ground)}</td>
+      <td class="sum">${any || '<i>none</i>'}</td>
+      <td class="sum">${lg || '<i>none</i>'}</td>
+      <td class="src">${r.warning ? `<b class="warnline">${esc(r.warning)}</b>` : ''}</td>
+    </tr>`;
+      })
+      .join('\n');
+    lpContrastHtml = `
+    <div class="meta-line">Contrast — what may sit on what (${esc(lpContrast.minSmallText)}:1 under ${esc(lpContrast.largeTextMinPx)}px · ${esc(Number(lpContrast.minLargeText).toFixed(1))}:1 at or above)</div>
+    <p class="note">${esc(lpContrast.law || '')}</p>
+    <table><thead><tr><th>Ground</th><th>Any size (≥${esc(lpContrast.minSmallText)})</th><th>Display only (≥${esc(Number(lpContrast.minLargeText).toFixed(1))}, ${esc(lpContrast.largeTextMinPx)}px+)</th><th></th></tr></thead><tbody>
+${rows}
+    </tbody></table>
+    <p class="note">${esc(lpContrast.computedFrom || '')}</p>`;
+  }
   const lpZone = (lpTokens.layout && lpTokens.layout.platformSafeZone) || {};
   const lpSurfaceRows = Object.entries(lpTokens.surfaces || {})
     .map(([k, v]) => `<tr><td class="rn">${esc(k)}</td><td class="sum">${esc(v.law || v.value || '')}${v.value && v.law ? ' — ' + esc(v.value) : ''}</td></tr>`)
@@ -256,8 +302,10 @@ if (lpTokens) {
     <p class="lead"><b>${esc(lpTokens.name || 'Letterpress')}</b> v${esc(lpTokens.version || '?')} — ${esc(lpTokens.status || '')}</p>
     <p class="note">${esc(lpTokens.basis || '')}</p>
     <p class="note">${esc(lpTokens.coexistsWith || '')}</p>
-    <div class="meta-line">Fields (two colours, nothing else)</div>
+    <div class="meta-line">Baseline pair</div>
     <div class="swatches">${lpSwatches}</div>
+    ${lpMarksHtml}
+    ${lpContrastHtml}
     ${lpLaws ? `<div class="meta-line">Colour laws</div><ul class="laws">${lpLaws}</ul>` : ''}
     <div class="meta-line">Type</div>
     <table><thead><tr><th>Role</th><th>Family</th><th>Used for</th></tr></thead><tbody>
@@ -347,6 +395,11 @@ const html = `<!doctype html>
   .chip { width: 30px; height: 30px; border-radius: 5px; border: 1px solid rgba(0,0,0,.15); flex: none; }
   .swname { font-weight: 700; }
   .swval { margin-left: auto; color: #8a8577; font-size: 11.5px; }
+  .chip-sm { width: 16px; height: 16px; border-radius: 3px; display: inline-block; vertical-align: -3px; }
+  .spec { display: inline-block; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(0,0,0,.15); font-size: 12px; margin: 2px 3px 2px 0; white-space: nowrap; }
+  .spec-lg { font-size: 15px; font-weight: 700; padding: 5px 9px; }
+  .spec b { font-weight: 700; }
+  .warnline { color: var(--blocker); font-size: 11.5px; }
   .laws { margin: 6px 0 2px; padding-left: 20px; font-size: 12.5px; color: #444; }
   .laws li { margin: 3px 0; }
   .meta-line { color: #6b6455; font-size: 12px; margin: 10px 0 2px; }
