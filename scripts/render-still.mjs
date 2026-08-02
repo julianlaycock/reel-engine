@@ -43,7 +43,16 @@ const main = async () => {
   }
   await fs.mkdir(path.dirname(args.output), {recursive: true});
 
-  const serveUrl = await bundle({entryPoint: path.join(root, 'src/index.ts'), webpackOverride: withEngineAlias});
+  // Pin the bundle to a stable cache dir — see render-video.mjs. Without outDir
+  // every run leaks a ~1.3GB %TEMP%\remotion-webpack-bundle-* that is never cleaned.
+  // Separate dir from render-video so a still and a video render can't clobber each other.
+  const bundleDir = path.join(root, 'node_modules', '.cache', 'remotion-bundle-still');
+  await fs.mkdir(bundleDir, {recursive: true});
+  const serveUrl = await bundle({
+    entryPoint: path.join(root, 'src/index.ts'),
+    webpackOverride: withEngineAlias,
+    outDir: bundleDir,
+  });
   const comps = await getCompositions(serveUrl, {inputProps: {video}});
   const composition = comps.find((candidate) => candidate.id === args.composition);
   if (!composition) throw new Error(`Composition ${args.composition} not found`);

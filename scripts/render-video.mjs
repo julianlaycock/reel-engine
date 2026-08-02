@@ -381,7 +381,16 @@ const main = async () => {
 
   const hasAudio = Boolean(video.audio?.voSrc || video.audio?.musicSrc);
 
-  const serveUrl = await bundle({entryPoint: path.join(root, 'src/index.ts'), webpackOverride: withEngineAlias});
+  // Pin the bundle to a stable cache dir. Without outDir, Remotion mints a fresh
+  // ~1.3GB %TEMP%\remotion-webpack-bundle-* per render and never removes it —
+  // 133 of them (~90GB) once filled the disk and throttled the whole machine.
+  const bundleDir = path.join(root, 'node_modules', '.cache', 'remotion-bundle-video');
+  await fs.mkdir(bundleDir, {recursive: true});
+  const serveUrl = await bundle({
+    entryPoint: path.join(root, 'src/index.ts'),
+    webpackOverride: withEngineAlias,
+    outDir: bundleDir,
+  });
   const comps = await getCompositions(serveUrl, {inputProps: {video}});
   const composition = comps.find((candidate) => candidate.id === args.composition);
 
