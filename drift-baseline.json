@@ -1,0 +1,6 @@
+{
+  "_comment": "Raw style literals recorded when the KT-Remotion films (KTHook/KTTax/KTFxDemo) were first committed, 2026-08-06. ALL of these live in those three files: they were authored as standalone hand-written compositions during the KT format's pilot and never went through the @tokens path. This baseline is a DEBT RECORD, not a permission: the ratchet still blocks any increase. Lower these numbers as the KT files migrate to @tokens, and delete this file entirely when they reach zero.",
+  "hexTs": 7,
+  "hexCss": 0,
+  "fontFamilyTs": 17
+}
