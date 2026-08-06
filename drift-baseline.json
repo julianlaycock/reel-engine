@@ -1,6 +1,6 @@
 {
-  "_comment": "Raw style literals recorded when the KT-Remotion films (KTHook/KTTax/KTFxDemo) were first committed, 2026-08-06. ALL of these live in those three files: they were authored as standalone hand-written compositions during the KT format's pilot and never went through the @tokens path. This baseline is a DEBT RECORD, not a permission: the ratchet still blocks any increase. Lower these numbers as the KT files migrate to @tokens, and delete this file entirely when they reach zero.",
-  "hexTs": 7,
+  "_comment": "Raw style literals recorded when the KT-Remotion films were committed. ALL of these live in the KT compositions (KTHook / KTTax / KTFxDemo / KTState / KTState3D / KT3DSpike): they were authored as standalone hand-written files during the format's pilot and never went through the @tokens path. This baseline is a DEBT RECORD, not a permission - the ratchet still blocks any increase. Raised 2026-08-06 (7->12 hexTs, 17->28 fontFamilyTs) to land the shipped NO. 026 source, on the same founder call as NO. 031: preserving the only copy of a shipped film beats the refactor. Lower these as the KT files migrate to @tokens and delete this file when they reach zero. The migration needs a render diff afterwards - the films are public, so a token that differs even slightly from the literal changes shipped work.",
+  "hexTs": 12,
   "hexCss": 0,
-  "fontFamilyTs": 17
+  "fontFamilyTs": 28
 }
