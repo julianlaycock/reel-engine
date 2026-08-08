@@ -57,6 +57,7 @@ export const Root: React.FC = () => {
       <Composition
         id="KTStack"
         component={KTStack}
+        defaultProps={{layer: 'all' as const}}
         durationInFrames={KT_STACK_FRAMES}
         fps={FPS}
         width={1080}

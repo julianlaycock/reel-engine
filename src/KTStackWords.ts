@@ -75,8 +75,8 @@ export const STACK_BEATS: StackBeat[] = [
     from: 11760, to: 24640, bg: CREAM, type: INK, top: true,
     rows: [
       {size: 96, words: [
-        {t: "1. ", ms: 11760},
-        {t: "Skills. ", ms: 12510},
+        {t: "1. ", ms: 11760, out: 20260},
+        {t: "Skills. ", ms: 12510, out: 20260},
       ]},
       {size: 54, words: [
         {t: "Anthropic ", ms: 13480, out: 16640},

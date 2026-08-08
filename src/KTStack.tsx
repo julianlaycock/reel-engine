@@ -144,9 +144,9 @@ const SkillGrid: React.FC = () => {
   return (
     <AbsoluteFill style={{fontFamily: FONT}}>
       <Odometer fromMs={14200} tickMs={60} values={rampValues(0, 17, 12, (n) => String(n))}
-        style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP - 70, fontSize: 130, color: INK,
+        style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP - 44, fontSize: 112, color: INK,
           lineHeight: 1}} />
-      <div style={{position: 'absolute', left: VIZ_L + 190, top: VIZ_TOP + 10, fontSize: 26,
+      <div style={{position: 'absolute', left: VIZ_L + 172, top: VIZ_TOP + 36, fontSize: 26,
         letterSpacing: 3, color: GREY_C}}>ANTHROPIC / SKILLS</div>
       {/* The real page, pasted in like a specimen rather than run full-bleed.
           Full-bleed would put type over the viz, which the locked ruling forbids
@@ -155,8 +155,8 @@ const SkillGrid: React.FC = () => {
           Framed, it stays inside x150-930 and its job is authenticity — the
           NUMBER is carried by the odometer and the spoken line, not by reading
           the screenshot. Provenance: public/screens/no033-skills-17.json. */}
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 90, width: VIZ_W,
-        height: 510, border: `4px solid ${INK}`, overflow: 'hidden', background: CREAM}}>
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 115, width: VIZ_W,
+        height: 485, border: `4px solid ${INK}`, overflow: 'hidden', background: CREAM}}>
         <Img src={staticFile('screens/no033-skills-17.png')}
           style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 24%'}} />
       </div>
@@ -184,7 +184,6 @@ const SkillGrid: React.FC = () => {
 const STORES = [{t: 'OFFICIAL', ms: 27600}, {t: 'COMMUNITY', ms: 31300}, {t: 'MINE', ms: 33800}];
 const Storefront: React.FC = () => {
   const frame = useCurrentFrame();
-  const mine = decel(prog(frame, 33800, 620));
   return (
     <AbsoluteFill style={{fontFamily: FONT}}>
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP, width: VIZ_W,
@@ -200,27 +199,17 @@ const Storefront: React.FC = () => {
         })}
       </div>
 
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 80, width: VIZ_W,
-        height: 500, border: `4px solid ${CREAM}`, overflow: 'hidden', background: CREAM}}>
-        <Img src={staticFile('screens/no033-plugin-store.png')}
-          style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 28%'}} />
+      {/* Pre-cropped to the card region rather than object-fit'd from the full
+          page. The whole 1100px-wide page inside a 780px plate rendered every
+          card title at 0.71x, which is why the list could not be read. The crop
+          (700x485 from x70,y290) is a 1.11x blow-up of the same cards instead —
+          a 56% gain in apparent type size, and the plate no longer has to guess
+          a focal point with objectPosition. */}
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 100, width: VIZ_W,
+        height: 510, border: `4px solid ${CREAM}`, overflow: 'hidden', background: CREAM}}>
+        <Img src={staticFile('screens/no033-plugin-store-crop.png')}
+          style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top'}} />
       </div>
-
-      {/* the third one, ours, landing over the public one */}
-      <div style={{position: 'absolute', left: VIZ_L + 300, top: VIZ_TOP + 300,
-        width: 440, height: 200, opacity: mine,
-        transform: `translateY(${(1 - mine) * 46}px)`,
-        background: INK, border: `5px solid ${CREAM}`, color: CREAM,
-        display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 22}}>
-        <div style={{fontSize: 26, letterSpacing: 3, color: 'rgba(244,239,223,0.6)'}}>PRIVATE</div>
-        <div style={{fontSize: 62, letterSpacing: 1}}>vektor</div>
-      </div>
-      <PumpRect fromMs={34600} x={VIZ_L + 300} y={VIZ_TOP + 300} w={440} h={200}
-        color={'rgba(244,239,223,0.20)'} beat={11} pumps={5} ampY={1.07} accel={0.86}
-        decay={0.82} anchor={'bottom'} />
-
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 62, width: VIZ_W,
-        fontSize: 24, letterSpacing: 3, color: 'rgba(244,239,223,0.55)'}}>CLAUDE.COM/PLUGINS</div>
     </AbsoluteFill>
   );
 };
@@ -367,8 +356,6 @@ const AgentCards: React.FC = () => {
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30,
         letterSpacing: 4}}>
         ONE GENERALIST, GUESSING
-        <div style={{position: 'absolute', left: 26, right: 26, top: '50%', height: 5,
-          background: RED}} />
       </div>
     </AbsoluteFill>
   );
@@ -425,7 +412,7 @@ const Seams: React.FC = () => (
 );
 
 // ---- composition -----------------------------------------------------------
-export const KTStack: React.FC = () => {
+export const KTStack: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'all'}) => {
   const frame = useCurrentFrame();
   // Every hook is called before any early return. A hook after an early return
   // passes every still and fails the video render with React error 310, and
@@ -441,6 +428,7 @@ export const KTStack: React.FC = () => {
   const furn = lightField ? GREY_C : GREY_I;
   return (
     <AbsoluteFill style={{backgroundColor: beat.bg, fontFamily: FONT}}>
+      {layer !== 'type' ? (<>
       <Window fromMs={1400}  toMs={7000}>  <PromptBox /></Window>
       <Window fromMs={7000}  toMs={11800}> <FiveTicks /></Window>
       <Window fromMs={11800} toMs={24600}> <SkillGrid /></Window>
@@ -449,7 +437,9 @@ export const KTStack: React.FC = () => {
       <Window fromMs={52600} toMs={63000}> <MemoryStack /></Window>
       <Window fromMs={63000} toMs={72800}> <AgentCards /></Window>
       <Window fromMs={72800} toMs={STACK_END_MS}><StackOutro /></Window>
+      </>) : null}
 
+      {layer !== 'viz' ? (
       <AbsoluteFill style={{alignItems: 'center',
         justifyContent: beat.top ? 'flex-start' : 'center',
         flexDirection: 'column', rowGap: 26,
@@ -464,9 +454,11 @@ export const KTStack: React.FC = () => {
           </div>
         ))}
       </AbsoluteFill>
+      ) : null}
 
-      <Seams />
+      {layer === 'all' ? <Seams /> : null}
 
+      {layer === 'all' ? (<>
       {/* FURNITURE — inside the safe box. The 44px rail is HORIZONTAL-ONLY since
           2026-08-07: Reels chrome cuts the top and bottom, so the wordmark sits
           at y240 and the footer slugs at y1372, not at the rail. */}
@@ -477,6 +469,7 @@ export const KTStack: React.FC = () => {
         color: furn}}>vektor /// five setups</div>
       <div style={{position: 'absolute', top: 1372, left: VIZ_L, width: VIZ_W, textAlign: 'right',
         fontSize: 22, letterSpacing: 3, color: furn}}>comment. stack.</div>
+      </>) : null}
     </AbsoluteFill>
   );
 };
