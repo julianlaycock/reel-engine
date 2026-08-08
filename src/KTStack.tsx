@@ -169,33 +169,58 @@ const SkillGrid: React.FC = () => {
   );
 };
 
-// ---- S4 -- three storefronts, the third alone ------------------------------
-const STORES = ['OFFICIAL', 'COMMUNITY', 'MINE'];
-const StorefrontPanels: React.FC = () => {
+// ---- S4 -- the real storefront, then the private one -----------------------
+// The founder supplied this capture by hand: claude.com/plugins refuses headless
+// Edge outright (flat single colour at 9s of virtual time, no file at all at
+// 45s). It is worth the manual step — the page shows verified badges and install
+// counts, so it visibly IS a storefront, which is the exact word in the line.
+// Provenance: public/screens/no033-plugin-store.json.
+//
+// The three labels above it keep the factual correction the source reel gets
+// wrong: official and community are DIFFERENT marketplaces
+// (code.claude.com/docs/en/discover-plugins). The live one lights as the script
+// names it. Then MINE lands ON TOP of the real store, because the line is "a
+// third that nobody else can see".
+const STORES = [{t: 'OFFICIAL', ms: 27600}, {t: 'COMMUNITY', ms: 31300}, {t: 'MINE', ms: 33800}];
+const Storefront: React.FC = () => {
   const frame = useCurrentFrame();
-  const inAt = [26800, 31700, 34200];
+  const mine = decel(prog(frame, 33800, 620));
   return (
     <AbsoluteFill style={{fontFamily: FONT}}>
-      {STORES.map((s, i) => {
-        const g = decel(prog(frame, inAt[i], 520));
-        const w = 244, x = VIZ_L + i * (w + 24);
-        const ours = i === 2;
-        return (
-          <div key={s} style={{position: 'absolute', left: x, top: VIZ_TOP + 150, width: w,
-            height: 300, opacity: g,
-            transform: `translateY(${(1 - g) * 40}px)`,
-            border: `5px solid ${CREAM}`, background: ours ? CREAM : 'transparent',
-            color: ours ? RED : CREAM,
-            display: 'flex', alignItems: 'flex-end', padding: 20, fontSize: 30,
-            letterSpacing: 2}}>{s}</div>
-        );
-      })}
-      {/* fx/pump-rect via KTEffects. The third panel is the only one that pumps:
-          it is the only one that is ours. transformOrigin does the anchoring, so
-          no position key is needed alongside the scale (see EFFECTS-INDEX). */}
-      <PumpRect fromMs={34600} x={VIZ_L + 2 * 268} y={VIZ_TOP + 150} w={244} h={300}
-        color={'rgba(244,239,223,0.22)'} beat={11} pumps={5} ampY={1.09} accel={0.86}
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP, width: VIZ_W,
+        display: 'flex', justifyContent: 'space-between'}}>
+        {STORES.map((s) => {
+          const live = frame >= f(s.ms);
+          return (
+            <div key={s.t} style={{fontSize: 26, letterSpacing: 3,
+              color: live ? CREAM : 'rgba(244,239,223,0.38)',
+              borderBottom: live ? `4px solid ${CREAM}` : '4px solid transparent',
+              paddingBottom: 8}}>{s.t}</div>
+          );
+        })}
+      </div>
+
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 80, width: VIZ_W,
+        height: 500, border: `4px solid ${CREAM}`, overflow: 'hidden', background: CREAM}}>
+        <Img src={staticFile('screens/no033-plugin-store.png')}
+          style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 28%'}} />
+      </div>
+
+      {/* the third one, ours, landing over the public one */}
+      <div style={{position: 'absolute', left: VIZ_L + 300, top: VIZ_TOP + 300,
+        width: 440, height: 200, opacity: mine,
+        transform: `translateY(${(1 - mine) * 46}px)`,
+        background: INK, border: `5px solid ${CREAM}`, color: CREAM,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 22}}>
+        <div style={{fontSize: 26, letterSpacing: 3, color: 'rgba(244,239,223,0.6)'}}>PRIVATE</div>
+        <div style={{fontSize: 62, letterSpacing: 1}}>vektor</div>
+      </div>
+      <PumpRect fromMs={34600} x={VIZ_L + 300} y={VIZ_TOP + 300} w={440} h={200}
+        color={'rgba(244,239,223,0.20)'} beat={11} pumps={5} ampY={1.07} accel={0.86}
         decay={0.82} anchor={'bottom'} />
+
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 62, width: VIZ_W,
+        fontSize: 24, letterSpacing: 3, color: 'rgba(244,239,223,0.55)'}}>CLAUDE.COM/PLUGINS</div>
     </AbsoluteFill>
   );
 };
@@ -419,7 +444,7 @@ export const KTStack: React.FC = () => {
       <Window fromMs={1400}  toMs={7000}>  <PromptBox /></Window>
       <Window fromMs={7000}  toMs={11800}> <FiveTicks /></Window>
       <Window fromMs={11800} toMs={24600}> <SkillGrid /></Window>
-      <Window fromMs={24600} toMs={36700}> <StorefrontPanels /></Window>
+      <Window fromMs={24600} toMs={36700}> <Storefront /></Window>
       <Window fromMs={36700} toMs={52600}> <ThresholdCross /></Window>
       <Window fromMs={52600} toMs={63000}> <MemoryStack /></Window>
       <Window fromMs={63000} toMs={72800}> <AgentCards /></Window>
