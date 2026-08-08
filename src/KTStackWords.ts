@@ -79,17 +79,17 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "Skills. ", ms: 12510},
       ]},
       {size: 54, words: [
-        {t: "Anthropic ", ms: 13480, out: 20260},
-        {t: "keeps ", ms: 14150, out: 20260},
-        {t: "17 ", ms: 14420, out: 20260, ring: 3411, furnMs: 14680, furnColor: RED, color: RED},
-        {t: "example ", ms: 14820, out: 20260},
-        {t: "ones ", ms: 15320, out: 20260},
+        {t: "Anthropic ", ms: 13480, out: 16640},
+        {t: "keeps ", ms: 14150, out: 16640},
+        {t: "17 ", ms: 14420, out: 16640, ring: 3411, furnMs: 14680, furnColor: RED, color: RED},
+        {t: "example ", ms: 14820, out: 16640},
+        {t: "ones ", ms: 15320, out: 16640},
       ]},
       {size: 50, words: [
-        {t: "in ", ms: 15600, out: 20260},
-        {t: "a ", ms: 15760, out: 20260},
-        {t: "public ", ms: 15840, out: 20260},
-        {t: "repo, ", ms: 16160, out: 20260},
+        {t: "in ", ms: 15600, out: 17840},
+        {t: "a ", ms: 15760, out: 17840},
+        {t: "public ", ms: 15840, out: 17840},
+        {t: "repo, ", ms: 16160, out: 17840},
       ]},
       {size: 46, words: [
         {t: "and ", ms: 16640, out: 20260},
@@ -336,28 +336,28 @@ export const STACK_BEATS: StackBeat[] = [
     ],
   },
   { // cta
-    from: 72810, to: 78060, bg: INK, type: CREAM, top: true,
+    from: 72810, to: 78060, bg: RED, type: CREAM, top: true,
     rows: [
       {size: 54, words: [
-        {t: "Set ", ms: 72810},
-        {t: "yours ", ms: 72870},
-        {t: "up ", ms: 73120},
-        {t: "this ", ms: 73220},
-        {t: "week. ", ms: 73420},
+        {t: "Set ", ms: 72810, out: 74060},
+        {t: "yours ", ms: 72870, out: 74060},
+        {t: "up ", ms: 73120, out: 74060},
+        {t: "this ", ms: 73220, out: 74060},
+        {t: "week. ", ms: 73420, out: 74060},
       ]},
-      {size: 78, words: [
+      {size: 60, words: [
         {t: "Comment ", ms: 74060},
-        {t: "stack ", ms: 74240, burst: 3461, furnMs: 74500, furnColor: RED, color: RED},
       ]},
-      {size: 48, words: [
+      {size: 140, words: [
+        {t: "stack ", ms: 74240, underline: 3461, furnMs: 74500, furnColor: CREAM},
+      ]},
+      {size: 42, words: [
         {t: "and ", ms: 74560},
         {t: "I'll ", ms: 74720},
         {t: "send ", ms: 74970},
         {t: "you ", ms: 75230},
         {t: "all ", ms: 75430},
         {t: "five ", ms: 75630},
-      ]},
-      {size: 52, words: [
         {t: "plus ", ms: 76070},
         {t: "the ", ms: 76150},
         {t: "files ", ms: 76370},

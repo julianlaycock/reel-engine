@@ -64,24 +64,51 @@ const Window: React.FC<{fromMs: number; toMs: number; children: React.ReactNode}
     return <>{children}</>;
   };
 
-// ---- S1 -- the gap ---------------------------------------------------------
-// Two rules drift apart. No labels: the type above already names the two groups,
-// and repeating them here would be the "text touching the viz" mistake.
-const GapBars: React.FC = () => {
+// ---- S1 -- the prompt box --------------------------------------------------
+// Founder direction, 2026-08-08: "someone typing in a textbox". The first
+// version drew two rules drifting apart to mean "a gap", which is an abstraction
+// of an abstraction and read as nothing.
+//
+// This is the person the line is about: opens Claude Code, types something
+// vague, sends it, and waits. The caret types "fix my code", the prompt is sent,
+// and then nothing comes back — the stall IS the point, so it is held, not
+// resolved. No setup above the box, because that is the other group.
+const PROMPT = 'fix my code';
+const PromptBox: React.FC = () => {
   const frame = useCurrentFrame();
-  const g = decel(prog(frame, 1400, 4200));
-  const spread = 40 + g * 190;
-  const mid = VIZ_TOP + 300;
+  const chars = Math.min(PROMPT.length, Math.max(0, Math.floor((frame - f(1500)) / 3)));
+  const sent = frame >= f(3900);
+  const caretOn = Math.floor(frame / 8) % 2 === 0;
+  const BOX_Y = VIZ_TOP + 130;
   return (
-    <AbsoluteFill>
-      <div style={{position: 'absolute', left: VIZ_L, top: mid - spread, width: VIZ_W, height: 10,
-        background: CREAM}} />
-      <div style={{position: 'absolute', left: VIZ_L, top: mid + spread, width: VIZ_W, height: 10,
-        background: RED}} />
-      <div style={{position: 'absolute', left: VIZ_L, top: mid - spread + 10, width: 4,
-        height: spread * 2 - 10, background: HAIR_I}} />
-      <div style={{position: 'absolute', left: VIZ_L + VIZ_W - 4, top: mid - spread + 10, width: 4,
-        height: spread * 2 - 10, background: HAIR_I}} />
+    <AbsoluteFill style={{fontFamily: FONT}}>
+      {/* the sent prompt, parked above the box once it goes */}
+      {sent ? (
+        <div style={{position: 'absolute', left: VIZ_L + VIZ_W - 430, top: BOX_Y - 118, width: 430,
+          height: 92, border: `4px solid ${HAIR_I}`, color: CREAM, fontSize: 34,
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 22px'}}>
+          {PROMPT}
+        </div>
+      ) : null}
+
+      {/* the input itself */}
+      <div style={{position: 'absolute', left: VIZ_L, top: BOX_Y, width: VIZ_W, height: 128,
+        border: `4px solid ${CREAM}`, display: 'flex', alignItems: 'center', padding: '0 26px',
+        fontSize: 40, color: CREAM, letterSpacing: 1}}>
+        <span>{sent ? '' : PROMPT.slice(0, chars)}</span>
+        <span style={{opacity: caretOn ? 1 : 0, marginLeft: 3}}>|</span>
+      </div>
+
+      {/* what comes back: nothing. three dots that never resolve. */}
+      {sent ? (
+        <div style={{position: 'absolute', left: VIZ_L, top: BOX_Y + 190, display: 'flex', gap: 18}}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{width: 22, height: 22, borderRadius: 11,
+              background: CREAM,
+              opacity: 0.22 + 0.5 * (Math.floor(frame / 6) % 3 === i ? 1 : 0)}} />
+          ))}
+        </div>
+      ) : null}
     </AbsoluteFill>
   );
 };
@@ -170,30 +197,78 @@ const StorefrontPanels: React.FC = () => {
   );
 };
 
-// ---- S5 -- the gate --------------------------------------------------------
-// A commit travels toward main and is stopped. The bar is the hook; it does not
-// move, which is the whole point of a hook.
-const HookGate: React.FC = () => {
+// ---- S5 -- threshold cross -------------------------------------------------
+// Founder pick, 2026-08-08, borrowing the shape of fx/threshold-cross ("the
+// failed attempt, then the breakthrough"). The first version just parked a bar
+// in front of a box, which showed that a hook blocks without ever showing what
+// it is FOR.
+//
+// Two runs at main are thrown back. The third takes the branch below and lands.
+// The rail is drawn the whole beat so the geometry is legible before anything
+// moves — visualisations enter early and hold long.
+const RAIL_Y = VIZ_TOP + 175;      // the direct line to main
+const BRANCH_Y = VIZ_TOP + 330;    // the way that actually works
+const GATE_X = VIZ_L + 560;
+const RUNS = [
+  {start: 45400, hit: 45950, back: 46500, blocked: true},
+  {start: 46600, hit: 47100, back: 47600, blocked: true},
+  {start: 47800, hit: 48600, back: 49900, blocked: false},
+];
+const ThresholdCross: React.FC = () => {
   const frame = useCurrentFrame();
-  const g = decel(prog(frame, 45600, 1900));
-  const gateX = VIZ_L + 520;
-  const x = VIZ_L + 20 + g * 430;
-  const blocked = frame >= f(47400);
+  const run = RUNS.find((r) => frame >= f(r.start) && frame < f(r.back)) ?? null;
+  let x = VIZ_L + 10, y = RAIL_Y, rejected = false, landed = false;
+  if (run) {
+    const toGate = decel(prog(frame, run.start, run.hit - run.start));
+    if (frame < f(run.hit)) {
+      x = VIZ_L + 10 + toGate * (GATE_X - VIZ_L - 150);
+    } else if (run.blocked) {
+      // thrown back: the recoil is faster than the approach, so it reads as a
+      // rejection rather than a retreat
+      const bk = decel(prog(frame, run.hit, run.back - run.hit));
+      x = (GATE_X - 140) - bk * (GATE_X - VIZ_L - 150);
+      rejected = true;
+    } else {
+      const dv = decel(prog(frame, run.hit, run.back - run.hit));
+      x = (GATE_X - 140) + dv * 250;
+      y = RAIL_Y + dv * (BRANCH_Y - RAIL_Y);
+      landed = dv > 0.92;
+    }
+  }
+  const anyBlocked = frame >= f(RUNS[0].hit);
   return (
     <AbsoluteFill style={{fontFamily: FONT}}>
-      <div style={{position: 'absolute', left: gateX, top: VIZ_TOP + 120, width: 12, height: 300,
+      {/* the two rails */}
+      <div style={{position: 'absolute', left: VIZ_L, top: RAIL_Y + 54, width: GATE_X - VIZ_L,
+        height: 3, background: HAIR_C}} />
+      <div style={{position: 'absolute', left: VIZ_L, top: BRANCH_Y + 54, width: VIZ_W,
+        height: 3, background: HAIR_C}} />
+
+      {/* the hook: a hard bar that never moves */}
+      <div style={{position: 'absolute', left: GATE_X, top: RAIL_Y - 46, width: 14, height: 150,
         background: RED}} />
-      <div style={{position: 'absolute', left: gateX + 30, top: VIZ_TOP + 130, fontSize: 26,
-        letterSpacing: 3, color: GREY_C}}>MAIN</div>
-      <div style={{position: 'absolute', left: x, top: VIZ_TOP + 210, width: 150, height: 110,
-        border: `4px solid ${INK}`, background: blocked ? WASH_C : 'transparent',
-        color: INK, fontSize: 22, letterSpacing: 2,
-        display: 'flex', alignItems: 'center', justifyContent: 'center'}}>COMMIT</div>
+      <div style={{position: 'absolute', left: GATE_X + 28, top: RAIL_Y - 42, fontSize: 30,
+        letterSpacing: 3, color: anyBlocked ? RED : GREY_C}}>MAIN</div>
+      <div style={{position: 'absolute', left: GATE_X + 28, top: BRANCH_Y + 14, fontSize: 26,
+        letterSpacing: 3, color: GREY_C}}>BRANCH</div>
+
+      {/* the commit */}
+      {run ? (
+        <div style={{position: 'absolute', left: x, top: y, width: 140, height: 100,
+          border: `4px solid ${rejected ? RED : INK}`,
+          background: landed ? INK : 'transparent',
+          color: landed ? CREAM : (rejected ? RED : INK),
+          fontSize: 22, letterSpacing: 2,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'}}>COMMIT</div>
+      ) : null}
+
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 150, width: VIZ_W,
         borderTop: `3px solid ${HAIR_C}`, paddingTop: 16, fontSize: 24, letterSpacing: 3,
         color: GREY_C}}>PRE-TOOL-USE / POST-TOOL-USE</div>
-      <PumpRect fromMs={47400} x={gateX} y={VIZ_TOP + 120} w={12} h={300} color={RED}
-        beat={9} pumps={4} ampX={2.4} ampY={1.0} accel={0.9} decay={0.7} anchor={'center'} />
+
+      {/* the bar kicks on each rejection, not continuously */}
+      <PumpRect fromMs={45950} x={GATE_X} y={RAIL_Y - 46} w={14} h={150} color={RED}
+        beat={9} pumps={3} ampX={2.2} ampY={1.0} accel={0.9} decay={0.7} anchor={'center'} />
     </AbsoluteFill>
   );
 };
@@ -254,34 +329,46 @@ const AgentCards: React.FC = () => {
           </div>
         );
       })}
+      {/* Founder note 2026-08-08: this box was "barely readable". It was GREY_I
+          (34% cream) on WASH_I (10% cream) over ink — low-contrast text on a
+          low-contrast fill, so both the type and its container were near the
+          field. Now full CREAM type on a bordered panel, struck through in red
+          to say the same thing the word "generalist" is saying in the type. */}
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 170, width: VIZ_W,
-        height: 96, border: `4px solid ${HAIR_I}`, background: WASH_I, color: GREY_I,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
-        letterSpacing: 4}}>ONE GENERALIST, GUESSING</div>
+        height: 96, border: `4px solid ${CREAM}`, color: CREAM,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30,
+        letterSpacing: 4}}>
+        ONE GENERALIST, GUESSING
+        <div style={{position: 'absolute', left: 26, right: 26, top: '50%', height: 5,
+          background: RED}} />
+      </div>
     </AbsoluteFill>
   );
 };
 
-// ---- S8 -- the keyword -----------------------------------------------------
-const KeywordPlate: React.FC = () => {
-  const frame = useCurrentFrame();
-  const g = decel(prog(frame, 74200, 420));
-  return (
-    <AbsoluteFill style={{fontFamily: FONT}}>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 210, width: VIZ_W, height: 190,
-        opacity: g, background: RED, color: CREAM, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontSize: 96, letterSpacing: 6}}>STACK</div>
-      {/* Inset 16px each side and pumped from the inset, NOT from VIZ_W. A
-          centre-anchored ampX of 1.02 on a full-width rect grows 7.8px past each
-          edge; it measured at x147-946 against a safe box of x150-930. The inset
-          keeps the PEAK inside: 748 * 1.02 = 762.96 centred on 540, so
-          158.5-921.5. Measure the peak, never the rest state. */}
-      <PumpRect fromMs={74600} x={VIZ_L + 16} y={VIZ_TOP + 210} w={VIZ_W - 32} h={190}
-        color={'rgba(231,55,26,0.30)'} beat={12} pumps={5} ampY={1.06} ampX={1.02}
-        accel={0.88} decay={0.8} anchor={'center'} />
-    </AbsoluteFill>
-  );
-};
+// ---- S8 -- the end card ----------------------------------------------------
+// THE HOUSE OUTRO. NO. 030 ends on a red field with fourteen rows of "vektor"
+// folding down the frame at 13% cream, and three type rows over it: comment /
+// the keyword huge with an underline / the promise. That is the standard and it
+// is deliberately the same film to film — the founder's note on 2026-08-08 was
+// that the outro should be "relatively standardized and relatively the same
+// between videos".
+//
+// What this replaces: a solid red rectangle with STACK set inside it and a pump
+// on top, on an ink field. Off-standard on the field, the row count and the
+// treatment, and the founder cut it on sight.
+//
+// NO. 030 hand-rolled this marquee locally as `ZigzagOutro`. This uses the
+// PORTED ZigzagMarquee from KTSeams instead — same fx, one implementation, no
+// look-alike under a second name.
+//
+// The unit's trailing DOUBLE SPACE is load-bearing: rowDelta = amp*4/period =
+// 260*4/13 = 80px must stay under the inter-word gap or adjacent rows shear.
+// These are NO. 030's shipped numbers.
+const StackOutro: React.FC = () => (
+  <ZigzagMarquee fromMs={72800} unit={'vektor  '} amp={260} period={13} rows={14}
+    rowH={136} fontSize={150} dur={75} color={'rgba(244,239,223,0.13)'} />
+);
 
 // ---- seams -----------------------------------------------------------------
 // Field flips are fx/matte-wipe.js (KTSeams.tsx), the same treatment shipped in
@@ -326,14 +413,14 @@ export const KTStack: React.FC = () => {
   const furn = lightField ? GREY_C : GREY_I;
   return (
     <AbsoluteFill style={{backgroundColor: beat.bg, fontFamily: FONT}}>
-      <Window fromMs={1400}  toMs={7000}>  <GapBars /></Window>
+      <Window fromMs={1400}  toMs={7000}>  <PromptBox /></Window>
       <Window fromMs={7000}  toMs={11800}> <FiveTicks /></Window>
       <Window fromMs={11800} toMs={24600}> <SkillGrid /></Window>
       <Window fromMs={24600} toMs={36700}> <StorefrontPanels /></Window>
-      <Window fromMs={36700} toMs={52600}> <HookGate /></Window>
+      <Window fromMs={36700} toMs={52600}> <ThresholdCross /></Window>
       <Window fromMs={52600} toMs={63000}> <MemoryStack /></Window>
       <Window fromMs={63000} toMs={72800}> <AgentCards /></Window>
-      <Window fromMs={72800} toMs={STACK_END_MS}><KeywordPlate /></Window>
+      <Window fromMs={72800} toMs={STACK_END_MS}><StackOutro /></Window>
 
       <AbsoluteFill style={{alignItems: 'center',
         justifyContent: beat.top ? 'flex-start' : 'center',
