@@ -74,35 +74,64 @@ const Window: React.FC<{fromMs: number; toMs: number; children: React.ReactNode}
 // vague, sends it, and waits. The caret types "fix my code", the prompt is sent,
 // and then nothing comes back — the stall IS the point, so it is held, not
 // resolved. No setup above the box, because that is the other group.
+// v3, 2026-08-08: the founder asked for the boxes to be improved. v2 drew two
+// hairline rectangles that read as generic boxes rather than as a chat. What
+// makes a composer legible at a glance is the furniture around the field, not
+// the field: a rounded composer with a leading chevron, a send affordance that
+// is dim until there is something to send, and the sent message as a filled
+// bubble on the right with a tail. So the beat now reads as a conversation that
+// goes nowhere, rather than as text in a rectangle.
 const PROMPT = 'fix my code';
 const PromptBox: React.FC = () => {
   const frame = useCurrentFrame();
   const chars = Math.min(PROMPT.length, Math.max(0, Math.floor((frame - f(1500)) / 3)));
+  const typed = PROMPT.slice(0, chars);
   const sent = frame >= f(3900);
   const caretOn = Math.floor(frame / 8) % 2 === 0;
-  const BOX_Y = VIZ_TOP + 130;
+  const BOX_Y = VIZ_TOP + 210;
+  const R = 26;
   return (
     <AbsoluteFill style={{fontFamily: FONT}}>
-      {/* the sent prompt, parked above the box once it goes */}
+      {/* the sent message: a filled bubble, right-aligned, with a tail */}
       {sent ? (
-        <div style={{position: 'absolute', left: VIZ_L + VIZ_W - 430, top: BOX_Y - 118, width: 430,
-          height: 92, border: `4px solid ${HAIR_I}`, color: CREAM, fontSize: 34,
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 22px'}}>
-          {PROMPT}
-        </div>
+        <>
+          <div style={{position: 'absolute', left: VIZ_L + VIZ_W - 400, top: BOX_Y - 168,
+            width: 400, height: 104, background: CREAM, color: INK, fontSize: 38,
+            borderRadius: `${R}px ${R}px 6px ${R}px`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+            {PROMPT}
+          </div>
+          {/* The tail hangs off the bubble's RIGHT edge, so it has to start 18px
+              back from it or it points outside the safe box — measured x933
+              against a limit of 930. */}
+          <div style={{position: 'absolute', left: VIZ_L + VIZ_W - 18, top: BOX_Y - 78,
+            width: 0, height: 0, borderLeft: `18px solid ${CREAM}`,
+            borderBottom: '16px solid transparent'}} />
+        </>
       ) : null}
 
-      {/* the input itself */}
-      <div style={{position: 'absolute', left: VIZ_L, top: BOX_Y, width: VIZ_W, height: 128,
-        border: `4px solid ${CREAM}`, display: 'flex', alignItems: 'center', padding: '0 26px',
-        fontSize: 40, color: CREAM, letterSpacing: 1}}>
-        <span>{sent ? '' : PROMPT.slice(0, chars)}</span>
-        <span style={{opacity: caretOn ? 1 : 0, marginLeft: 3}}>|</span>
+      {/* the composer */}
+      <div style={{position: 'absolute', left: VIZ_L, top: BOX_Y, width: VIZ_W, height: 132,
+        boxSizing: 'border-box',   // without this the 3px border pushes the
+        // composer's right edge to x936, 6px outside the safe box; measured x933
+        border: `3px solid ${HAIR_I}`, borderRadius: R, display: 'flex', alignItems: 'center',
+        padding: '0 24px', fontSize: 40, color: CREAM, letterSpacing: 1, gap: 18}}>
+        <span style={{color: RED, fontSize: 36}}>&gt;</span>
+        <span style={{flex: 1, textAlign: 'left', opacity: sent ? 0.34 : 1}}>
+          {sent ? 'ask anything' : typed}
+          {sent ? null : <span style={{opacity: caretOn ? 1 : 0}}>|</span>}
+        </span>
+        {/* send: dim until there is something to send, then solid */}
+        <div style={{width: 62, height: 62, borderRadius: 31,
+          background: chars > 0 && !sent ? CREAM : 'transparent',
+          border: `3px solid ${chars > 0 && !sent ? CREAM : HAIR_I}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: chars > 0 && !sent ? INK : GREY_I, fontSize: 30}}>↑</div>
       </div>
 
       {/* what comes back: nothing. three dots that never resolve. */}
       {sent ? (
-        <div style={{position: 'absolute', left: VIZ_L, top: BOX_Y + 190, display: 'flex', gap: 18}}>
+        <div style={{position: 'absolute', left: VIZ_L + 24, top: BOX_Y + 186, display: 'flex', gap: 18}}>
           {[0, 1, 2].map((i) => (
             <div key={i} style={{width: 22, height: 22, borderRadius: 11,
               background: CREAM,
@@ -149,23 +178,8 @@ const SkillGrid: React.FC = () => {
           lineHeight: 1}} />
       <div style={{position: 'absolute', left: VIZ_L + 172, top: VIZ_TOP + 36, fontSize: 26,
         letterSpacing: 3, color: GREY_C}}>ANTHROPIC / SKILLS</div>
-      {/* The real page, pasted in like a specimen rather than run full-bleed.
-          Full-bleed would put type over the viz, which the locked ruling forbids
-          ("text on viz beats sits top, never touching the viz"), and NO. 016's
-          full-bleed repo shot came with an accepted tradeoff of nibbled edges.
-          Framed, it stays inside x150-930 and its job is authenticity — the
-          NUMBER is carried by the odometer and the spoken line, not by reading
-          the screenshot. Provenance: public/screens/no033-skills-17.json. */}
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 115, width: VIZ_W,
-        height: 485, border: `4px solid ${INK}`, overflow: 'hidden', background: CREAM}}>
-        <Img src={staticFile('screens/no033-skills-17.png')}
-          style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 24%'}} />
-      </div>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 62, width: VIZ_W,
-        display: 'flex', justifyContent: 'space-between', fontSize: 24, letterSpacing: 3,
-        color: GREY_C}}>
-        <span>GITHUB.COM/ANTHROPICS/SKILLS</span><span>{filled(6) ? '7 MINE' : ''}</span>
-      </div>
+      {/* The framed specimen is superseded by the shot beat from 13.4s; this
+          is the opener only, so it carries just the count and the source. */}
     </AbsoluteFill>
   );
 };
@@ -200,17 +214,10 @@ const Storefront: React.FC = () => {
         })}
       </div>
 
-      {/* Pre-cropped to the card region rather than object-fit'd from the full
-          page. The whole 1100px-wide page inside a 780px plate rendered every
-          card title at 0.71x, which is why the list could not be read. The crop
-          (700x485 from x70,y290) is a 1.11x blow-up of the same cards instead —
-          a 56% gain in apparent type size, and the plate no longer has to guess
-          a focal point with objectPosition. */}
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 100, width: VIZ_W,
-        height: 510, border: `4px solid ${CREAM}`, overflow: 'hidden', background: CREAM}}>
-        <Img src={staticFile('screens/no033-plugin-store-crop.png')}
-          style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top'}} />
-      </div>
+      {/* The page itself is no longer a plate here -- the shot beat shows the
+          real repo full-width from 26.2s. This strip is the opener only, and it
+          carries the factual correction the source reel gets wrong: official and
+          community are DIFFERENT marketplaces. */}
     </AbsoluteFill>
   );
 };
@@ -363,8 +370,8 @@ const MemoryStack: React.FC = () => {
 
 // ---- S7 -- two specialists, one generalist ---------------------------------
 const AGENTS = [
-  {t: 'JUDGE', s: 'reads rendered frames', x: 26, ms: 65100},
-  {t: 'TRIAGE', s: 'what actually needs me', x: 44, ms: 67500},
+  {t: 'JUDGE', s: 'reads rendered frames', x: 30, ms: 65100},
+  {t: 'TRIAGE', s: 'what actually needs me', x: 50, ms: 67500},
 ];
 const AgentCards: React.FC<{frames: number}> = ({frames}) => {
   const frame = useCurrentFrame();
@@ -375,24 +382,29 @@ const AgentCards: React.FC<{frames: number}> = ({frames}) => {
           them is present but inert. Placement respects the mascot safe zone
           (xPct 20-62, yPct 25-66 per scenes/ClaudeMascot.tsx) — outside it the
           rig logs a render warning. */}
-      {AGENTS.map((a) => (
-        frame >= f(a.ms) ? (
-          <ClaudeMascot key={a.t} frames={frames} sceneKind="beat"
-            config={{pose: 'pop', xPct: a.x, yPct: 56, size: 132, delay: 0,
-              lookAt: {xPct: 50, yPct: 30}}} />
-        ) : null
-      ))}
-      {/* the generalist: same figure, drained of presence */}
-      {frame >= f(69600) ? (
-        <div style={{opacity: 0.28}}>
-          <ClaudeMascot frames={frames} sceneKind="beat"
-            config={{pose: 'pop', xPct: 62, yPct: 56, size: 108, delay: 0, bubble: false}} />
-        </div>
-      ) : null}
+      {/* Eyes forced to ink. ClaudeMascot draws them as var(--fg, mascotNavy),
+          so setting --fg here changes them WITHOUT touching a component that
+          NO. 026 / 030 / 031 also render — those films are locked. */}
+      <div style={{['--fg' as string]: INK} as React.CSSProperties}>
+        {AGENTS.map((a) => (
+          frame >= f(a.ms) ? (
+            <ClaudeMascot key={a.t} frames={frames} sceneKind="beat"
+              config={{pose: 'pop', xPct: a.x, yPct: 56, size: 132, delay: 0,
+                lookAt: {xPct: 50, yPct: 30}}} />
+          ) : null
+        ))}
+        {/* the generalist: same size as the specialists, drained of presence */}
+        {frame >= f(69600) ? (
+          <div style={{opacity: 0.3}}>
+            <ClaudeMascot frames={frames} sceneKind="beat"
+              config={{pose: 'pop', xPct: 70, yPct: 56, size: 132, delay: 0, bubble: false}} />
+          </div>
+        ) : null}
+      </div>
 
       {AGENTS.map((a) => (
         frame >= f(a.ms) ? (
-          <div key={`l-${a.t}`} style={{position: 'absolute', left: a.x * 10.8 - 110, top: 1236,
+          <div key={`l-${a.t}`} style={{position: 'absolute', left: a.x * 10.8 - 110, top: 1250,
             width: 220, textAlign: 'center', fontSize: 30, letterSpacing: 2, color: CREAM}}>
             {a.t}
             <div style={{fontSize: 20, letterSpacing: 2, color: GREY_I, marginTop: 8}}>
@@ -402,7 +414,7 @@ const AgentCards: React.FC<{frames: number}> = ({frames}) => {
         ) : null
       ))}
       {frame >= f(69600) ? (
-        <div style={{position: 'absolute', left: 62 * 10.8 - 110, top: 1236, width: 220,
+        <div style={{position: 'absolute', left: 70 * 10.8 - 110, top: 1250, width: 220,
           textAlign: 'center', fontSize: 26, letterSpacing: 2, color: GREY_I}}>GENERALIST</div>
       ) : null}
     </AbsoluteFill>
@@ -447,7 +459,7 @@ const StackOutro: React.FC = () => (
 // Scroll travel is capped. The official-plugins page is 2340px tall once fitted
 // to 1080 wide, and letting it run its full length would scroll at 122px/s,
 // which reads as a swipe rather than a drift.
-const SHOT_TOP = 1120, BAND_TYPE_BOTTOM = 1440;
+const SHOT_TOP = 1920;   // full bleed, founder 2026-08-08
 type Shot = {from: number; to: number; src: string; travel: number};
 const SHOTS: Shot[] = [
   {from: 13400, to: 24600, src: 'screens/no033-skills-17.png', travel: 230},
@@ -465,8 +477,6 @@ const ShotPlate: React.FC<{shot: Shot}> = ({shot}) => {
           style={{position: 'absolute', left: 0, top: 0, width: 1080,
             transform: `translateY(${-t * shot.travel}px)`}} />
       </div>
-      <div style={{position: 'absolute', left: 0, top: SHOT_TOP, width: 1080,
-        height: 1920 - SHOT_TOP, background: INK}} />
     </>
   );
 };
@@ -527,19 +537,17 @@ export const KTStack: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'al
       </>) : null}
       {layer !== 'type' && shot ? <ShotPlate shot={shot} /> : null}
 
-      {layer !== 'viz' ? (
+      {layer !== 'viz' && !shot ? (
       <AbsoluteFill style={{alignItems: 'center',
-        justifyContent: shot ? 'flex-end' : (beat.top ? 'flex-start' : 'center'),
-        flexDirection: 'column', rowGap: shot ? 16 : 26,
+        justifyContent: beat.top ? 'flex-start' : 'center',
+        flexDirection: 'column', rowGap: 26,
         // 330 not 260: the wordmark sits at y240 to clear Instagram's Reels
         // header, so the type block starts below its baseline.
-        padding: shot
-          ? `0 150px ${1920 - BAND_TYPE_BOTTOM}px`
-          : (beat.top ? '330px 150px 0' : '0 150px'), textAlign: 'center'}}>
+        padding: beat.top ? '330px 150px 0' : '0 150px', textAlign: 'center'}}>
         {beat.rows.map((row, ri) => (
           <div key={`${beat.from}-${ri}`} style={{lineHeight: 1.14}}>
             {row.words.map((w, wi) => (
-              <Word key={wi} w={w} base={row.size} baseColor={shot ? CREAM : beat.type} />
+              <Word key={wi} w={w} base={row.size} baseColor={beat.type} />
             ))}
           </div>
         ))}
