@@ -31,6 +31,7 @@ import {INK, CREAM, RED, f, Word} from './KTHook';
 import {STACK_BEATS, STACK_END_MS} from './KTStackWords';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer, rampValues, PumpRect} from './KTEffects';
+import {ClaudeMascot} from './scenes/ClaudeMascot';
 import './style.css';
 
 export const KT_STACK_FRAMES = f(STACK_END_MS);
@@ -214,78 +215,110 @@ const Storefront: React.FC = () => {
   );
 };
 
-// ---- S5 -- threshold cross -------------------------------------------------
-// Founder pick, 2026-08-08, borrowing the shape of fx/threshold-cross ("the
-// failed attempt, then the breakthrough"). The first version just parked a bar
-// in front of a box, which showed that a hook blocks without ever showing what
-// it is FOR.
+// ---- S5 -- the commit that has to take the branch --------------------------
+// Rebuilt 2026-08-08 after the founder rejected v2 as cheap. Research findings
+// that drove this, with sources in the session record:
 //
-// Two runs at main are thrown back. The third takes the branch below and lands.
-// The rail is drawn the whole beat so the geometry is legible before anything
-// moves — visualisations enter early and hold long.
-const RAIL_Y = VIZ_TOP + 175;      // the direct line to main
-const BRANCH_Y = VIZ_TOP + 330;    // the way that actually works
-const GATE_X = VIZ_L + 560;
+//  - GRAMMAR. In every git-graph implementation a filled RECTANGLE means
+//    "highlighted", and a commit is a solid CIRCLE (mermaid, gitgraph.js).
+//    v2 slid a rectangle along a rail, so it was drawing the wrong object.
+//  - FILL CARRIES STATE (Primer): filled = accepted, outline = rejected. The
+//    commit is a solid ink disc and becomes a hollow ring at the moment it is
+//    turned back. That one state change tells the story with no new element.
+//  - CURVE. Three independent libraries (gitgraph.js toSvgPath, d3 curveBumpY,
+//    React Flow calculateControlOffset) compute the SAME diverging path: a
+//    symmetric cubic bezier whose control points both sit at the midpoint of
+//    the travel axis, so the branch leaves and rejoins exactly parallel to the
+//    trunk. No visible corner is the premium tell. Founder picked this over an
+//    elbow and over straight diagonals.
+//  - WEIGHT HIERARCHY, two weights and no more: rails 12px, the blocking bar
+//    20px, hairline annotation 3px.
+//  - ONE RED OBJECT AT A TIME (Tufte's smallest effective difference). The bar
+//    is red; the rejected ring is ink. Never both red.
+//  - MOTION. A bounce oscillates; a rejection displaces ONCE and holds. So:
+//    approach accelerates (no ease-out), hard stop at zero, 110ms of absolute
+//    stillness, then a single recoil of ~10% that settles and never returns.
+//    The dead hold does more work than any easing curve.
+const LANE_X = 330;                 // trunk, on the 90px column grid
+const BRANCH_X = LANE_X + 260;      // the branch lane
+const GATE_Y = VIZ_TOP + 150;       // where main refuses it
+const START_Y = VIZ_BOTTOM - 120;
+const W_RAIL = 12, W_BAR = 20, W_HAIR = 3, DOT = 30;
+
+// accelerate INTO the stop (M3 emphasized-accelerate), never ease out
+const accel = (t: number) => clamp01(t) * clamp01(t) * (0.3 + 0.7 * clamp01(t));
+
 const RUNS = [
-  {start: 45400, hit: 45950, back: 46500, blocked: true},
-  {start: 46600, hit: 47100, back: 47600, blocked: true},
-  {start: 47800, hit: 48600, back: 49900, blocked: false},
+  {start: 45300, hit: 45900, hold: 46010, settle: 46250},
+  {start: 46450, hit: 47050, hold: 47160, settle: 47400},
 ];
+const BRANCH_RUN = {draw: 47700, start: 48200, land: 49100};
+
 const ThresholdCross: React.FC = () => {
   const frame = useCurrentFrame();
-  const run = RUNS.find((r) => frame >= f(r.start) && frame < f(r.back)) ?? null;
-  let x = VIZ_L + 10, y = RAIL_Y, rejected = false, landed = false;
-  if (run) {
-    const toGate = decel(prog(frame, run.start, run.hit - run.start));
+
+  // which attempt owns this frame
+  const run = RUNS.find((r) => frame >= f(r.start) && frame < f(r.settle));
+  const onBranch = frame >= f(BRANCH_RUN.start);
+  const branchDraw = decel(prog(frame, BRANCH_RUN.draw, 400));
+  const rejected = RUNS.some((r) => frame >= f(r.hit) && frame < f(r.settle));
+
+  let cx = LANE_X, cy = START_Y;
+  if (onBranch) {
+    const t = decel(prog(frame, BRANCH_RUN.start, BRANCH_RUN.land - BRANCH_RUN.start));
+    // ride the same bezier the branch is drawn on
+    const p0 = {x: LANE_X, y: START_Y - 120}, p3 = {x: BRANCH_X, y: GATE_Y + 40};
+    const my = (p0.y + p3.y) / 2;
+    const u = 1 - t;
+    cx = u * u * u * p0.x + 3 * u * u * t * p0.x + 3 * u * t * t * p3.x + t * t * t * p3.x;
+    cy = u * u * u * p0.y + 3 * u * u * t * my + 3 * u * t * t * my + t * t * t * p3.y;
+  } else if (run) {
+    const reach = GATE_Y + 46;
     if (frame < f(run.hit)) {
-      x = VIZ_L + 10 + toGate * (GATE_X - VIZ_L - 150);
-    } else if (run.blocked) {
-      // thrown back: the recoil is faster than the approach, so it reads as a
-      // rejection rather than a retreat
-      const bk = decel(prog(frame, run.hit, run.back - run.hit));
-      x = (GATE_X - 140) - bk * (GATE_X - VIZ_L - 150);
-      rejected = true;
+      cy = START_Y - accel(prog(frame, run.start, run.hit - run.start)) * (START_Y - reach);
+    } else if (frame < f(run.hold)) {
+      cy = reach;                       // the dead hold — 110ms of nothing
     } else {
-      const dv = decel(prog(frame, run.hit, run.back - run.hit));
-      x = (GATE_X - 140) + dv * 250;
-      y = RAIL_Y + dv * (BRANCH_Y - RAIL_Y);
-      landed = dv > 0.92;
+      const s = decel(prog(frame, run.hold, run.settle - run.hold));
+      cy = reach + s * 74;              // ONE displacement, ~10%, then still
     }
+  } else {
+    cy = START_Y;
   }
-  const anyBlocked = frame >= f(RUNS[0].hit);
+
+  const barKick = rejected ? 1 : 0;
+
   return (
     <AbsoluteFill style={{fontFamily: FONT}}>
-      {/* the two rails */}
-      <div style={{position: 'absolute', left: VIZ_L, top: RAIL_Y + 54, width: GATE_X - VIZ_L,
-        height: 3, background: HAIR_C}} />
-      <div style={{position: 'absolute', left: VIZ_L, top: BRANCH_Y + 54, width: VIZ_W,
-        height: 3, background: HAIR_C}} />
+      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}>
+        {/* trunk */}
+        <line x1={LANE_X} y1={GATE_Y + 30} x2={LANE_X} y2={VIZ_BOTTOM - 40}
+          stroke={INK} strokeWidth={W_RAIL} strokeLinecap="round" opacity={0.32} />
+        {/* the branch, drawn on the tangent-parallel bezier */}
+        <path
+          d={`M ${LANE_X} ${START_Y - 120} C ${LANE_X} ${(START_Y - 120 + GATE_Y + 40) / 2} ${BRANCH_X} ${(START_Y - 120 + GATE_Y + 40) / 2} ${BRANCH_X} ${GATE_Y + 40}`}
+          fill="none" stroke={INK} strokeWidth={W_RAIL} strokeLinecap="round"
+          strokeDasharray={1400} strokeDashoffset={1400 * (1 - branchDraw)} opacity={0.32} />
+        {/* the hook: the only red object in the frame */}
+        <line x1={LANE_X - 92} y1={GATE_Y} x2={LANE_X + 92} y2={GATE_Y}
+          stroke={RED} strokeWidth={W_BAR + barKick * 6} strokeLinecap="butt" />
+        {/* main's terminus, and the branch's */}
+        <circle cx={LANE_X} cy={GATE_Y - 54} r={DOT / 2} fill={INK} />
+        <circle cx={BRANCH_X} cy={GATE_Y + 40} r={DOT / 2}
+          fill={frame >= f(BRANCH_RUN.land) ? INK : 'none'}
+          stroke={INK} strokeWidth={W_HAIR} />
+        {/* the travelling commit: solid when live, hollow the moment it is refused */}
+        <circle cx={cx} cy={cy} r={DOT / 2}
+          fill={rejected ? CREAM : INK} stroke={INK} strokeWidth={rejected ? W_RAIL : 0} />
+      </svg>
 
-      {/* the hook: a hard bar that never moves */}
-      <div style={{position: 'absolute', left: GATE_X, top: RAIL_Y - 46, width: 14, height: 150,
-        background: RED}} />
-      <div style={{position: 'absolute', left: GATE_X + 28, top: RAIL_Y - 42, fontSize: 30,
-        letterSpacing: 3, color: anyBlocked ? RED : GREY_C}}>MAIN</div>
-      <div style={{position: 'absolute', left: GATE_X + 28, top: BRANCH_Y + 14, fontSize: 26,
+      <div style={{position: 'absolute', left: LANE_X - 92, top: GATE_Y - 104, fontSize: 30,
+        letterSpacing: 3, color: INK}}>MAIN</div>
+      <div style={{position: 'absolute', left: BRANCH_X - 40, top: GATE_Y - 34, fontSize: 26,
         letterSpacing: 3, color: GREY_C}}>BRANCH</div>
-
-      {/* the commit */}
-      {run ? (
-        <div style={{position: 'absolute', left: x, top: y, width: 140, height: 100,
-          border: `4px solid ${rejected ? RED : INK}`,
-          background: landed ? INK : 'transparent',
-          color: landed ? CREAM : (rejected ? RED : INK),
-          fontSize: 22, letterSpacing: 2,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'}}>COMMIT</div>
-      ) : null}
-
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 150, width: VIZ_W,
-        borderTop: `3px solid ${HAIR_C}`, paddingTop: 16, fontSize: 24, letterSpacing: 3,
-        color: GREY_C}}>PRE-TOOL-USE / POST-TOOL-USE</div>
-
-      {/* the bar kicks on each rejection, not continuously */}
-      <PumpRect fromMs={45950} x={GATE_X} y={RAIL_Y - 46} w={14} h={150} color={RED}
-        beat={9} pumps={3} ampX={2.2} ampY={1.0} accel={0.9} decay={0.7} anchor={'center'} />
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 46, width: VIZ_W,
+        borderTop: `${W_HAIR}px solid ${HAIR_C}`, paddingTop: 12, fontSize: 22,
+        letterSpacing: 3, color: GREY_C}}>PRE-TOOL-USE HOOK</div>
     </AbsoluteFill>
   );
 };
@@ -301,7 +334,7 @@ const MemoryStack: React.FC = () => {
       {/* The unit's trailing DOUBLE SPACE is load-bearing: rowDelta = amp*4/period
           must stay under the inter-word gap or adjacent rows shear and the crease
           reads as torn columns. amp 150 / period 15 gives 40px. */}
-      <ZigzagMarquee fromMs={53200} unit={'SESSION  '} amp={150} period={15}
+      <ZigzagMarquee fromMs={53200} unit={'MEMORY  '} amp={150} period={15}
         color={'rgba(16,16,16,0.07)'} fontSize={120} />
       {Array.from({length: MEM_ROWS}).map((_, i) => {
         const on = frame >= f(58400 + i * 190);
@@ -314,10 +347,13 @@ const MemoryStack: React.FC = () => {
             // safe box starting at x150. The rows sit at y930-1300, so 18px of
             // vertical travel has room the horizontal axis does not.
             transform: `translateY(${(1 - g) * 18}px)`,
+            // Founder 2026-08-08: ink at 42% did not contrast. Full ink, with
+            // the one row the VO calls out taking the red.
             borderBottom: `3px solid ${HAIR_C}`, display: 'flex', alignItems: 'center',
-            justifyContent: 'space-between', fontSize: 26, letterSpacing: 2, color: GREY_C}}>
+            justifyContent: 'space-between', fontSize: 26, letterSpacing: 2,
+            color: i === 0 ? RED : INK}}>
             <span>{`FACT ${String(i + 1).padStart(2, '0')}`}</span>
-            <span style={{color: i === 0 ? RED : GREY_C}}>{i === 0 ? 'INDEX' : 'ON DISK'}</span>
+            <span>{i === 0 ? 'INDEX' : 'ON DISK'}</span>
           </div>
         );
       })}
@@ -326,37 +362,49 @@ const MemoryStack: React.FC = () => {
 };
 
 // ---- S7 -- two specialists, one generalist ---------------------------------
-const AgentCards: React.FC = () => {
+const AGENTS = [
+  {t: 'JUDGE', s: 'reads rendered frames', x: 26, ms: 65100},
+  {t: 'TRIAGE', s: 'what actually needs me', x: 44, ms: 67500},
+];
+const AgentCards: React.FC<{frames: number}> = ({frames}) => {
   const frame = useCurrentFrame();
-  const cards = [
-    {t: 'JUDGE', s: 'reads rendered frames', ms: 65100},
-    {t: 'TRIAGE', s: 'what actually needs me', ms: 67500},
-  ];
   return (
     <AbsoluteFill style={{fontFamily: FONT}}>
-      {cards.map((c, i) => {
-        const g = decel(prog(frame, c.ms, 480));
-        return (
-          <div key={c.t} style={{position: 'absolute', left: VIZ_L + i * 400, top: VIZ_TOP + 160,
-            width: 376, height: 250, opacity: g, transform: `translateY(${(1 - g) * 34}px)`,
-            border: `5px solid ${CREAM}`, color: CREAM, padding: 22,
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between'}}>
-            <div style={{fontSize: 46, letterSpacing: 1}}>{c.t}</div>
-            <div style={{fontSize: 24, letterSpacing: 2, color: GREY_I}}>{c.s.toUpperCase()}</div>
+      {/* Founder 2026-08-08: use the mini mascots, as NO. 030's radial council
+          did. Two specialists land as the VO names them; the generalist behind
+          them is present but inert. Placement respects the mascot safe zone
+          (xPct 20-62, yPct 25-66 per scenes/ClaudeMascot.tsx) — outside it the
+          rig logs a render warning. */}
+      {AGENTS.map((a) => (
+        frame >= f(a.ms) ? (
+          <ClaudeMascot key={a.t} frames={frames} sceneKind="beat"
+            config={{pose: 'pop', xPct: a.x, yPct: 56, size: 132, delay: 0,
+              lookAt: {xPct: 50, yPct: 30}}} />
+        ) : null
+      ))}
+      {/* the generalist: same figure, drained of presence */}
+      {frame >= f(69600) ? (
+        <div style={{opacity: 0.28}}>
+          <ClaudeMascot frames={frames} sceneKind="beat"
+            config={{pose: 'pop', xPct: 62, yPct: 56, size: 108, delay: 0, bubble: false}} />
+        </div>
+      ) : null}
+
+      {AGENTS.map((a) => (
+        frame >= f(a.ms) ? (
+          <div key={`l-${a.t}`} style={{position: 'absolute', left: a.x * 10.8 - 110, top: 1236,
+            width: 220, textAlign: 'center', fontSize: 30, letterSpacing: 2, color: CREAM}}>
+            {a.t}
+            <div style={{fontSize: 20, letterSpacing: 2, color: GREY_I, marginTop: 8}}>
+              {a.s.toUpperCase()}
+            </div>
           </div>
-        );
-      })}
-      {/* Founder note 2026-08-08: this box was "barely readable". It was GREY_I
-          (34% cream) on WASH_I (10% cream) over ink — low-contrast text on a
-          low-contrast fill, so both the type and its container were near the
-          field. Now full CREAM type on a bordered panel, struck through in red
-          to say the same thing the word "generalist" is saying in the type. */}
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 170, width: VIZ_W,
-        height: 96, border: `4px solid ${CREAM}`, color: CREAM,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30,
-        letterSpacing: 4}}>
-        ONE GENERALIST, GUESSING
-      </div>
+        ) : null
+      ))}
+      {frame >= f(69600) ? (
+        <div style={{position: 'absolute', left: 62 * 10.8 - 110, top: 1236, width: 220,
+          textAlign: 'center', fontSize: 26, letterSpacing: 2, color: GREY_I}}>GENERALIST</div>
+      ) : null}
     </AbsoluteFill>
   );
 };
@@ -384,6 +432,44 @@ const StackOutro: React.FC = () => (
   <ZigzagMarquee fromMs={72800} unit={'vektor  '} amp={260} period={13} rows={14}
     rowH={136} fontSize={150} dur={75} color={'rgba(244,239,223,0.13)'} />
 );
+
+
+// ---- the screenshot beats --------------------------------------------------
+// Founder direction 2026-08-08: the numbered label opens the section, then the
+// real page takes the frame and scrolls slowly. Hard cut in and out, no wipe,
+// no wordmark and no footer while it is up.
+//
+// The words go in a solid ink band under the shot rather than over it. The band
+// stops at y1440, NOT at the frame edge: Instagram's chrome eats the bottom, and
+// the words are the one thing that must never be cropped. The band's FILL runs
+// to 1920 so there is no seam against the frame edge; only its TYPE is fenced.
+//
+// Scroll travel is capped. The official-plugins page is 2340px tall once fitted
+// to 1080 wide, and letting it run its full length would scroll at 122px/s,
+// which reads as a swipe rather than a drift.
+const SHOT_TOP = 1120, BAND_TYPE_BOTTOM = 1440;
+type Shot = {from: number; to: number; src: string; travel: number};
+const SHOTS: Shot[] = [
+  {from: 13400, to: 24600, src: 'screens/no033-skills-17.png', travel: 230},
+  {from: 26200, to: 36700, src: 'screens/no033-official-repo.png', travel: 600},
+];
+
+const ShotPlate: React.FC<{shot: Shot}> = ({shot}) => {
+  const frame = useCurrentFrame();
+  const t = clamp01((frame - f(shot.from)) / Math.max(1, f(shot.to) - f(shot.from)));
+  return (
+    <>
+      <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: SHOT_TOP,
+        overflow: 'hidden', background: CREAM}}>
+        <Img src={staticFile(shot.src)}
+          style={{position: 'absolute', left: 0, top: 0, width: 1080,
+            transform: `translateY(${-t * shot.travel}px)`}} />
+      </div>
+      <div style={{position: 'absolute', left: 0, top: SHOT_TOP, width: 1080,
+        height: 1920 - SHOT_TOP, background: INK}} />
+    </>
+  );
+};
 
 // ---- seams -----------------------------------------------------------------
 // Field flips are fx/matte-wipe.js (KTSeams.tsx), the same treatment shipped in
@@ -424,32 +510,36 @@ export const KTStack: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'al
     (frame >= f(STACK_BEATS[STACK_BEATS.length - 1].from)
       ? STACK_BEATS[STACK_BEATS.length - 1]
       : STACK_BEATS[0]);
+  const shot = SHOTS.find((sh) => frame >= f(sh.from) && frame < f(sh.to));
   const lightField = beat.bg === CREAM;
   const furn = lightField ? GREY_C : GREY_I;
   return (
     <AbsoluteFill style={{backgroundColor: beat.bg, fontFamily: FONT}}>
-      {layer !== 'type' ? (<>
+      {layer !== 'type' && !shot ? (<>
       <Window fromMs={1400}  toMs={7000}>  <PromptBox /></Window>
       <Window fromMs={7000}  toMs={11800}> <FiveTicks /></Window>
       <Window fromMs={11800} toMs={24600}> <SkillGrid /></Window>
       <Window fromMs={24600} toMs={36700}> <Storefront /></Window>
       <Window fromMs={36700} toMs={52600}> <ThresholdCross /></Window>
       <Window fromMs={52600} toMs={63000}> <MemoryStack /></Window>
-      <Window fromMs={63000} toMs={72800}> <AgentCards /></Window>
+      <Window fromMs={63000} toMs={72800}> <AgentCards frames={KT_STACK_FRAMES} /></Window>
       <Window fromMs={72800} toMs={STACK_END_MS}><StackOutro /></Window>
       </>) : null}
+      {layer !== 'type' && shot ? <ShotPlate shot={shot} /> : null}
 
       {layer !== 'viz' ? (
       <AbsoluteFill style={{alignItems: 'center',
-        justifyContent: beat.top ? 'flex-start' : 'center',
-        flexDirection: 'column', rowGap: 26,
+        justifyContent: shot ? 'flex-end' : (beat.top ? 'flex-start' : 'center'),
+        flexDirection: 'column', rowGap: shot ? 16 : 26,
         // 330 not 260: the wordmark sits at y240 to clear Instagram's Reels
         // header, so the type block starts below its baseline.
-        padding: beat.top ? '330px 150px 0' : '0 150px', textAlign: 'center'}}>
+        padding: shot
+          ? `0 150px ${1920 - BAND_TYPE_BOTTOM}px`
+          : (beat.top ? '330px 150px 0' : '0 150px'), textAlign: 'center'}}>
         {beat.rows.map((row, ri) => (
           <div key={`${beat.from}-${ri}`} style={{lineHeight: 1.14}}>
             {row.words.map((w, wi) => (
-              <Word key={wi} w={w} base={row.size} baseColor={beat.type} />
+              <Word key={wi} w={w} base={row.size} baseColor={shot ? CREAM : beat.type} />
             ))}
           </div>
         ))}
@@ -458,16 +548,16 @@ export const KTStack: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'al
 
       {layer === 'all' ? <Seams /> : null}
 
-      {layer === 'all' ? (<>
+      {layer === 'all' && !shot ? (<>
       {/* FURNITURE — inside the safe box. The 44px rail is HORIZONTAL-ONLY since
           2026-08-07: Reels chrome cuts the top and bottom, so the wordmark sits
           at y240 and the footer slugs at y1372, not at the rail. */}
       <div style={{position: 'absolute', top: 240, left: VIZ_L, fontSize: 40, fontWeight: 600,
         letterSpacing: '-0.045em', color: lightField ? INK : CREAM,
         fontFamily: FONT_UI}}>vektor</div>
-      <div style={{position: 'absolute', top: 1372, left: VIZ_L, fontSize: 22, letterSpacing: 3,
+      <div style={{position: 'absolute', top: 1560, left: VIZ_L, fontSize: 22, letterSpacing: 3,
         color: furn}}>vektor /// five setups</div>
-      <div style={{position: 'absolute', top: 1372, left: VIZ_L, width: VIZ_W, textAlign: 'right',
+      <div style={{position: 'absolute', top: 1560, left: VIZ_L, width: VIZ_W, textAlign: 'right',
         fontSize: 22, letterSpacing: 3, color: furn}}>comment. stack.</div>
       </>) : null}
     </AbsoluteFill>

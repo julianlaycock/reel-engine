@@ -109,14 +109,14 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "get ", ms: 19490, out: 20260},
         {t: "today. ", ms: 19680, out: 20260},
       ]},
-      {size: 84, words: [
+      {size: 72, words: [
         {t: "Seven ", ms: 20260, ring: 3413, furnMs: 20520, furnColor: RED, color: RED},
         {t: "more ", ms: 20540},
         {t: "live ", ms: 20770},
         {t: "in ", ms: 21040},
         {t: "mine. ", ms: 21170},
       ]},
-      {size: 46, words: [
+      {size: 42, words: [
         {t: "One ", ms: 21820},
         {t: "of ", ms: 21830},
         {t: "them ", ms: 21920},
@@ -133,10 +133,10 @@ export const STACK_BEATS: StackBeat[] = [
     from: 24640, to: 36710, bg: RED, type: CREAM, top: true,
     rows: [
       {size: 62, words: [
-        {t: "2. ", ms: 24640},
-        {t: "The ", ms: 24850},
-        {t: "plugin ", ms: 25180},
-        {t: "marketplace. ", ms: 25480},
+        {t: "2. ", ms: 24640, out: 33830},
+        {t: "The ", ms: 24850, out: 33830},
+        {t: "plugin ", ms: 25180, out: 33830},
+        {t: "marketplace. ", ms: 25480, out: 33830},
       ]},
       {size: 48, words: [
         {t: "It's ", ms: 26480, out: 31270},
@@ -336,7 +336,7 @@ export const STACK_BEATS: StackBeat[] = [
     ],
   },
   { // cta
-    from: 72810, to: 78060, bg: RED, type: CREAM, top: true,
+    from: 72810, to: 78060, bg: RED, type: CREAM, top: false,
     rows: [
       {size: 54, words: [
         {t: "Set ", ms: 72810, out: 74060},
