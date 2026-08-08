@@ -323,7 +323,7 @@ ${lpSurfaceRows}
     <table><thead><tr><th>Section</th><th>Blocks</th></tr></thead><tbody>
 ${lpBlockRows}
     </tbody></table>
-    <p class="note"><b>Safe zone (hybrid, founder 2026-07-29):</b> content keeps top ${esc(lpZone.topPx)} / bottom ${esc(lpZone.bottomPx)} / sides ${esc(lpZone.sidePx)}px; furniture (${(lpZone.furnitureExempt || []).map((f) => `<code>${esc(f)}</code>`).join(' ')}) may ride the ${esc(lpZone.furnitureRailPx)}px rail / 56px footer line. Cover rule: hook + figure inside the centre ${esc((lpZone.coverRule || {}).centreCrop || '4:5')} crop, bottom ${esc((lpZone.coverRule || {}).bottomClearPx || 180)}px clear.</p>
+    <p class="note"><b>Safe zone (hybrid, founder 2026-07-29; furniture axis amended 2026-08-07):</b> content keeps top ${esc(lpZone.topPx)} / bottom ${esc(lpZone.bottomPx)} / sides ${esc(lpZone.sidePx)}px; furniture (${(lpZone.furnitureExempt || []).map((f) => `<code>${esc(f)}</code>`).join(' ')}) may ride the ${esc(lpZone.furnitureRailPx)}px rail${lpZone.furnitureRailAxis === 'horizontal-only' ? ' <b>LEFT AND RIGHT ONLY</b>' : ' / 56px footer line'}${lpZone.furnitureVerticalBand ? `, and must sit inside y${esc(lpZone.furnitureVerticalBand[0])}–${esc(lpZone.furnitureVerticalBand[1])} — Instagram's Reels header and caption strip cover the top and bottom bands regardless of how small the element is` : ''}. Cover rule: hook + figure inside the centre ${esc((lpZone.coverRule || {}).centreCrop || '4:5')} crop, bottom ${esc((lpZone.coverRule || {}).bottomClearPx || 180)}px clear.</p>
     <p class="note">Master: <code>${esc(lpPathRel)}</code> · letterpress templates enter via founder RENDER→SEE→LOCK (none registered yet).</p>
   </section>`;
 }
