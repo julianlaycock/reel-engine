@@ -7,6 +7,8 @@ import {KTHook, KT_HOOK_FRAMES} from './KTHook';
 import {KTFxDemo, KT_FX_DEMO_FRAMES} from './KTFxDemo';
 import {KTTax, KT_TAX_FRAMES} from './KTTax';
 import {KTState, KT_STATE_FRAMES} from './KTState';
+import {KTFunnel, KT_FUNNEL_FRAMES} from './KTFunnel';
+import {KTStack, KT_STACK_FRAMES} from './KTStack';
 import {KT3DSpike, KT_3D_SPIKE_FRAMES} from './KT3DSpike';
 
 export const Root: React.FC = () => {
@@ -40,6 +42,22 @@ export const Root: React.FC = () => {
         id="KTTax"
         component={KTTax}
         durationInFrames={KT_TAX_FRAMES}
+        fps={FPS}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="KTFunnel"
+        component={KTFunnel}
+        durationInFrames={KT_FUNNEL_FRAMES}
+        fps={FPS}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="KTStack"
+        component={KTStack}
+        durationInFrames={KT_STACK_FRAMES}
         fps={FPS}
         width={1080}
         height={1920}
