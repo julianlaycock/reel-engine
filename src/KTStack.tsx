@@ -26,7 +26,7 @@
 // inside x150-930 / y220-1420, drop shadows included. VIZ_L/VIZ_W below are that
 // box and nothing may exceed it.
 import React from 'react';
-import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Img, staticFile, useCurrentFrame} from 'remotion';
 import {INK, CREAM, RED, f, Word} from './KTHook';
 import {STACK_BEATS, STACK_END_MS} from './KTStackWords';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
@@ -140,27 +140,30 @@ const FiveTicks: React.FC = () => {
 // GitHub API, 2026-08-08). The 7 that fills is vektor/.claude/skills.
 const SkillGrid: React.FC = () => {
   const frame = useCurrentFrame();
-  const cols = 6, cell = 118, gap = 14;
   const filled = (i: number) => frame >= f(20400 + i * 130);
   return (
     <AbsoluteFill style={{fontFamily: FONT}}>
       <Odometer fromMs={14200} tickMs={60} values={rampValues(0, 17, 12, (n) => String(n))}
-        style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP - 30, fontSize: 150, color: INK,
+        style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP - 70, fontSize: 130, color: INK,
           lineHeight: 1}} />
-      <div style={{position: 'absolute', left: VIZ_L + 200, top: VIZ_TOP + 60, fontSize: 26,
+      <div style={{position: 'absolute', left: VIZ_L + 190, top: VIZ_TOP + 10, fontSize: 26,
         letterSpacing: 3, color: GREY_C}}>ANTHROPIC / SKILLS</div>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 190, width: VIZ_W,
-        display: 'flex', flexWrap: 'wrap', gap}}>
-        {Array.from({length: 17}).map((_, i) => (
-          <div key={i} style={{width: cell, height: 74,
-            border: `3px solid ${i < 7 && filled(i) ? RED : HAIR_C}`,
-            background: i < 7 && filled(i) ? RED : WASH_C}} />
-        ))}
+      {/* The real page, pasted in like a specimen rather than run full-bleed.
+          Full-bleed would put type over the viz, which the locked ruling forbids
+          ("text on viz beats sits top, never touching the viz"), and NO. 016's
+          full-bleed repo shot came with an accepted tradeoff of nibbled edges.
+          Framed, it stays inside x150-930 and its job is authenticity — the
+          NUMBER is carried by the odometer and the spoken line, not by reading
+          the screenshot. Provenance: public/screens/no033-skills-17.json. */}
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 90, width: VIZ_W,
+        height: 510, border: `4px solid ${INK}`, overflow: 'hidden', background: CREAM}}>
+        <Img src={staticFile('screens/no033-skills-17.png')}
+          style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 24%'}} />
       </div>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 92, width: VIZ_W,
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 62, width: VIZ_W,
         display: 'flex', justifyContent: 'space-between', fontSize: 24, letterSpacing: 3,
-        color: GREY_C, borderTop: `3px solid ${HAIR_C}`, paddingTop: 14}}>
-        <span>{`${cols * 0 + 17} EXAMPLES`}</span><span>7 MINE</span>
+        color: GREY_C}}>
+        <span>GITHUB.COM/ANTHROPICS/SKILLS</span><span>{filled(6) ? '7 MINE' : ''}</span>
       </div>
     </AbsoluteFill>
   );
