@@ -477,6 +477,11 @@ const FLIPS: {ms: number; field: string}[] = [
   {ms: 11800, field: CREAM},
   {ms: 24600, field: RED},
   {ms: 36700, field: CREAM},
+  // Splits the hooks beat. At 36.7s-52.6s it was 15.9s with no field change,
+  // the longest stretch in the film and the weakest (design review 2026-08-08).
+  // 44.8s lands between the second rejected commit and the branch draw, so the
+  // seam falls on a story boundary rather than in the middle of a move.
+  {ms: 44800, field: CREAM},
   {ms: 52600, field: CREAM},   // same-colour wipe: splits a 26.3s static stretch
   {ms: 63000, field: INK},
   {ms: 72800, field: INK},     // same-colour wipe into the end card
@@ -508,7 +513,16 @@ export const KTStack: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'al
   // line of a paragraph.
   const opener = OPENERS.some((o) => frame >= f(o.from) && frame < f(o.to));
   const lightField = beat.bg === CREAM;
-  const furn = lightField ? GREY_C : GREY_I;
+  // Footer contrast (design review 2026-08-08). It was cream-at-34% on every
+  // dark field, which measures 1.47:1 against RED — effectively invisible, and
+  // on the beat that carries the CTA. Ink and red need different treatments:
+  // red is a mid-luminance field, so the furniture has to be much closer to
+  // full cream there than it does on ink.
+  const furn = lightField
+    ? 'rgba(16,16,16,0.55)'
+    // Full cream on red: at 82% it still measured 2.88:1, under the 3.0
+    // large-text floor. Undimmed cream on red is 3.68:1 and clears it.
+    : (beat.bg === RED ? CREAM : 'rgba(244,239,223,0.55)');
   return (
     <AbsoluteFill style={{backgroundColor: beat.bg, fontFamily: FONT}}>
       {layer !== 'type' && !shot ? (<>

@@ -11,20 +11,20 @@ export const STACK_BEATS: StackBeat[] = [
   { // gap
     from: 90, to: 7040, bg: INK, type: CREAM, top: true,
     rows: [
-      {size: 52, words: [
+      {size: 55, words: [
         {t: "Most ", ms: 90, out: 3110},
         {t: "people ", ms: 270, out: 3110},
         {t: "open ", ms: 680, out: 3110},
         {t: "Claude ", ms: 990, out: 3110},
         {t: "Code ", ms: 1360, out: 3110},
       ]},
-      {size: 84, words: [
+      {size: 86, words: [
         {t: "and ", ms: 1630, out: 4570},
         {t: "just ", ms: 1830, out: 4570},
         {t: "start ", ms: 2100, out: 4570},
         {t: "typing. ", ms: 2430, out: 4570, strike: 3401, furnMs: 2690, furnColor: RED, color: RED},
       ]},
-      {size: 56, words: [
+      {size: 55, words: [
         {t: "A ", ms: 3110, out: 4570},
         {t: "few ", ms: 3190, out: 4570},
         {t: "set ", ms: 3430, out: 4570},
@@ -32,13 +32,13 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "up ", ms: 3890, out: 4570},
         {t: "first. ", ms: 3990, out: 4570},
       ]},
-      {size: 54, words: [
+      {size: 55, words: [
         {t: "That ", ms: 4570},
         {t: "gap ", ms: 4640},
         {t: "is ", ms: 5020},
         {t: "getting ", ms: 5060},
       ]},
-      {size: 90, words: [
+      {size: 86, words: [
         {t: "wider ", ms: 5440, underline: 3403, furnMs: 5700, furnColor: RED, color: RED},
         {t: "every ", ms: 5920},
         {t: "week. ", ms: 6320},
@@ -48,21 +48,21 @@ export const STACK_BEATS: StackBeat[] = [
   { // promise
     from: 7040, to: 11760, bg: INK, type: CREAM, top: true,
     rows: [
-      {size: 80, words: [
+      {size: 86, words: [
         {t: "Here ", ms: 7040},
         {t: "are ", ms: 7180},
         {t: "five ", ms: 7450, ring: 3405, furnMs: 7710, furnColor: RED, color: RED},
         {t: "free ", ms: 7710},
         {t: "setups. ", ms: 8010},
       ]},
-      {size: 48, words: [
+      {size: 44, words: [
         {t: "All ", ms: 8710},
         {t: "five ", ms: 9050},
         {t: "run ", ms: 9350},
         {t: "in ", ms: 9460},
         {t: "the ", ms: 9710},
       ]},
-      {size: 58, words: [
+      {size: 55, words: [
         {t: "repo ", ms: 9840},
         {t: "that ", ms: 10140},
         {t: "ships ", ms: 10440},
@@ -74,24 +74,24 @@ export const STACK_BEATS: StackBeat[] = [
   { // skills
     from: 11760, to: 24640, bg: CREAM, type: INK, top: true,
     rows: [
-      {size: 96, words: [
+      {size: 86, words: [
         {t: "1. ", ms: 11760, out: 20260},
         {t: "Skills. ", ms: 12510, out: 20260},
       ]},
-      {size: 54, words: [
+      {size: 55, words: [
         {t: "Anthropic ", ms: 13480, out: 16640},
         {t: "keeps ", ms: 14150, out: 16640},
         {t: "17 ", ms: 14420, out: 16640, ring: 3411, furnMs: 14680, furnColor: RED, color: RED},
         {t: "example ", ms: 14820, out: 16640},
         {t: "ones ", ms: 15320, out: 16640},
       ]},
-      {size: 50, words: [
+      {size: 55, words: [
         {t: "in ", ms: 15600, out: 17840},
         {t: "a ", ms: 15760, out: 17840},
         {t: "public ", ms: 15840, out: 17840},
         {t: "repo, ", ms: 16160, out: 17840},
       ]},
-      {size: 46, words: [
+      {size: 44, words: [
         {t: "and ", ms: 16640, out: 20260},
         {t: "if ", ms: 16810, out: 20260},
         {t: "you've ", ms: 16870, out: 20260},
@@ -99,7 +99,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "opened ", ms: 17360, out: 20260},
         {t: "it, ", ms: 17680, out: 20260},
       ]},
-      {size: 50, words: [
+      {size: 55, words: [
         {t: "that's ", ms: 17840, out: 20260},
         {t: "the ", ms: 18180, out: 20260},
         {t: "fastest ", ms: 18350, out: 20260},
@@ -109,14 +109,14 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "get ", ms: 19490, out: 20260},
         {t: "today. ", ms: 19680, out: 20260},
       ]},
-      {size: 72, words: [
+      {size: 69, words: [
         {t: "Seven ", ms: 20260, ring: 3413, furnMs: 20520, furnColor: RED, color: RED},
         {t: "more ", ms: 20540},
         {t: "live ", ms: 20770},
         {t: "in ", ms: 21040},
         {t: "mine. ", ms: 21170},
       ]},
-      {size: 42, words: [
+      {size: 44, words: [
         {t: "One ", ms: 21820},
         {t: "of ", ms: 21830},
         {t: "them ", ms: 21920},
@@ -132,13 +132,13 @@ export const STACK_BEATS: StackBeat[] = [
   { // market
     from: 24640, to: 36710, bg: RED, type: CREAM, top: true,
     rows: [
-      {size: 62, words: [
+      {size: 55, words: [
         {t: "2. ", ms: 24640, out: 26480},
         {t: "The ", ms: 24850, out: 26480},
         {t: "plugin ", ms: 25180, out: 26480},
         {t: "marketplace. ", ms: 25480, out: 26480},
       ]},
-      {size: 48, words: [
+      {size: 44, words: [
         {t: "It's ", ms: 26480, out: 31270},
         {t: "a ", ms: 26720, out: 31270},
         {t: "storefront ", ms: 26780, out: 31270},
@@ -149,7 +149,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "official ", ms: 28740, out: 31270},
         {t: "one. ", ms: 29130, out: 31270},
       ]},
-      {size: 46, words: [
+      {size: 44, words: [
         {t: "It ", ms: 29530, out: 31270},
         {t: "loads ", ms: 29600, out: 31270},
         {t: "itself ", ms: 29790, out: 31270},
@@ -159,7 +159,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "you ", ms: 30710, out: 31270},
         {t: "start. ", ms: 30860, out: 31270},
       ]},
-      {size: 46, words: [
+      {size: 44, words: [
         {t: "There's ", ms: 31270, out: 33830},
         {t: "a ", ms: 31660, out: 33830},
         {t: "separate ", ms: 31680, out: 33830},
@@ -170,7 +170,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "by ", ms: 33200, out: 33830},
         {t: "hand. ", ms: 33340, out: 33830},
       ]},
-      {size: 50, words: [
+      {size: 55, words: [
         {t: "I ", ms: 33830},
         {t: "run ", ms: 34010},
         {t: "a ", ms: 34110},
@@ -181,7 +181,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "can ", ms: 35510},
         {t: "see. ", ms: 35750},
       ]},
-      {size: 104, words: [
+      {size: 107, words: [
         {t: "My ", ms: 36140},
         {t: "own. ", ms: 36420, burst: 3421, furnMs: 36680, furnColor: CREAM},
       ]},
@@ -190,14 +190,14 @@ export const STACK_BEATS: StackBeat[] = [
   { // hooks
     from: 36710, to: 52630, bg: CREAM, type: INK, top: true,
     rows: [
-      {size: 64, words: [
+      {size: 69, words: [
         {t: "3. ", ms: 36710, out: 42130},
         {t: "Rules ", ms: 37380, out: 42130},
         {t: "that ", ms: 38000, out: 42130},
         {t: "actually ", ms: 38100, out: 42130},
         {t: "bite. ", ms: 38840, out: 42130, underline: 3431, furnMs: 39100, furnColor: RED, color: RED},
       ]},
-      {size: 46, words: [
+      {size: 44, words: [
         {t: "A ", ms: 39680, out: 44090},
         {t: "markdown ", ms: 39720, out: 44090},
         {t: "file ", ms: 40320, out: 44090},
@@ -208,13 +208,13 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "a ", ms: 41390, out: 44090},
         {t: "suggestion ", ms: 41450, out: 44090},
       ]},
-      {size: 52, words: [
+      {size: 55, words: [
         {t: "until ", ms: 42130, out: 44090},
         {t: "something ", ms: 42470, out: 44090},
         {t: "enforces ", ms: 43080, out: 44090},
         {t: "it. ", ms: 43610, out: 44090},
       ]},
-      {size: 70, words: [
+      {size: 69, words: [
         {t: "Two ", ms: 44090, out: 48670},
         {t: "hooks ", ms: 44140, out: 48670},
         {t: "do ", ms: 44480, out: 48670},
@@ -234,7 +234,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "it ", ms: 47970, out: 48670},
         {t: "happens. ", ms: 48070, out: 48670},
       ]},
-      {size: 48, words: [
+      {size: 44, words: [
         {t: "The ", ms: 48670},
         {t: "other ", ms: 48820},
         {t: "rebuilds ", ms: 49150},
@@ -242,7 +242,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "design ", ms: 49760},
         {t: "canon ", ms: 50160},
       ]},
-      {size: 56, words: [
+      {size: 55, words: [
         {t: "the ", ms: 50510},
         {t: "second ", ms: 50690},
         {t: "a ", ms: 51040},
@@ -254,11 +254,11 @@ export const STACK_BEATS: StackBeat[] = [
   { // memory
     from: 52630, to: 63020, bg: CREAM, type: INK, top: true,
     rows: [
-      {size: 96, words: [
+      {size: 86, words: [
         {t: "4. ", ms: 52630, out: 56520},
         {t: "Memory. ", ms: 52940, out: 56520},
       ]},
-      {size: 50, words: [
+      {size: 55, words: [
         {t: "Every ", ms: 53910, out: 56520},
         {t: "session ", ms: 54080, out: 56520},
         {t: "ends ", ms: 54540, out: 56520},
@@ -268,7 +268,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "the ", ms: 55830, out: 56520},
         {t: "lot. ", ms: 56010, out: 56520},
       ]},
-      {size: 52, words: [
+      {size: 55, words: [
         {t: "Mine ", ms: 56520, out: 59440},
         {t: "writes ", ms: 56660, out: 59440},
         {t: "what ", ms: 57160, out: 59440},
@@ -276,13 +276,13 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "to ", ms: 57760, out: 59440},
         {t: "disk. ", ms: 57920, out: 59440},
       ]},
-      {size: 80, words: [
+      {size: 86, words: [
         {t: "One ", ms: 58410},
         {t: "fact ", ms: 58600, ring: 3441, furnMs: 58860, furnColor: RED, color: RED},
         {t: "per ", ms: 58870},
         {t: "file ", ms: 59090},
       ]},
-      {size: 46, words: [
+      {size: 44, words: [
         {t: "and ", ms: 59440},
         {t: "reads ", ms: 59580},
         {t: "the ", ms: 59930},
@@ -299,12 +299,12 @@ export const STACK_BEATS: StackBeat[] = [
   { // agents
     from: 63020, to: 72810, bg: INK, type: CREAM, top: true,
     rows: [
-      {size: 72, words: [
+      {size: 69, words: [
         {t: "5. ", ms: 63020, out: 67500},
         {t: "Pinned ", ms: 63610, out: 67500},
         {t: "sub-agents. ", ms: 63920, out: 67500},
       ]},
-      {size: 48, words: [
+      {size: 44, words: [
         {t: "One ", ms: 64720, out: 69600},
         {t: "reads ", ms: 65070, out: 69600},
         {t: "rendered ", ms: 65270, out: 69600},
@@ -313,7 +313,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "scores ", ms: 66430, out: 69600},
         {t: "them. ", ms: 66840, out: 69600},
       ]},
-      {size: 48, words: [
+      {size: 44, words: [
         {t: "One ", ms: 67500, out: 69600},
         {t: "triages ", ms: 67510, out: 69600},
         {t: "what ", ms: 68040, out: 69600},
@@ -321,7 +321,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "needs ", ms: 68960, out: 69600},
         {t: "me. ", ms: 69270, out: 69600},
       ]},
-      {size: 54, words: [
+      {size: 55, words: [
         {t: "A ", ms: 69600},
         {t: "specialist ", ms: 69760},
         {t: "beats ", ms: 70320},
@@ -329,7 +329,7 @@ export const STACK_BEATS: StackBeat[] = [
         {t: "generalist ", ms: 70710, strike: 3451, furnMs: 70970, furnColor: RED, color: RED},
         {t: "guessing ", ms: 71360},
       ]},
-      {size: 88, words: [
+      {size: 86, words: [
         {t: "every ", ms: 71910},
         {t: "time. ", ms: 72220},
       ]},
@@ -338,20 +338,20 @@ export const STACK_BEATS: StackBeat[] = [
   { // cta
     from: 72810, to: 78060, bg: RED, type: CREAM, top: false,
     rows: [
-      {size: 54, words: [
+      {size: 55, words: [
         {t: "Set ", ms: 72810, out: 74060},
         {t: "yours ", ms: 72870, out: 74060},
         {t: "up ", ms: 73120, out: 74060},
         {t: "this ", ms: 73220, out: 74060},
         {t: "week. ", ms: 73420, out: 74060},
       ]},
-      {size: 60, words: [
+      {size: 55, words: [
         {t: "Comment ", ms: 74060},
       ]},
-      {size: 140, words: [
+      {size: 134, words: [
         {t: "stack ", ms: 74240, underline: 3461, furnMs: 74500, furnColor: CREAM},
       ]},
-      {size: 42, words: [
+      {size: 44, words: [
         {t: "and ", ms: 74560},
         {t: "I'll ", ms: 74720},
         {t: "send ", ms: 74970},
