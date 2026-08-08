@@ -165,62 +165,23 @@ const FiveTicks: React.FC = () => {
   );
 };
 
-// ---- S3 -- the 17, then the 7 ----------------------------------------------
-// The count is the verified figure (17 directories in anthropics/skills/skills,
-// GitHub API, 2026-08-08). The 7 that fills is vektor/.claude/skills.
-const SkillGrid: React.FC = () => {
-  const frame = useCurrentFrame();
-  const filled = (i: number) => frame >= f(20400 + i * 130);
-  return (
-    <AbsoluteFill style={{fontFamily: FONT}}>
-      <Odometer fromMs={14200} tickMs={60} values={rampValues(0, 17, 12, (n) => String(n))}
-        style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP - 44, fontSize: 112, color: INK,
-          lineHeight: 1}} />
-      <div style={{position: 'absolute', left: VIZ_L + 172, top: VIZ_TOP + 36, fontSize: 26,
-        letterSpacing: 3, color: GREY_C}}>ANTHROPIC / SKILLS</div>
-      {/* The framed specimen is superseded by the shot beat from 13.4s; this
-          is the opener only, so it carries just the count and the source. */}
-    </AbsoluteFill>
-  );
-};
+// ---- the section openers ---------------------------------------------------
+// Founder 2026-08-08: "1. Skills" and "2. The plugin marketplace" are OPENERS —
+// centred, alone in the frame, obviously a section card, then a hard cut to the
+// page. So these beats carry NO visualisation at all during their opener: the
+// odometer, the 17-cell grid and the OFFICIAL/COMMUNITY/MINE strip are all gone.
+// The card is the spoken words themselves, centred by the composition, which is
+// why there is no component here — adding one would put the label on screen
+// twice, once as type and once as furniture.
+const OPENERS = [
+  {from: 11810, to: 13400},   // 1. Skills.
+  {from: 24610, to: 26200},   // 2. The plugin marketplace.
+];
 
-// ---- S4 -- the real storefront, then the private one -----------------------
-// The founder supplied this capture by hand: claude.com/plugins refuses headless
-// Edge outright (flat single colour at 9s of virtual time, no file at all at
-// 45s). It is worth the manual step — the page shows verified badges and install
-// counts, so it visibly IS a storefront, which is the exact word in the line.
-// Provenance: public/screens/no033-plugin-store.json.
-//
-// The three labels above it keep the factual correction the source reel gets
-// wrong: official and community are DIFFERENT marketplaces
-// (code.claude.com/docs/en/discover-plugins). The live one lights as the script
-// names it. Then MINE lands ON TOP of the real store, because the line is "a
-// third that nobody else can see".
-const STORES = [{t: 'OFFICIAL', ms: 27600}, {t: 'COMMUNITY', ms: 31300}, {t: 'MINE', ms: 33800}];
-const Storefront: React.FC = () => {
-  const frame = useCurrentFrame();
-  return (
-    <AbsoluteFill style={{fontFamily: FONT}}>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP, width: VIZ_W,
-        display: 'flex', justifyContent: 'space-between'}}>
-        {STORES.map((s) => {
-          const live = frame >= f(s.ms);
-          return (
-            <div key={s.t} style={{fontSize: 26, letterSpacing: 3,
-              color: live ? CREAM : 'rgba(244,239,223,0.38)',
-              borderBottom: live ? `4px solid ${CREAM}` : '4px solid transparent',
-              paddingBottom: 8}}>{s.t}</div>
-          );
-        })}
-      </div>
-
-      {/* The page itself is no longer a plate here -- the shot beat shows the
-          real repo full-width from 26.2s. This strip is the opener only, and it
-          carries the factual correction the source reel gets wrong: official and
-          community are DIFFERENT marketplaces. */}
-    </AbsoluteFill>
-  );
-};
+// S4 has no plate either. The OFFICIAL / COMMUNITY / MINE strip is gone at the
+// founder's direction; the script already says "Anthropic curates the official
+// one" and "there's a separate community one you add by hand", so the
+// distinction is spoken and the screen does not need to repeat it.
 
 // ---- S5 -- the commit that has to take the branch --------------------------
 // Rebuilt 2026-08-08 after the founder rejected v2 as cheap. Research findings
@@ -319,10 +280,13 @@ const ThresholdCross: React.FC = () => {
           fill={rejected ? CREAM : INK} stroke={INK} strokeWidth={rejected ? W_RAIL : 0} />
       </svg>
 
-      <div style={{position: 'absolute', left: LANE_X - 92, top: GATE_Y - 104, fontSize: 30,
-        letterSpacing: 3, color: INK}}>MAIN</div>
-      <div style={{position: 'absolute', left: BRANCH_X - 40, top: GATE_Y - 34, fontSize: 26,
-        letterSpacing: 3, color: GREY_C}}>BRANCH</div>
+      {/* Founder 2026-08-08: centre the labels on their circles. Both were
+          left-anchored off a hand-picked offset, so neither sat under the node
+          it names. Each is now a fixed-width box centred on the node's x. */}
+      <div style={{position: 'absolute', left: LANE_X - 140, top: GATE_Y - 116, width: 280,
+        textAlign: 'center', fontSize: 30, letterSpacing: 3, color: INK}}>MAIN</div>
+      <div style={{position: 'absolute', left: BRANCH_X - 140, top: GATE_Y + 82, width: 280,
+        textAlign: 'center', fontSize: 26, letterSpacing: 3, color: GREY_C}}>BRANCH</div>
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_BOTTOM - 46, width: VIZ_W,
         borderTop: `${W_HAIR}px solid ${HAIR_C}`, paddingTop: 12, fontSize: 22,
         letterSpacing: 3, color: GREY_C}}>PRE-TOOL-USE HOOK</div>
@@ -451,19 +415,23 @@ const StackOutro: React.FC = () => (
 // real page takes the frame and scrolls slowly. Hard cut in and out, no wipe,
 // no wordmark and no footer while it is up.
 //
-// The words go in a solid ink band under the shot rather than over it. The band
-// stops at y1440, NOT at the frame edge: Instagram's chrome eats the bottom, and
-// the words are the one thing that must never be cropped. The band's FILL runs
-// to 1920 so there is no seam against the frame edge; only its TYPE is fenced.
+// No words at all while a shot is up (founder, third scrub) — full bleed means
+// full bleed. That costs the film roughly 16 of its 78 seconds with no text on
+// screen, which is a deliberate trade, not an oversight.
 //
-// Scroll travel is capped. The official-plugins page is 2340px tall once fitted
-// to 1080 wide, and letting it run its full length would scroll at 122px/s,
-// which reads as a swipe rather than a drift.
+// The sources are AUTO-CROPPED, not eyeballed: a script measures where the page
+// content actually ends against the page's own background colour, trims the dead
+// space below it, and takes the left 55% where the file list sits. The founder's
+// note was that the captures left too much empty space at the bottom and needed
+// to zoom the left side; measuring the content beats picking a number by hand,
+// and it re-derives itself if the pages are ever re-captured.
+//
+// Scroll travel is capped so the page drifts rather than swipes.
 const SHOT_TOP = 1920;   // full bleed, founder 2026-08-08
 type Shot = {from: number; to: number; src: string; travel: number};
 const SHOTS: Shot[] = [
-  {from: 13400, to: 24600, src: 'screens/no033-skills-17.png', travel: 230},
-  {from: 26200, to: 36700, src: 'screens/no033-official-repo.png', travel: 600},
+  {from: 13400, to: 24600, src: 'screens/no033-skills-crop.png', travel: 420},
+  {from: 26200, to: 36700, src: 'screens/no033-official-crop.png', travel: 520},
 ];
 
 const ShotPlate: React.FC<{shot: Shot}> = ({shot}) => {
@@ -473,8 +441,13 @@ const ShotPlate: React.FC<{shot: Shot}> = ({shot}) => {
     <>
       <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: SHOT_TOP,
         overflow: 'hidden', background: CREAM}}>
+        {/* minHeight guards the case where a crop comes back shorter than the
+            frame — at 55% the skills page fitted to 1080 wide was only 1756 tall
+            and would have letterboxed. Both crops are taller than 1920 at 42%,
+            but a re-capture must not be able to reintroduce a gap silently. */}
         <Img src={staticFile(shot.src)}
-          style={{position: 'absolute', left: 0, top: 0, width: 1080,
+          style={{position: 'absolute', left: 0, top: 0, width: 1080, minHeight: 1920,
+            objectFit: 'cover', objectPosition: 'top',
             transform: `translateY(${-t * shot.travel}px)`}} />
       </div>
     </>
@@ -490,19 +463,28 @@ const ShotPlate: React.FC<{shot: Shot}> = ({shot}) => {
 // and 72.8s exist because the cream stretch from 36.7s to 63.0s is 26.3s long,
 // well past the 21.4s worst case qa-measure accepted on NO. 027. They split it
 // to 15.9s and 10.4s.
-const FLIPS: {ms: number; main: string; a1: string; a2: string; border?: string}[] = [
-  {ms: 11800, main: CREAM, a1: RED,   a2: INK,   border: CREAM},
-  {ms: 24600, main: RED,   a1: CREAM, a2: INK,   border: CREAM},
-  {ms: 36700, main: CREAM, a1: INK,   a2: RED,   border: CREAM},
-  {ms: 52600, main: CREAM, a1: RED,   a2: INK,   border: CREAM},
-  {ms: 63000, main: INK,   a1: CREAM, a2: RED,   border: CREAM},
-  {ms: 72800, main: INK,   a1: RED,   a2: CREAM, border: CREAM},
+// ONE COLOUR PER WIPE (founder, 2026-08-08: "i like those transitions but just
+// make them cleaner, with 1 colour, i see like 3 colors"). MatteWipe sweeps three
+// panels — two accents through the frame, then the main panel stopping at x0 —
+// and colouring them separately is what put three colours on screen. All three
+// now take the INCOMING field colour, so the seam reads as one clean sheet of the
+// new colour arriving rather than as a parade.
+//
+// Done by passing the same value three times, NOT by editing MatteWipe: that
+// component is the single shared implementation and NO. 027, 030 and 031 all
+// render it. The border is dropped for the same reason it was a third colour.
+const FLIPS: {ms: number; field: string}[] = [
+  {ms: 11800, field: CREAM},
+  {ms: 24600, field: RED},
+  {ms: 36700, field: CREAM},
+  {ms: 52600, field: CREAM},   // same-colour wipe: splits a 26.3s static stretch
+  {ms: 63000, field: INK},
+  {ms: 72800, field: INK},     // same-colour wipe into the end card
 ];
 const Seams: React.FC = () => (
   <>
     {FLIPS.map((w) => (
-      <MatteWipe key={w.ms} atMs={w.ms} main={w.main} accent1={w.a1} accent2={w.a2}
-        accent2Border={w.border} />
+      <MatteWipe key={w.ms} atMs={w.ms} main={w.field} accent1={w.field} accent2={w.field} />
     ))}
   </>
 );
@@ -521,6 +503,10 @@ export const KTStack: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'al
       ? STACK_BEATS[STACK_BEATS.length - 1]
       : STACK_BEATS[0]);
   const shot = SHOTS.find((sh) => frame >= f(sh.from) && frame < f(sh.to));
+  // During an opener the type block centres in the frame instead of sitting in
+  // its usual top band, so the section card reads as a card and not as the first
+  // line of a paragraph.
+  const opener = OPENERS.some((o) => frame >= f(o.from) && frame < f(o.to));
   const lightField = beat.bg === CREAM;
   const furn = lightField ? GREY_C : GREY_I;
   return (
@@ -528,8 +514,6 @@ export const KTStack: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'al
       {layer !== 'type' && !shot ? (<>
       <Window fromMs={1400}  toMs={7000}>  <PromptBox /></Window>
       <Window fromMs={7000}  toMs={11800}> <FiveTicks /></Window>
-      <Window fromMs={11800} toMs={24600}> <SkillGrid /></Window>
-      <Window fromMs={24600} toMs={36700}> <Storefront /></Window>
       <Window fromMs={36700} toMs={52600}> <ThresholdCross /></Window>
       <Window fromMs={52600} toMs={63000}> <MemoryStack /></Window>
       <Window fromMs={63000} toMs={72800}> <AgentCards frames={KT_STACK_FRAMES} /></Window>
@@ -539,11 +523,13 @@ export const KTStack: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'al
 
       {layer !== 'viz' && !shot ? (
       <AbsoluteFill style={{alignItems: 'center',
-        justifyContent: beat.top ? 'flex-start' : 'center',
+        justifyContent: opener || !beat.top ? 'center' : 'flex-start',
         flexDirection: 'column', rowGap: 26,
         // 330 not 260: the wordmark sits at y240 to clear Instagram's Reels
-        // header, so the type block starts below its baseline.
-        padding: beat.top ? '330px 150px 0' : '0 150px', textAlign: 'center'}}>
+        // header, so the type block starts below its baseline. An opener ignores
+        // that band entirely and centres in the frame.
+        padding: opener || !beat.top ? '0 150px' : '330px 150px 0',
+        textAlign: 'center'}}>
         {beat.rows.map((row, ri) => (
           <div key={`${beat.from}-${ri}`} style={{lineHeight: 1.14}}>
             {row.words.map((w, wi) => (
