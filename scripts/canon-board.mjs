@@ -215,6 +215,112 @@ const tmplCountLine = Object.entries(tmplCounts)
 // Wireframe zone summary (a light pointer, not exhaustive).
 const wfKinds = wireframes.kinds ? Object.keys(wireframes.kinds) : [];
 
+// ── KT-REMOTION — the active format (additive; rendered only when the machine
+//    files exist). NOT a canon.yml skin: skins dispatch on a video.json and
+//    hand-composed KT films have none, which is exactly why five of them shipped
+//    with no automated canon safety net. Masters: canon/kt-tokens.json (values)
+//    and canon/kt-canon.yml (rules + severities). ─────────────────────────────
+const ktTokens = readJson(path.join(canonDir, 'kt-tokens.json'));
+const ktCanonText = readText(path.join(canonDir, 'kt-canon.yml'));
+const ktCanon = ktCanonText ? yaml.load(ktCanonText) : null;
+let ktHtml = '';
+if (ktTokens && ktCanon) {
+  const kf = (ktTokens.color && ktTokens.color.fields) || {};
+  const ktSwatches = Object.entries(kf)
+    .map(([n, v]) => fieldSwatch(n, v.hex) +
+      `<div class="sw"><span class="chip" style="background:${esc(v.text)}"></span><span class="swname">${esc(n)}.text</span><span class="swval">${esc(v.text)}</span></div>`)
+    .join('\n');
+
+  const scale = (ktTokens.type && ktTokens.type.scale) || {};
+  const scaleChips = (scale.steps || [])
+    .map((s) => `<span class="spec${s >= 107 ? ' spec-lg' : ''}">${s}</span>`).join(' ');
+
+  const cm = (ktTokens.color && ktTokens.color.contrast && ktTokens.color.contrast.measured) || {};
+  const floors = (ktTokens.color && ktTokens.color.contrast && ktTokens.color.contrast.floors) || {};
+  const contrastRows = Object.entries(cm).map(([k, v]) => {
+    const bodyFloor = (floors.body && floors.body.ratio) || 4.5;
+    const largeFloor = (floors.large && floors.large.ratio) || 3.0;
+    const verdict = v >= bodyFloor ? 'body + large'
+      : v >= largeFloor ? 'large only'
+        : 'FAILS BOTH';
+    return `<tr><td class="rn">${esc(k.replace(/_/g, ' '))}</td><td><b>${v}:1</b></td><td class="sum">${
+      v < largeFloor ? `<span class="warnline">${verdict}</span>` : esc(verdict)}</td></tr>`;
+  }).join('\n');
+
+  const ktRuleRows = Object.entries(ktCanon.rules || {}).map(([name, r]) =>
+    `<tr><td class="rn">${esc(name)}</td><td><span class="spec">${esc(r.severity)}</span></td>` +
+    `<td class="sum">${esc(String(r.checks || '').trim())}</td>` +
+    `<td class="sum">${esc(r.gate || 'scripts/check-kt.mjs')}${r.since ? ` · since ${esc(r.since)}` : ''}</td></tr>`
+  ).join('\n');
+
+  const ktOpenRows = Object.entries(ktCanon.open || {}).map(([name, o]) =>
+    `<tr><td class="rn">${esc(name)}</td><td class="sum">${esc(String(o.measured || '').trim())}</td>` +
+    `<td class="sum"><b>${esc(String(o.question || '').trim())}</b></td></tr>`
+  ).join('\n');
+
+  const rot = (ktTokens.fieldRotation && ktTokens.fieldRotation.shipped) || {};
+  const filmRows = Object.entries(ktCanon.films || {}).map(([id, f]) => {
+    const seq = (rot[id] && rot[id].sequence) ? rot[id].sequence.join(' → ') : '—';
+    const n = (ktTokens.narration && ktTokens.narration.measured && ktTokens.narration.measured[id]) || {};
+    return `<tr><td class="rn">${esc(id)}</td><td>${esc(f.title)}</td>` +
+      `<td class="sum">${esc(seq)}</td>` +
+      `<td>${n.durationSec ? `${n.durationSec}s · ${n.wpm} wpm` : '—'}</td>` +
+      `<td><span class="spec">${esc(f.status || '')}</span></td></tr>`;
+  }).join('\n');
+
+  const outro = ktTokens.outro || {};
+  const outroRows = ((outro.rows && outro.rows.spec) || [])
+    .map((r) => `<tr><td class="rn">${esc(r.role)}</td><td><b>${r.size}</b></td><td class="sum">${
+      esc(r.mark ? `${r.mark} mark` : '—')} · NO. 030 shipped ${r.no030Literal}</td></tr>`).join('\n');
+
+  const blockers = Object.values(ktCanon.rules || {}).filter((r) => r.severity === 'blocker').length;
+  const opens = Object.keys(ktCanon.open || {}).length;
+
+  ktHtml = `
+  <h2>KT-Remotion — THE ACTIVE FORMAT · ${blockers} blockers, ${opens} open</h2>
+  <section>
+    <p class="note">Masters: <code>canon/kt-tokens.json</code> (values) + <code>canon/kt-canon.yml</code> (rules).
+    Gate: <code>node scripts/check-kt.mjs --film &lt;id&gt; [--render]</code>.
+    Motion grammar: <code>docs/KT-MOTION-SPEC.md</code>.
+    <b>Not a skin</b> — skins dispatch on a <code>video.json</code>, and hand-composed KT films have none.</p>
+
+    <div class="meta-line">Fields</div>
+    <div class="swatches">${ktSwatches}</div>
+
+    <div class="meta-line">Type scale — ${esc(String(scale.steps || []).replace(/,/g, ' / '))} on a ${esc(String(scale.ratio))} ratio</div>
+    <p>${scaleChips}</p>
+    <p class="note">${esc(scale.law || '')}</p>
+
+    <div class="meta-line">Measured contrast vs the ${esc(String((floors.body || {}).ratio))}:1 body / ${esc(String((floors.large || {}).ratio))}:1 large floors</div>
+    <table><thead><tr><th>Pair</th><th>Ratio</th><th>Clears</th></tr></thead><tbody>
+${contrastRows}
+    </tbody></table>
+
+    <div class="meta-line">The house outro — red field, three rows on screen at once</div>
+    <table><thead><tr><th>Row</th><th>Size</th><th>Notes</th></tr></thead><tbody>
+${outroRows}
+    </tbody></table>
+
+    <div class="meta-line">Shipped films — field rotation is read from the beat DATA, never a file header</div>
+    <table><thead><tr><th>Film</th><th>Title</th><th>Field rotation</th><th>Length · pace</th><th>Status</th></tr></thead><tbody>
+${filmRows}
+    </tbody></table>
+
+    <div class="meta-line">Enforced rules — every one fails the build</div>
+    <table><thead><tr><th>Rule</th><th>Severity</th><th>Checks</th><th>Gate</th></tr></thead><tbody>
+${ktRuleRows}
+    </tbody></table>
+
+    <div class="meta-line">OPEN — measured, never ruled on, NEVER enforced</div>
+    <p class="note">These are not standards. They are observations waiting on a founder ruling.
+    Promoting one to a blocker needs a decision and a <code>DECISIONS.md</code> entry.</p>
+    <table><thead><tr><th>Question</th><th>What was measured</th><th>What needs deciding</th></tr></thead><tbody>
+${ktOpenRows}
+    </tbody></table>
+  </section>
+`;
+}
+
 // ── page ─────────────────────────────────────────────────────────────────────
 const html = `<!doctype html>
 <html lang="en">
@@ -299,6 +405,7 @@ const html = `<!doctype html>
   </header>
   <div class="artifact">⚙ BUILD ARTIFACT — generated by <code>reel-engine/scripts/canon-board.mjs</code> on ${esc(now)}. Do NOT hand-edit. Change the master files in <code>canon/</code> and regenerate (<code>npm run canon:board</code>).</div>
 
+${ktHtml}
   <h2>The Video Model</h2>
   <section>${videoModelHtml}</section>
 
@@ -365,4 +472,4 @@ ${tmplRows}
 // ── write ────────────────────────────────────────────────────────────────────
 const outPath = path.join(canonDir, 'BOARD.html');
 fs.writeFileSync(outPath, html, 'utf8');
-console.log(`canon-board: wrote ${outPath} (canon v${canon.version}, ${blockerCount} blockers, ${Object.keys(tmpl).length} templates)`);
+console.log(`canon-board: wrote ${outPath} (canon v${canon.version}, ${blockerCount} blockers, ${Object.keys(tmpl).length} templates${ktHtml ? `, KT canon v${ktCanon.version}` : ''})`);
