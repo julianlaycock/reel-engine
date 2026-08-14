@@ -9,6 +9,7 @@ import {KTTax, KT_TAX_FRAMES} from './KTTax';
 import {KTState, KT_STATE_FRAMES} from './KTState';
 import {KTFunnel, KT_FUNNEL_FRAMES} from './KTFunnel';
 import {KTStack, KT_STACK_FRAMES} from './KTStack';
+import {KTTokens, KT_TOKENS_FRAMES} from './KTTokens';
 import {KT3DSpike, KT_3D_SPIKE_FRAMES} from './KT3DSpike';
 
 export const Root: React.FC = () => {
@@ -50,6 +51,15 @@ export const Root: React.FC = () => {
         id="KTFunnel"
         component={KTFunnel}
         durationInFrames={KT_FUNNEL_FRAMES}
+        fps={FPS}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="KTTokens"
+        component={KTTokens}
+        defaultProps={{layer: 'all' as const}}
+        durationInFrames={KT_TOKENS_FRAMES}
         fps={FPS}
         width={1080}
         height={1920}
