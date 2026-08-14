@@ -310,8 +310,35 @@ const WIPE_TAIL = 6;    // the main panel settles at x0 a few frames after
 const inWipe = (frame: number) =>
   FLIPS.some((w) => frame >= f(w.ms) - WIPE_LEAD && frame < f(w.ms) + WIPE_TAIL);
 
+// THE WIPE RUNS ONE WAY (founder, 2026-08-14).
+//
+// Suppressing the type and the plates got the seam down to the two colours a wipe
+// must show — the field it is leaving and the colour it is bringing. But the
+// measurement showed the sequence going the WRONG WAY round: at seam 9920ms the
+// frame read cream 100% at +8, then ink 11.7% at +10, then cream 100% again. The
+// old field FLASHES BACK after the new one has already covered the frame.
+//
+// The cause is the panel train's geometry. The two accents sweep through and
+// exit, the main panel follows and stops at x0, and in the gap between them the
+// background — still the OUTGOING field until atMs — shows through again.
+//
+// The fix is not to edit MatteWipe. That component is the single shared
+// implementation and NO. 027, 030 and 031 all render it; changing its geometry
+// would change three locked films. Instead the FIELD flips early, at the moment
+// the first panel has covered the frame, so anything visible through a later gap
+// is the incoming colour rather than the outgoing one. The wipe then travels one
+// way: old, panels arriving, new. It never goes back.
+//
+// COVER is measured, not guessed: scripts/check-seam-colours.mjs reported 100%
+// coverage at +8 on every seam of this film.
+const WIPE_COVER = 8;
+const wipeField = (frame: number): string | null => {
+  const w = FLIPS.find((x) => frame >= f(x.ms) - WIPE_COVER && frame < f(x.ms));
+  return w ? w.field : null;
+};
+
 // ---- composition -----------------------------------------------------------
-export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'all'}) => {
+export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> = ({layer = 'all'}) => {
   const frame = useCurrentFrame();
   // Every hook is called before any early return. A hook after an early return
   // passes every still and fails the video render with React error 310, and
@@ -326,18 +353,21 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'a
   // Suppress type and plates while the panel train is on screen — see inWipe.
   const wiping = inWipe(frame);
   const shot = SHOTS.find((sh) => frame >= f(sh.from) && frame < f(sh.to));
-  const lightField = beat.bg === CREAM;
+  // During the back half of a wipe the field is already the incoming one, so a
+  // gap between panels reveals the new colour instead of flashing the old back.
+  const bg = wipeField(frame) ?? beat.bg;
+  const lightField = bg === CREAM;
   // Footer contrast is field-aware (design review 2026-08-08). It was
   // cream-at-34% on every dark field, which measures 1.47:1 against RED —
   // effectively invisible, and on the beat that carries the CTA.
   const furn = lightField
     ? 'rgba(16,16,16,0.55)'
-    : (beat.bg === RED ? CREAM : 'rgba(244,239,223,0.55)');
+    : (bg === RED ? CREAM : 'rgba(244,239,223,0.55)');
   return (
-    <AbsoluteFill style={{backgroundColor: beat.bg, fontFamily: FONT}}>
-      {layer !== 'type' && !wiping && shot ? <ShotPlate shot={shot} /> : null}
+    <AbsoluteFill style={{backgroundColor: bg, fontFamily: FONT}}>
+      {layer !== 'type' && layer !== 'furniture' && !wiping && shot ? <ShotPlate shot={shot} /> : null}
 
-      {layer !== 'type' && !wiping && !shot ? (<>
+      {layer !== 'type' && layer !== 'furniture' && !wiping && !shot ? (<>
       <Window fromMs={1600}  toMs={9920}> <ClaimBars /></Window>
       <Window fromMs={20080} toMs={24540}><AbPlate /></Window>
       <Window fromMs={24540} toMs={30200}><DropPlate /></Window>
@@ -346,7 +376,7 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'a
       <Window fromMs={41760} toMs={TOKENS_END_MS}><TokensOutro /></Window>
       </>) : null}
 
-      {layer !== 'viz' && !wiping && !shot ? (
+      {layer !== 'viz' && layer !== 'furniture' && !wiping && !shot ? (
       <AbsoluteFill style={{alignItems: 'center',
         justifyContent: beat.top ? 'flex-start' : 'center',
         flexDirection: 'column', rowGap: 26,
@@ -366,7 +396,7 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'a
 
       {layer === 'all' ? <Seams /> : null}
 
-      {layer === 'all' && !shot ? (<>
+      {(layer === 'all' || layer === 'furniture') && !shot ? (<>
       {/* FURNITURE — inside the safe box. The 44px rail is HORIZONTAL-ONLY since
           2026-08-07: Reels chrome cuts the top and bottom, so the wordmark sits
           at y240 and the footer slugs at y1372, not at the rail. NO. 033 put the
