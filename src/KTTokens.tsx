@@ -32,7 +32,7 @@
 // inside x150-930 / y220-1420, drop shadows included. VIZ_L/VIZ_W below are that
 // box and nothing may exceed it.
 import React from 'react';
-import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Img, staticFile, useCurrentFrame} from 'remotion';
 import {INK, CREAM, RED, f, Word} from './KTHook';
 import {TOKENS_BEATS, TOKENS_END_MS} from './KTTokensWords';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
@@ -97,32 +97,36 @@ const ClaimBars: React.FC = () => {
 };
 
 // ---- S2 -- the thing nobody else has ---------------------------------------
-// A repo card with the evaluation directory inside it. The point is not the tool,
-// it is that the folder exists at all, so the folder and its scripts are what get
-// drawn. These are the real filenames from the repo.
-const RepoCard: React.FC = () => {
+// A REAL capture of the repo's evaluation directory, full-bleed, scrolling.
+//
+// This was a drawn card until 2026-08-14. The founder caught it: a film whose
+// whole argument is "they published the evidence" was showing a picture of the
+// evidence instead of the evidence. The ruling that covers it is from 2026-07-19
+// ("AI decides WHEN to screenshot; full-bleed is the screenshot treatment") and
+// lived only in DECISIONS.md, which no gate reads — so the canon now carries it
+// as treatments.screenshot and this plate obeys it.
+//
+// Captured with scripts/capture-url.mjs from
+// github.com/zilliztech/claude-context/tree/master/evaluation at 1080x3160, so it
+// is wider than nothing and taller than the frame and can scroll.
+//
+// FULL BLEED MEANS FULL BLEED: no wordmark, no footer and no type while it is up.
+const SHOTS: {from: number; to: number; src: string}[] = [
+  {from: 11800, to: 17600, src: 'screens/no034-evaluation.png'},
+];
+
+const ShotPlate: React.FC<{shot: {from: number; to: number; src: string}}> = ({shot}) => {
   const frame = useCurrentFrame();
-  const p = decel(prog(frame, 10400, 400));
-  const files = ['generate_subset_json.py', 'run_evaluation.py', 'analyze_and_plot.py'];
+  const IMG_H = 3160;
+  // Slow, linear scroll. A drift that eases would read as a camera move; this is
+  // a page being read.
+  const t = clamp01((frame - f(shot.from)) / Math.max(1, f(shot.to - shot.from)));
+  const y = -(IMG_H - 1920) * t;
   return (
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 60, width: VIZ_W,
-      border: `2px solid ${HAIR_I}`, background: WASH_I, opacity: p,
-      transform: `translateY(${(1 - p) * 16}px)`, padding: '26px 30px'}}>
-      <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: GREY_I}}>
-        ZILLIZTECH / CLAUDE-CONTEXT
-      </div>
-      <div style={{fontFamily: FONT, fontSize: 55, color: CREAM, margin: '14px 0 20px'}}>
-        / evaluation
-      </div>
-      {files.map((name, i) => {
-        const fp = decel(prog(frame, 11600 + i * 380, 260));
-        if (fp <= 0) return null;
-        return (
-          <div key={name} style={{fontFamily: FONT_UI, fontSize: 24, color: CREAM, opacity: fp,
-            padding: '9px 0', borderTop: `2px solid ${HAIR_I}`}}>{name}</div>
-        );
-      })}
-    </div>
+    <AbsoluteFill style={{overflow: 'hidden', backgroundColor: INK}}>
+      <Img src={staticFile(shot.src)}
+        style={{position: 'absolute', left: 0, top: y, width: 1080}} />
+    </AbsoluteFill>
   );
 };
 
@@ -286,6 +290,26 @@ const Seams: React.FC = () => (
   </>
 );
 
+// THE WIPE CARRIES A CLEAN SHEET (founder, 2026-08-14).
+//
+// One colour per wipe was ruled on 2026-08-08 and check-kt enforced it at the
+// CALL SITE: main, accent1 and accent2 are the same value, so the panels are one
+// colour. The founder still saw three and four colours scrubbing NO. 034, and
+// was right. MatteWipe paints at zIndex 5 over whatever is still mounted, and
+// beneath it the outgoing beat's type and its plate are both still on screen —
+// so the frame reads field + panel + type + accent even though the panels agree.
+//
+// Measured with scripts/check-seam-colours.mjs: seam 9920ms carried ink 95.4%,
+// red 1.3%, type 2.6% and cream 0.7% at the head of the train. Four.
+//
+// So the type layer and the plates are suppressed for the frames the train is on
+// screen. The wipe travels over a flat field and lands on a flat field, which is
+// what "one colour per wipe" always meant.
+const WIPE_LEAD = 16;   // MW.sweep — the train starts this far before atMs
+const WIPE_TAIL = 6;    // the main panel settles at x0 a few frames after
+const inWipe = (frame: number) =>
+  FLIPS.some((w) => frame >= f(w.ms) - WIPE_LEAD && frame < f(w.ms) + WIPE_TAIL);
+
 // ---- composition -----------------------------------------------------------
 export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'all'}) => {
   const frame = useCurrentFrame();
@@ -299,6 +323,9 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'a
     (frame >= f(TOKENS_BEATS[TOKENS_BEATS.length - 1].from)
       ? TOKENS_BEATS[TOKENS_BEATS.length - 1]
       : TOKENS_BEATS[0]);
+  // Suppress type and plates while the panel train is on screen — see inWipe.
+  const wiping = inWipe(frame);
+  const shot = SHOTS.find((sh) => frame >= f(sh.from) && frame < f(sh.to));
   const lightField = beat.bg === CREAM;
   // Footer contrast is field-aware (design review 2026-08-08). It was
   // cream-at-34% on every dark field, which measures 1.47:1 against RED —
@@ -308,17 +335,18 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'a
     : (beat.bg === RED ? CREAM : 'rgba(244,239,223,0.55)');
   return (
     <AbsoluteFill style={{backgroundColor: beat.bg, fontFamily: FONT}}>
-      {layer !== 'type' ? (<>
+      {layer !== 'type' && !wiping && shot ? <ShotPlate shot={shot} /> : null}
+
+      {layer !== 'type' && !wiping && !shot ? (<>
       <Window fromMs={1600}  toMs={9920}> <ClaimBars /></Window>
-      <Window fromMs={9920}  toMs={20080}><RepoCard /></Window>
       <Window fromMs={20080} toMs={24540}><AbPlate /></Window>
-      <Window fromMs={24540} toMs={36060}><DropPlate /></Window>
+      <Window fromMs={24540} toMs={30200}><DropPlate /></Window>
       <Window fromMs={30200} toMs={36060}><CostPlate /></Window>
       <Window fromMs={36060} toMs={41760}><FindPlate /></Window>
       <Window fromMs={41760} toMs={TOKENS_END_MS}><TokensOutro /></Window>
       </>) : null}
 
-      {layer !== 'viz' ? (
+      {layer !== 'viz' && !wiping && !shot ? (
       <AbsoluteFill style={{alignItems: 'center',
         justifyContent: beat.top ? 'flex-start' : 'center',
         flexDirection: 'column', rowGap: 26,
@@ -338,7 +366,7 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz'}> = ({layer = 'a
 
       {layer === 'all' ? <Seams /> : null}
 
-      {layer === 'all' ? (<>
+      {layer === 'all' && !shot ? (<>
       {/* FURNITURE — inside the safe box. The 44px rail is HORIZONTAL-ONLY since
           2026-08-07: Reels chrome cuts the top and bottom, so the wordmark sits
           at y240 and the footer slugs at y1372, not at the rail. NO. 033 put the
