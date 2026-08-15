@@ -74,22 +74,44 @@ const WASH_C = 'rgba(16,16,16,0.08)';
 const WASH_I = 'rgba(244,239,223,0.10)';
 const FURN_R = 'rgba(244,239,223,0.4)';  // furniture on red, which needs more than ink does
 
-// ON RED, 4.5:1 IS UNREACHABLE. Measured 2026-08-15, at FULL opacity:
-// cream on red is 3.68:1 and ink on red is 4.49:1. No alpha improves either —
-// those are the ceilings the field colour allows. The red hex cannot change;
-// three locked films import it.
+// WHITE TEXT, AND A 5% DEEPER RED (founder ruling, 2026-08-15).
 //
-// So red text takes the ceiling, undimmed, which is exactly the ruling the canon
-// already made for the footer on red in 2026-08-08 (furniture.footerContrast
-// .onRed: "cream, undimmed") after cream-at-34% measured 1.47:1 and vanished on
-// the beat carrying the CTA. The same reasoning, applied to plate text.
+// FURN_R above stays for RULES AND STROKES, where contrast is decoration rather
+// than reading. It was being used for label TEXT at 1.60:1, which is what the
+// founder saw at second 33.
 //
-// FURN_R stays for RULES AND STROKES, where contrast is decoration, not reading.
-// It was being used for label text at 1.60:1, which is what the founder saw at
-// second 33. This needs a founder ruling recorded as an exemption: red is the
-// one field where the 4.5 rule cannot be satisfied, and pretending otherwise
-// would make the gate unpassable on the outro every film ships with.
-const LABEL_R = CREAM;                   // on red — 3.68:1, the achievable ceiling
+// Pure black measures 4.96:1 on E7371A and is the only colour that clears 4.5
+// against it — and the founder rejected it on sight: "black red doesn't contrast
+// well". That is not a matter of taste overruling a measurement. WCAG 2.x is a
+// pure relative-luminance formula and is known to mis-rank saturated
+// mid-luminance colours; on a strong red it scores dark text high while the eye
+// reads it as muddy and vibrating. The metric was the wrong instrument, which is
+// the same mistake as measuring the call site instead of the frame.
+//
+// White is the ceiling on the light side and reaches only 4.23:1 on the current
+// red, so the fix is to move the red rather than keep hunting for a text colour
+// that does not exist. Scaling E7371A down 5% in linear light:
+//
+//   E7371A (now)   white 4.23:1   cream 3.68:1
+//   DB3419 (-5%)   white 4.65:1   cream 4.04:1   <- clears the floor
+//   D03217 (-10%)  white 5.06:1   cream 4.40:1
+//
+// 5% is close to imperceptible side by side and it moves the whole red field
+// permanently onto the right side of the rule — no exemption, no block behind the
+// text, no black. It also lifts cream on red from 3.68 to 4.04, which helps the
+// outro's large type without touching the house outro spec.
+//
+// A NEW CONSTANT, not an edit to RED: NO. 026, 030 and 031 import RED from
+// KTHook and are locked artefacts. They keep the exact red they shipped with.
+const WHITE = '#FFFFFF';
+const RED_DEEP = '#DB3419';
+const LABEL_R = WHITE;                   // on the deeper red — 4.65:1
+
+// The beat data and the FLIPS list both say RED, because the words file is
+// GENERATED and a hand-edit there is lost on the next run. The substitution
+// happens once, here, so there is exactly one place that decides which red this
+// film renders.
+const asField = (c: string) => (c === RED ? RED_DEEP : c);
 
 // The safe box. Nothing below may leave it.
 const VIZ_L = 150, VIZ_W = 780, VIZ_TOP = 800;
@@ -320,9 +342,9 @@ const CostPlate: React.FC = () => {
   return (
     <>
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 40, width: VIZ_W,
-        border: `2px solid ${CREAM}`, padding: '22px 26px', opacity: p,
+        border: `2px solid ${WHITE}`, padding: '22px 26px', opacity: p,
         transform: `translateY(${(1 - p) * 14}px)`,
-        fontFamily: FONT_UI, fontSize: 26, color: CREAM}}>
+        fontFamily: FONT_UI, fontSize: 26, color: WHITE}}>
         <span style={{color: LABEL_R}}>$ </span>claude mcp add claude-context
       </div>
 
@@ -338,7 +360,7 @@ const CostPlate: React.FC = () => {
           <div key={r.k} style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 210 + i * 78,
             width: VIZ_W, opacity: rp,
             display: 'flex', alignItems: 'baseline', columnGap: 12,
-            fontFamily: FONT_UI, fontSize: 24, letterSpacing: 2, color: CREAM}}>
+            fontFamily: FONT_UI, fontSize: 24, letterSpacing: 2, color: WHITE}}>
             <span>{r.k}</span>
             {/* The leader. A repeated glyph clipped by its own overflow, so it
                 always meets the right-hand column exactly and never wraps. */}
@@ -352,10 +374,10 @@ const CostPlate: React.FC = () => {
       })}
 
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 378, width: VIZ_W,
-        height: 2, background: CREAM, opacity: tot}} />
+        height: 2, background: WHITE, opacity: tot}} />
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 400, width: VIZ_W,
         opacity: tot, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-        fontFamily: FONT_UI, letterSpacing: 3, color: CREAM}}>
+        fontFamily: FONT_UI, letterSpacing: 3, color: WHITE}}>
         <span style={{fontSize: 20, color: LABEL_R}}>TOTAL</span>
         <span style={{fontFamily: FONT, fontSize: 44, letterSpacing: 0}}>someone else&rsquo;s tokens</span>
       </div>
@@ -410,9 +432,9 @@ const TokensOutro: React.FC = () => (
 const FLIPS: {ms: number; field: string}[] = [
   {ms: 9920, field: CREAM},
   {ms: 20080, field: INK},
-  {ms: 24540, field: RED},
+  {ms: 24540, field: RED_DEEP},
   {ms: 36060, field: CREAM},
-  {ms: 41760, field: RED},
+  {ms: 41760, field: RED_DEEP},
 ];
 const Seams: React.FC = () => (
   <>
@@ -502,30 +524,19 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
   const shot = SHOTS.find((sh) => frame >= f(sh.from) && frame < f(sh.to));
   // During the back half of a wipe the field is already the incoming one, so a
   // gap between panels reveals the new colour instead of flashing the old back.
-  const bg = wipeField(frame) ?? beat.bg;
+  // The beat data and the seams both say RED; this film renders the 5% deeper
+  // one so white text clears the floor. Mapped here, once, rather than edited
+  // into KTTokensWords.ts — the words file is generated and would lose it.
+  const bg = asField(wipeField(frame) ?? beat.bg);
   const lightField = bg === CREAM;
   // Footer contrast is field-aware (design review 2026-08-08). It was
   // cream-at-34% on every dark field, which measures 1.47:1 against RED —
   // effectively invisible, and on the beat that carries the CTA.
   const furn = lightField
     ? 'rgba(16,16,16,0.55)'
-    : (bg === RED ? CREAM : 'rgba(244,239,223,0.55)');
+    : (bg === RED_DEEP ? WHITE : 'rgba(244,239,223,0.55)');
   return (
     <AbsoluteFill style={{backgroundColor: bg, fontFamily: FONT}}>
-      {/* TEXT ON RED SITS ON A BLOCK (founder ruling, 2026-08-15).
-          Red is the one field where the readability rule cannot be met: at full
-          opacity cream on red measures 3.68:1 and ink on red 4.49:1, and neither
-          reaches the 4.5 floor. The red hex cannot change — three locked films
-          import it — so the fix is to change what the text sits ON, not the text.
-          Cream on ink is 16.54:1, four and a half times the ceiling red allows.
-          The field stays red and frames the block, so the beat keeps its colour.
-          Rendered on the VIZ layer because it is structure, not type: the gate
-          measuring text against its real background has to see it as background. */}
-      {layer !== 'type' && layer !== 'furniture' && !wiping && !shot && bg === RED ? (
-        <div style={{position: 'absolute', left: VIZ_L - 40, top: 268,
-          width: VIZ_W + 80, height: 1180, background: INK}} />
-      ) : null}
-
       {layer !== 'type' && layer !== 'furniture' && !wiping && shot ? <ShotPlate shot={shot} /> : null}
 
       {layer !== 'type' && layer !== 'furniture' && !wiping && !shot ? (<>
