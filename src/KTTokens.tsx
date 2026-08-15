@@ -246,8 +246,12 @@ const FindPlate: React.FC = () => {
       flexDirection: 'column', rowGap: 12}}>
       <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: GREY_C}}>GITHUB.COM</div>
       <div style={{fontFamily: FONT, fontSize: 55, color: INK}}>zilliztech / claude-context</div>
+      {/* A star count is the one figure in this film with a shelf life. Read at
+          primary source (`gh api repos/zilliztech/claude-context`) on 2026-08-15;
+          it was 12,395 on 2026-08-14, so it moves several a day. Re-read it on
+          the day the film renders and update both here and facts.md#G10. */}
       <div style={{fontFamily: FONT_UI, fontSize: 22, letterSpacing: 2, color: GREY_C}}>
-        12,395 stars · MIT
+        12,402 stars · MIT
       </div>
     </div>
   );
