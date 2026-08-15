@@ -512,6 +512,20 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
     : (bg === RED ? CREAM : 'rgba(244,239,223,0.55)');
   return (
     <AbsoluteFill style={{backgroundColor: bg, fontFamily: FONT}}>
+      {/* TEXT ON RED SITS ON A BLOCK (founder ruling, 2026-08-15).
+          Red is the one field where the readability rule cannot be met: at full
+          opacity cream on red measures 3.68:1 and ink on red 4.49:1, and neither
+          reaches the 4.5 floor. The red hex cannot change — three locked films
+          import it — so the fix is to change what the text sits ON, not the text.
+          Cream on ink is 16.54:1, four and a half times the ceiling red allows.
+          The field stays red and frames the block, so the beat keeps its colour.
+          Rendered on the VIZ layer because it is structure, not type: the gate
+          measuring text against its real background has to see it as background. */}
+      {layer !== 'type' && layer !== 'furniture' && !wiping && !shot && bg === RED ? (
+        <div style={{position: 'absolute', left: VIZ_L - 40, top: 268,
+          width: VIZ_W + 80, height: 1180, background: INK}} />
+      ) : null}
+
       {layer !== 'type' && layer !== 'furniture' && !wiping && shot ? <ShotPlate shot={shot} /> : null}
 
       {layer !== 'type' && layer !== 'furniture' && !wiping && !shot ? (<>
