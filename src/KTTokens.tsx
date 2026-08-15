@@ -46,13 +46,50 @@ export const KT_TOKENS_FRAMES = f(TOKENS_END_MS);
 const FONT = '"Printvetica", "Helvetica Neue", sans-serif';
 const FONT_UI = '"Inter Tight", sans-serif';
 
-const GREY_C = 'rgba(16,16,16,0.42)';    // spent, on cream
-const GREY_I = 'rgba(244,239,223,0.34)'; // spent, on ink
+const GREY_C = 'rgba(16,16,16,0.42)';    // spent, on cream — WORDS ONLY, see LABEL_*
+const GREY_I = 'rgba(244,239,223,0.34)'; // spent, on ink — WORDS ONLY, see LABEL_*
+
+// READABLE LABEL COLOURS (founder ruling, 2026-08-15: text clears 4.5:1).
+//
+// GREY_C/GREY_I are the SPENT colour — a word that has been said and is fading
+// out of relevance. Being hard to read is the point of them, and they stay as
+// they are because NO. 026, 030, 031 and 033 all import them.
+//
+// They were also being used for every UI LABEL on every plate, where being hard
+// to read is not the point. Measured 2026-08-15 with scripts/check-contrast.mjs:
+// GREY_C on cream 2.74:1, GREY_I on ink 2.85:1, both under the 3.0 large-text
+// floor and far under the 4.5 body floor that 19-26px labels actually need.
+// The founder found it by eye first — "sec 33 'what it costs' is barely
+// readable" — which is the third time this session a gate agreed with itself
+// while the screen disagreed.
+//
+// NEW constants rather than edited ones: these are imported by locked films and
+// the Approval Protocol forbids changing a published artefact. Alphas are the
+// measured minimum that clears 4.5, rounded up to a round number.
+const LABEL_C = 'rgba(16,16,16,0.62)';    // on cream — 5.07:1 (floor reached at 0.59)
+const LABEL_I = 'rgba(244,239,223,0.55)'; // on ink   — 5.57:1 (floor reached at 0.49)
 const HAIR_C = 'rgba(16,16,16,0.28)';
 const HAIR_I = 'rgba(244,239,223,0.26)';
 const WASH_C = 'rgba(16,16,16,0.08)';
 const WASH_I = 'rgba(244,239,223,0.10)';
 const FURN_R = 'rgba(244,239,223,0.4)';  // furniture on red, which needs more than ink does
+
+// ON RED, 4.5:1 IS UNREACHABLE. Measured 2026-08-15, at FULL opacity:
+// cream on red is 3.68:1 and ink on red is 4.49:1. No alpha improves either —
+// those are the ceilings the field colour allows. The red hex cannot change;
+// three locked films import it.
+//
+// So red text takes the ceiling, undimmed, which is exactly the ruling the canon
+// already made for the footer on red in 2026-08-08 (furniture.footerContrast
+// .onRed: "cream, undimmed") after cream-at-34% measured 1.47:1 and vanished on
+// the beat carrying the CTA. The same reasoning, applied to plate text.
+//
+// FURN_R stays for RULES AND STROKES, where contrast is decoration, not reading.
+// It was being used for label text at 1.60:1, which is what the founder saw at
+// second 33. This needs a founder ruling recorded as an exemption: red is the
+// one field where the 4.5 rule cannot be satisfied, and pretending otherwise
+// would make the gate unpassable on the outro every film ships with.
+const LABEL_R = CREAM;                   // on red — 3.68:1, the achievable ceiling
 
 // The safe box. Nothing below may leave it.
 const VIZ_L = 150, VIZ_W = 780, VIZ_TOP = 800;
@@ -72,25 +109,64 @@ const Window: React.FC<{fromMs: number; toMs: number; children: React.ReactNode}
   };
 
 // ---- S1 -- the claim -------------------------------------------------------
-// The hero number is on the type layer. This is the bar it lands against: a
-// second column visibly shorter than the first, which is what 40% means in one
-// picture. Two words label it and nothing else is needed.
-const ClaimBars: React.FC = () => {
+// THE CONTEXT FIELD (founder, 2026-08-15). Replaces two bars.
+//
+// The film's claim is that semantic search cuts token usage ~40%, and the reason
+// it can is the one thing the film never showed: grep hands the model the whole
+// codebase, search hands it the part that matters. Two bars stated the OUTCOME as
+// a quantity. This states the MECHANISM as a picture, at the exact moment the VO
+// says "over your whole codebase".
+//
+// IT CARRIES NO NUMBERS, DELIBERATELY. The repo publishes tokens and tool calls;
+// it does not publish how many chunks either method read, and facts.md has no such
+// figure. So the field has no count on it and no axis: the tick grid is an
+// ILLUSTRATION of a mechanism, not a measurement of one. Labelling it would make
+// it read as data the evaluation never produced — which is the drawn-evidence
+// mistake of 2026-08-14 wearing a different costume. If a count ever goes on this
+// plate it comes from facts.md or it does not go on.
+//
+// The three lit ticks are FIXED indices, never seeded or random. A random pick
+// would differ between a verification still and the video render, and a gate that
+// measures a different frame than the one that ships is worthless.
+const HITS = [27, 64, 111];
+const FIELD_COLS = 20, FIELD_ROWS = 6, FIELD_GAP = 8, FIELD_RGAP = 10, FIELD_TH = 18;
+
+const ContextField: React.FC = () => {
   const frame = useCurrentFrame();
-  const grow = decel(prog(frame, 2600, 900));
-  const cut = decel(prog(frame, 4200, 700));
-  const full = VIZ_W * 0.92;
+  // Timings unchanged from the bars they replace: both are pinned to the VO and
+  // the word layer, and moving them would desync the claim from the sentence.
+  const sweep = decel(prog(frame, 2600, 900));   // grep takes the whole corpus
+  const slice = decel(prog(frame, 4200, 700));   // search narrows to what matters
+  const tw = (VIZ_W - (FIELD_COLS - 1) * FIELD_GAP) / FIELD_COLS;
+  const n = FIELD_COLS * FIELD_ROWS;
+  const litTo = Math.round(n * sweep);
   return (
     <>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 70, width: full * grow,
-        height: 62, background: HAIR_I}} />
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 152, width: full * 0.6 * cut,
-        height: 62, background: RED}} />
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 246, width: VIZ_W,
+      {Array.from({length: n}, (_, i) => {
+        const col = i % FIELD_COLS, row = Math.floor(i / FIELD_COLS);
+        const hit = HITS.includes(i);
+        // Every tick sits on the hairline. Grep raises the whole field to cream;
+        // search lowers it again and leaves three in red. One element, two states,
+        // no third thing appearing — the field never gains a mark, it loses them.
+        const grepOn = i < litTo ? 1 : 0;
+        return (
+          <div key={i} style={{position: 'absolute',
+            left: VIZ_L + col * (tw + FIELD_GAP),
+            top: VIZ_TOP + 70 + row * (FIELD_TH + FIELD_RGAP),
+            width: tw, height: FIELD_TH, background: HAIR_I}}>
+            <div style={{position: 'absolute', inset: 0, background: CREAM,
+              opacity: grepOn * (1 - slice)}} />
+            {hit ? <div style={{position: 'absolute', inset: 0, background: RED,
+              opacity: slice}} /> : null}
+          </div>
+        );
+      })}
+      <div style={{position: 'absolute', left: VIZ_L,
+        top: VIZ_TOP + 70 + FIELD_ROWS * (FIELD_TH + FIELD_RGAP) + 34, width: VIZ_W,
         display: 'flex', justifyContent: 'space-between',
-        fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: GREY_I}}>
-        <span>WITH GREP</span>
-        <span style={{color: cut > 0.5 ? RED : GREY_I}}>WITH SEARCH</span>
+        fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_I}}>
+        <span style={{opacity: 1 - slice}}>GREP READS EVERYTHING</span>
+        <span style={{color: RED, opacity: slice}}>SEARCH READS THE PART THAT MATTERS</span>
       </div>
     </>
   );
@@ -169,9 +245,9 @@ const AbPlate: React.FC = () => {
             opacity: p, transform: `translateY(${(1 - p) * 16}px)`,
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
             alignItems: 'center', rowGap: 16, padding: '0 16px'}}>
-            <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: GREY_C}}>{c.k}</div>
+            <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_C}}>{c.k}</div>
             <div style={{fontFamily: FONT, fontSize: 44, color: INK, textAlign: 'center'}}>{c.tool}</div>
-            <div style={{fontFamily: FONT_UI, fontSize: 19, letterSpacing: 2, color: GREY_C}}>
+            <div style={{fontFamily: FONT_UI, fontSize: 19, letterSpacing: 2, color: LABEL_C}}>
               30 FIXES · 3 RUNS
             </div>
           </div>
@@ -179,7 +255,7 @@ const AbPlate: React.FC = () => {
       })}
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 386, width: VIZ_W,
         opacity: decel(prog(frame, 22600, 500)), textAlign: 'center',
-        fontFamily: FONT_UI, fontSize: 22, letterSpacing: 3, color: GREY_C}}>
+        fontFamily: FONT_UI, fontSize: 22, letterSpacing: 3, color: LABEL_C}}>
         SAME ANSWER QUALITY
       </div>
     </>
@@ -192,7 +268,7 @@ const AbPlate: React.FC = () => {
 const DropPlate: React.FC = () => (
   <>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 50, width: VIZ_W,
-      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: GREY_I}}>
+      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_I}}>
       TOKENS PER FIX
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 94, width: VIZ_W,
@@ -203,7 +279,7 @@ const DropPlate: React.FC = () => (
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 234, width: VIZ_W,
       height: 2, background: HAIR_I}} />
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 276, width: VIZ_W,
-      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: GREY_I}}>
+      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_I}}>
       TOOL CALLS
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 320, width: VIZ_W,
@@ -214,37 +290,75 @@ const DropPlate: React.FC = () => (
 );
 
 // ---- S5 -- what it costs ---------------------------------------------------
-// The install line, then the two credentials it will not work without. The
-// command is drawn as a terminal row because it is the only thing on screen the
-// viewer is meant to copy.
+// THE RECEIPT (founder, 2026-08-15). Replaces two label-left / reason-right rows.
+//
+// This beat is the film's honesty beat: it names the price of the thing it just
+// recommended. The old plate listed the two credentials as plain rows and the
+// founder called it out at second 33 — legible and inert. Nothing about a list
+// says "this costs you something".
+//
+// A receipt does. Same information, arranged as the argument: what you run, what
+// it charges you, and the line at the bottom that the VO already speaks —
+// "you're spending someone else's tokens to save your own". The layout carries
+// the point instead of sitting under it.
+//
+// It stays inside the format: rules, set type and a red accent, no new device.
+// The line-leader dots are the one new mark and they are what makes it read as a
+// bill rather than a table.
 const CostPlate: React.FC = () => {
   const frame = useCurrentFrame();
   const p = decel(prog(frame, 30200, 400));
+  // Both items are in facts.md#G11, sourced to the evaluation's own setup step:
+  // `export OPENAI_API_KEY` and `export MILVUS_ADDRESS`. Milvus is Zilliz's store,
+  // which is why the second line names the account and not the variable.
   const keys = [
-    {k: 'OPENAI_API_KEY', why: 'embeddings', at: 32400},
+    {k: 'OPENAI API KEY', why: 'embeddings', at: 32400},
     {k: 'ZILLIZ ACCOUNT', why: 'vector store', at: 33600},
   ];
+  // The total lands after both items, on the clause that states it.
+  const tot = decel(prog(frame, 34600, 560));
   return (
     <>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 60, width: VIZ_W,
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 40, width: VIZ_W,
         border: `2px solid ${CREAM}`, padding: '22px 26px', opacity: p,
         transform: `translateY(${(1 - p) * 14}px)`,
         fontFamily: FONT_UI, fontSize: 26, color: CREAM}}>
-        <span style={{color: FURN_R}}>$ </span>claude mcp add claude-context
+        <span style={{color: LABEL_R}}>$ </span>claude mcp add claude-context
       </div>
+
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 158, width: VIZ_W,
+        opacity: p, fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_R}}>
+        WHAT IT COSTS
+      </div>
+
       {keys.map((r, i) => {
         const rp = decel(prog(frame, r.at, 320));
         if (rp <= 0) return null;
         return (
-          <div key={r.k} style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 200 + i * 92,
-            width: VIZ_W, opacity: rp, transform: `translateX(${(1 - rp) * -20}px)`,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-            padding: '14px 0', borderBottom: `2px solid ${FURN_R}`}}>
-            <span style={{fontFamily: FONT_UI, fontSize: 24, letterSpacing: 2, color: CREAM}}>{r.k}</span>
-            <span style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: FURN_R}}>{r.why}</span>
+          <div key={r.k} style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 210 + i * 78,
+            width: VIZ_W, opacity: rp,
+            display: 'flex', alignItems: 'baseline', columnGap: 12,
+            fontFamily: FONT_UI, fontSize: 24, letterSpacing: 2, color: CREAM}}>
+            <span>{r.k}</span>
+            {/* The leader. A repeated glyph clipped by its own overflow, so it
+                always meets the right-hand column exactly and never wraps. */}
+            <span style={{flex: 1, overflow: 'hidden', whiteSpace: 'nowrap',
+              color: FURN_R, letterSpacing: 6}}>
+              ........................................................
+            </span>
+            <span style={{fontSize: 20, letterSpacing: 3, color: LABEL_R}}>{r.why}</span>
           </div>
         );
       })}
+
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 378, width: VIZ_W,
+        height: 2, background: CREAM, opacity: tot}} />
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 400, width: VIZ_W,
+        opacity: tot, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+        fontFamily: FONT_UI, letterSpacing: 3, color: CREAM}}>
+        <span style={{fontSize: 20, color: LABEL_R}}>TOTAL</span>
+        <span style={{fontFamily: FONT, fontSize: 44, letterSpacing: 0}}>someone else&rsquo;s tokens</span>
+      </div>
     </>
   );
 };
@@ -258,13 +372,13 @@ const FindPlate: React.FC = () => {
       border: `2px solid ${INK}`, background: WASH_C, padding: '30px 34px', opacity: p,
       transform: `translateY(${(1 - p) * 16}px)`, display: 'flex',
       flexDirection: 'column', rowGap: 12}}>
-      <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: GREY_C}}>GITHUB.COM</div>
+      <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_C}}>GITHUB.COM</div>
       <div style={{fontFamily: FONT, fontSize: 55, color: INK}}>zilliztech / claude-context</div>
       {/* A star count is the one figure in this film with a shelf life. Read at
           primary source (`gh api repos/zilliztech/claude-context`) on 2026-08-15;
           it was 12,395 on 2026-08-14, so it moves several a day. Re-read it on
           the day the film renders and update both here and facts.md#G10. */}
-      <div style={{fontFamily: FONT_UI, fontSize: 22, letterSpacing: 2, color: GREY_C}}>
+      <div style={{fontFamily: FONT_UI, fontSize: 22, letterSpacing: 2, color: LABEL_C}}>
         12,402 stars · MIT
       </div>
     </div>
@@ -401,7 +515,7 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
       {layer !== 'type' && layer !== 'furniture' && !wiping && shot ? <ShotPlate shot={shot} /> : null}
 
       {layer !== 'type' && layer !== 'furniture' && !wiping && !shot ? (<>
-      <Window fromMs={1600}  toMs={9920}> <ClaimBars /></Window>
+      <Window fromMs={1600}  toMs={9920}> <ContextField /></Window>
       <Window fromMs={20080} toMs={24540}><AbPlate /></Window>
       <Window fromMs={24540} toMs={30200}><DropPlate /></Window>
       <Window fromMs={30200} toMs={36060}><CostPlate /></Window>
