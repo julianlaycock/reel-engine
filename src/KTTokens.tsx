@@ -305,7 +305,22 @@ const Seams: React.FC = () => (
 // So the type layer and the plates are suppressed for the frames the train is on
 // screen. The wipe travels over a flat field and lands on a flat field, which is
 // what "one colour per wipe" always meant.
-const WIPE_LEAD = 16;   // MW.sweep — the train starts this far before atMs
+// WIPE_LEAD IS THE PANEL'S ARRIVAL, NOT MW.sweep (founder scrub, 2026-08-15).
+//
+// The first version took 16 from MW.sweep on the reasoning that the train "starts"
+// then. It does start then — off screen. Measured on the rendered frame, the first
+// panel pixel does not enter the frame until atMs - 10, on BOTH seams tested:
+//
+//   seam  9920 -> cream: clear at f282, first panel pixel f288, covered f290
+//   seam 24540 -> red:   clear at f720, first panel pixel f726, covered f728
+//
+// So six frames — a fifth of a second — were cleared for an arrival that had not
+// happened. The founder scrubbed it and saw the frame empty to nothing but the
+// wordmark and the two footer slugs, twice per seam window: "transition at second
+// 09.22 still shows some words like 'vektor' in the top and bottom and it looks
+// messy". Suppressing at the measured arrival closes the hole, and the panel's
+// leading edge is on screen at the instant the type goes, so nothing is stranded.
+const WIPE_LEAD = 10;   // MEASURED first-panel-pixel, scripts/check-seam-colours.mjs
 const WIPE_TAIL = 6;    // the main panel settles at x0 a few frames after
 const inWipe = (frame: number) =>
   FLIPS.some((w) => frame >= f(w.ms) - WIPE_LEAD && frame < f(w.ms) + WIPE_TAIL);
@@ -396,7 +411,18 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
 
       {layer === 'all' ? <Seams /> : null}
 
-      {(layer === 'all' || layer === 'furniture') && !shot ? (<>
+      {/* FURNITURE IS PART OF THE CLEAN SHEET (founder scrub, 2026-08-15).
+          The 2026-08-14 fix suppressed "the type layer and the plates" for the
+          frames the panel train is on screen. Furniture was never in that
+          sentence, so the wipe emptied the frame of everything EXCEPT the two
+          things that read as words — and MatteWipe paints at zIndex 5, so the
+          panels covered them except through a gap, which measured as a one-frame
+          reappearance at f292 (seam 9920) and f730 (seam 24540).
+          `!wiping` applies to the `furniture` LAYER too, not just the composite:
+          the layer has to show what actually ships or the gate reading it is
+          measuring a frame the viewer never sees. check-type-fit already reports
+          a layer that rendered nothing as blind rather than clean. */}
+      {(layer === 'all' || layer === 'furniture') && !shot && !wiping ? (<>
       {/* FURNITURE — inside the safe box. The 44px rail is HORIZONTAL-ONLY since
           2026-08-07: Reels chrome cuts the top and bottom, so the wordmark sits
           at y240 and the footer slugs at y1372, not at the rail. NO. 033 put the
