@@ -131,15 +131,29 @@ const ShotPlate: React.FC<{shot: {from: number; to: number; src: string}}> = ({s
 };
 
 // ---- S3 -- the experiment --------------------------------------------------
-// Two identical runs side by side, so the control reads as a control. The only
+// Two identical METHODS side by side, so the control reads as a control. The only
 // difference between the columns is the one line that changed, and the score
 // underneath is the same on both sides. That line is what makes the comparison
 // mean anything, so it is drawn last and on its own.
+//
+// THE COLUMNS SAY METHOD, NOT RUN (founder, 2026-08-15).
+//
+// The repo ran each method THREE times independently, six runs in total, and the
+// VO says "run twice. Once with grep, once with search." That line is true about
+// the two ARMS and silent about the repetition, and the founder chose to carry the
+// repetition on the plate rather than spend a new VO take on it — a regenerated
+// eleven_v3 take is a different take and would not sit beside take 10.
+//
+// The plate already carried "3 RUNS" under each column and it did not land,
+// because the column was headed RUN A. A column called RUN A that reports 3 RUNS
+// contradicts itself, and the viewer resolves that by ignoring one of them. The
+// repo's own word is method — "We ran each method 3 times independently" — so the
+// header is METHOD A and the count beneath it now reads as what it is.
 const AbPlate: React.FC = () => {
   const frame = useCurrentFrame();
   const cols = [
-    {k: 'RUN A', tool: 'grep', at: 20600},
-    {k: 'RUN B', tool: 'semantic search', at: 21400, live: true},
+    {k: 'METHOD A', tool: 'grep', at: 20600},
+    {k: 'METHOD B', tool: 'semantic search', at: 21400, live: true},
   ];
   const cw = (VIZ_W - 24) / 2;
   return (
