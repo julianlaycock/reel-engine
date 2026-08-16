@@ -35,7 +35,7 @@ import React from 'react';
 import {AbsoluteFill, Audio, Img, staticFile, useCurrentFrame} from 'remotion';
 import {INK, CREAM, RED, f, Word} from './KTHook';
 import {TOKENS_BEATS, TOKENS_END_MS} from './KTTokensWords';
-import {CAPTURE_SCROLL_PX_PER_SEC} from './kt/system';
+import {CAPTURE_SCROLL_PX_PER_SEC, gap} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer, rampValues} from './KTEffects';
 import './style.css';
@@ -273,19 +273,26 @@ const onField = (bg: string): FieldPalette =>
 // goes up: 12x4 at 52x30 with real air between them. Same idea, half the noise,
 // and the three that remain now sit in obvious isolation.
 //
-// The hit indices are spread across different rows and columns on purpose. Three
-// adjacent ticks would read as one surviving block rather than as a search
-// returning scattered results from across a codebase.
-const HITS = [7, 21, 40];
+// THE FIELD IS THE OPENING PLATE ONLY, 0.09-7.04s (founder, 2026-08-16).
+//
+// It used to run the whole way to 18.68s and carry a second state at 13.0s: the
+// field lowering again and leaving three red survivors for "semantic search reads
+// only the part that actually matters". The founder watched that and called the
+// second section monotonous — measured, the field finished its fill at 1.78s and
+// then held ONE image for 11.2 seconds before that collapse.
+//
+// The explanation now has its own picture (WindowPlate, below), so the collapse,
+// the three fixed hit indices and the second label are DELETED rather than left in
+// place unable to fire. Code that can no longer run still gets read as if it does.
 const FIELD_COLS = 12, FIELD_ROWS = 4, FIELD_GAP = 14, FIELD_RGAP = 18, FIELD_TH = 30;
 
 const ContextField: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
-  // Timings unchanged from the bars they replace: both are pinned to the VO and
-  // the word layer, and moving them would desync the claim from the sentence.
-  const sweep = decel(prog(frame, 1280, ENTER));   // grep takes the whole corpus
-  const slice = decel(prog(frame, 13000, ENTER));   // search narrows to what matters
+  // Pinned to the VO and the word layer: the field takes the whole corpus as the
+  // line says "over your whole codebase". Moving it desyncs the claim from the
+  // sentence, so this number does not move.
+  const sweep = decel(prog(frame, 1280, ENTER));
   const tw = (VIZ_W - (FIELD_COLS - 1) * FIELD_GAP) / FIELD_COLS;
   const n = FIELD_COLS * FIELD_ROWS;
   const litTo = Math.round(n * sweep);
@@ -293,36 +300,150 @@ const ContextField: React.FC<{field: string}> = ({field}) => {
     <>
       {Array.from({length: n}, (_, i) => {
         const col = i % FIELD_COLS, row = Math.floor(i / FIELD_COLS);
-        const hit = HITS.includes(i);
-        // Every tick sits on the hairline. Grep raises the whole field to cream;
-        // search lowers it again and leaves three in red. One element, two states,
-        // no third thing appearing — the field never gains a mark, it loses them.
-        const grepOn = i < litTo ? 1 : 0;
+        // Every tick sits on the hairline and grep raises it to cream. One
+        // element, one state, nothing appearing on top of anything.
         return (
           <div key={i} style={{position: 'absolute',
             left: VIZ_L + col * (tw + FIELD_GAP),
             top: VIZ_TOP + PLATE_TOP + row * (FIELD_TH + FIELD_RGAP),
             width: tw, height: FIELD_TH, background: pal.hair}}>
             <div style={{position: 'absolute', inset: 0, background: pal.text,
-              opacity: grepOn * (1 - slice)}} />
-            {hit ? <div style={{position: 'absolute', inset: 0, background: pal.accent,
-              opacity: slice}} /> : null}
+              opacity: i < litTo ? 1 : 0}} />
           </div>
         );
       })}
+      {/* The label takes the readable ink-field colour. Red was doing the emphasis
+          here and measured 4.49:1 on ink — under the 4.5 floor by a hundredth, at
+          20px. Red also belongs on the data, not on the commentary. */}
       <div style={{position: 'absolute', left: VIZ_L,
         top: VIZ_TOP + PLATE_TOP + FIELD_ROWS * (FIELD_TH + FIELD_RGAP) + 34, width: VIZ_W,
-        display: 'flex', justifyContent: 'space-between',
         fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>
-        {/* Both labels take the readable ink-field colour and the ACTIVE one goes
-            to full cream. Red was doing the emphasis here and measured 4.49:1 on
-            ink — under the 4.5 floor by a hundredth, at 20px. Red also belongs on
-            the data, not on the commentary: the canon keeps marks on type and off
-            the graphics, and here the three lit ticks are the mark. */}
-        <span style={{opacity: 1 - slice}}>GREP READS EVERYTHING</span>
-        <span style={{color: pal.text, opacity: slice}}>SEARCH READS THE PART THAT MATTERS</span>
+        GREP READS EVERYTHING
       </div>
     </>
+  );
+};
+
+// ---- S1b -- the context window as a container -------------------------------
+// FOUNDER, 2026-08-16: "the first visualization with all those little boxes, it's
+// fine for the first slide, but for the second slide, it just becomes too
+// monotonous to just see that. So we have to come up with a different
+// visualization to show for the second slide."
+//
+// Three directions were put to the founder — re-time the block field, draw the
+// context window as a container, or split the section into two plates — and the
+// founder chose the container. It draws what the sentence literally says:
+//
+//   "Grep reads your whole repo looking for a match, so everything it touches
+//    GOES INTO THE CONTEXT WINDOW. Semantic search reads only the part that
+//    actually matters, and hands the model that instead."
+//
+// So: a bounded box. Grep fills it past the brim. Search puts a fraction in.
+//
+// STILL NO NUMBERS, for the reason ContextField carries none. The repo publishes
+// tokens and tool calls; it does not publish how many chunks either method read,
+// and facts.md has no such figure. The rows are units of "stuff" — no axis, no
+// count, nothing labelled with a quantity. If a figure ever goes on this plate it
+// comes from facts.md or it does not go on.
+//
+// RED KEEPS ITS MEANING ACROSS THE SEAM. In ContextField red marks what search
+// KEPT. Painting the overflow red here would have been the obvious move — the
+// overflow is the waste — and it would have made one colour mean "kept" six
+// seconds after it meant "wasted". The spill is cream, like the rest of grep's
+// haul; POSITION carries it, because the rows that matter are the ones outside the
+// box. Red returns on the search state meaning exactly what it meant before.
+//
+// The window is drawn quiet on three sides and HEAVY on the brim, because the brim
+// is the line being exceeded. That is the only thing on the plate the eye has to
+// find.
+//
+// TIMINGS ARE THE WORD LAYER'S, not round numbers. Every one below is a word's
+// `ms` from KTTokensWords.ts, so the picture moves when the sentence moves:
+const WIN_IN = 7040;        // the box arrives on "Here is why that works."
+const WIN_FILL_FROM = 8450; // "Grep reads your whole repo" — the stacking starts
+const WIN_FILL_TO = 12760;  // the last row lands as the VO reaches "window." (12960)
+const WIN_CLEAR = 13660;    // "Semantic search" — grep's haul goes
+const WIN_KEEP_1 = 14450;   // "reads"
+const WIN_KEEP_2 = 15330;   // "part"
+
+// Geometry off the ladder. ROW_H is ContextField's tick height, so the unit of
+// "stuff" is the same size in both pictures and the eye reads them as one idea.
+const ROW_H = FIELD_TH;
+const ROW_GAP = gap('xs');
+const WIN_ROWS = 6;          // what the window holds
+const WIN_SPILL = 3;         // what will not fit
+const WIN_KEPT = 2;          // what search puts in
+const WIN_PAD = gap('s');
+const WIN_H = WIN_ROWS * ROW_H + (WIN_ROWS - 1) * ROW_GAP + WIN_PAD * 2;
+const WIN_SPILL_H = WIN_SPILL * (ROW_H + ROW_GAP);
+// The spill needs headroom, so the box starts BELOW the plate origin by exactly
+// the height of what will overflow it. Top of the topmost spill row is then the
+// plate origin itself and nothing leaves the safe box.
+const WIN_TOP = VIZ_TOP + PLATE_TOP + WIN_SPILL_H;
+const WIN_ROW_L = VIZ_L + WIN_PAD;
+const WIN_ROW_W = VIZ_W - WIN_PAD * 2;
+
+const WindowPlate: React.FC<{field: string}> = ({field}) => {
+  const pal = onField(field);
+  const frame = useCurrentFrame();
+  // THE PLATE CANNOT ARRIVE WHILE A WIPE IS OVER IT. The beat opens at 7040 and so
+  // does a same-colour paragraph-break wipe, which suppresses every plate for
+  // WIPE_TAIL frames. Starting the entrance at 7040 measured BLANK at 7.20s and
+  // then popped the box on at 70% opacity the frame the wipe released — the
+  // WIPE_LEAD mistake again, in the other direction: a declared window is not an
+  // arrival. The ramp starts when the screen is actually handed back.
+  const box = decel(clamp01((frame - (f(WIN_IN) + WIPE_TAIL)) / f(ENTER)));
+  const clear = decel(prog(frame, WIN_CLEAR, ENTER));
+  // One row's arrival: the stack fills evenly across the sentence rather than in
+  // one gesture, which is the whole point — the section had nothing moving in it.
+  const step = (WIN_FILL_TO - WIN_FILL_FROM) / (WIN_ROWS + WIN_SPILL - 1);
+  const rowY = (i: number) => WIN_TOP + WIN_H - WIN_PAD - (i + 1) * ROW_H - i * ROW_GAP;
+  const spillY = (j: number) => WIN_TOP - (j + 1) * (ROW_H + ROW_GAP);
+  const bar = (key: string, top: number, at: number, colour: string, fade: number) => {
+    const t = decel(prog(frame, at, DETAIL));
+    if (t <= 0 || fade <= 0) return null;
+    return (
+      <div key={key} style={{position: 'absolute', left: WIN_ROW_L,
+        top: top + (1 - t) * TRAVEL, width: WIN_ROW_W, height: ROW_H,
+        background: colour, opacity: t * fade}} />
+    );
+  };
+  return (
+    <div style={{opacity: box, transform: `translateY(${(1 - box) * TRAVEL}px)`}}>
+      {/* the window: quiet on three sides */}
+      <div style={{position: 'absolute', left: VIZ_L, top: WIN_TOP,
+        width: VIZ_W, height: WIN_H, boxSizing: 'border-box',
+        borderLeft: `2px solid ${pal.hair}`, borderRight: `2px solid ${pal.hair}`,
+        borderBottom: `2px solid ${pal.hair}`}} />
+      {/* the brim: the one line that matters, so it is the one heavy rule */}
+      <div style={{position: 'absolute', left: VIZ_L, top: WIN_TOP - 3,
+        width: VIZ_W, height: 3, background: pal.text, opacity: 0.5}} />
+
+      {/* grep — the box fills, then keeps going */}
+      {Array.from({length: WIN_ROWS}, (_, i) =>
+        bar(`in${i}`, rowY(i), WIN_FILL_FROM + i * step, pal.text, 1 - clear))}
+      {Array.from({length: WIN_SPILL}, (_, j) =>
+        bar(`out${j}`, spillY(j), WIN_FILL_FROM + (WIN_ROWS + j) * step, pal.text, 1 - clear))}
+
+      {/* search — a fraction of it, in red, which is what red has meant since 1.28s */}
+      {bar('keep0', rowY(0), WIN_KEEP_1, pal.accent, clear)}
+      {WIN_KEPT > 1 ? bar('keep1', rowY(1), WIN_KEEP_2, pal.accent, clear) : null}
+
+      <div style={{position: 'absolute', left: VIZ_L, top: WIN_TOP + WIN_H + gap('l'),
+        width: VIZ_W, height: UI.s * 1.2,
+        fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug}}>
+        {/* The label NAMES THE METHOD and stops. The first draft read "GREP PUTS IN
+            EVERYTHING IT TOUCHES" / "SEARCH PUTS IN THE PART THAT MATTERS", which
+            failed twice over: it restates words the VO is speaking and the word
+            layer is already printing, and at seven words the second label needed
+            7.2s of readable time in a 5.0s state. The picture says what goes in;
+            the label only has to say whose. */}
+        <span style={{position: 'absolute', left: 0, top: 0, color: pal.label,
+          opacity: 1 - clear}}>GREP</span>
+        <span style={{position: 'absolute', left: 0, top: 0, color: pal.text,
+          opacity: clear}}>SEMANTIC SEARCH</span>
+      </div>
+    </div>
   );
 };
 
@@ -749,7 +870,13 @@ const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
   // THE BLOCK GRAPHIC HOLDS for the whole opening - founder, 2026-08-16. It is the
   // picture of the idea the new section explains, and giving it room instead of a
   // second graphic is what the extra seconds were bought for.
-  {from: 90,    to: 18680,         Node: ContextField},   // 18.6s  needs 6.6
+  //
+  // ...AND STOPS AT THE OPENING, same day, after the founder watched it: held over
+  // BOTH sections it was one still image for 11.2 of the 18.6 seconds. It now ends
+  // on the seam in the sentence — the claim gets the field, the explanation gets
+  // the window it actually names. Two plates, still never two at once.
+  {from: 90,    to: 7040,          Node: ContextField},   //  7.0s  needs 4.8
+  {from: 7040,  to: 18680,         Node: WindowPlate},    // 11.6s  needs 9.0
   {from: 23770, to: 31840,         Node: AbPlate},        //  8.1s  needs 7.8
   {from: 31840, to: 41640,         Node: DropPlate},      //  9.8s  needs 7.8
   {from: 41640, to: 52870,         Node: CostPlate},      // 11.2s  needs 9.0
