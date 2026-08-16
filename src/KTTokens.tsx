@@ -151,6 +151,37 @@ const Window: React.FC<{fromMs: number; toMs: number; children: React.ReactNode}
     return <>{children}</>;
   };
 
+// ---- the plate system -------------------------------------------------------
+// THE CANON GOVERNED THE WORD LAYER AND NOT THE PLATES (founder review, 2026-08-16).
+//
+// Every consistency law this brand has was written for TYPE and enforced there.
+// The plates occupy the bottom two-thirds of most frames and were under none of
+// them. Measured across this file before this change:
+//
+//   type sizes          19, 20, 22, 27, 40      five ad-hoc sizes, no scale
+//   entrance durations  400, 500, 560, 700, 900 five values, three outside the
+//                                               motion spec's own 500-730 range
+//   entrance distances  14 and 16               two values two pixels apart
+//   letter-spacing      0, 2, 3, 4              four values
+//   rule weights        1, 2, 3                 three
+//   plate origin        VIZ_TOP -40 .. +90      every plate starts somewhere else
+//
+// This is the defect the canon already fixed once: NO. 033 had grown 21 type sizes
+// with adjacent steps of 1.02-1.05, and the ruling was that differences no viewer
+// can perceive do no work while every value still has to be maintained. That
+// ruling was applied to the word layer and stopped at the plate boundary.
+//
+// A viewer never notices that one plate arrives in 400ms and the next in 900ms.
+// They notice the film feels loose - assembled rather than designed. These are the
+// values that stop that, and nothing here touches a timing the VO is pinned to:
+// every one is an entrance ramp or a size.
+const UI = {s: 20, m: 26, l: 40};   // the UI sub-scale, under the display scale
+const ENTER = 500;                  // a plate arriving
+const DETAIL = 300;                 // something landing inside one
+const TRAVEL = 16;                  // one distance, always
+const TRACK = {label: 2, slug: 3};  // tracking: labels, and all-caps slugs
+const PLATE_TOP = 60;               // one origin for every plate
+
 // ---- S1 -- the claim -------------------------------------------------------
 // THE CONTEXT FIELD (founder, 2026-08-15). Replaces two bars.
 //
@@ -190,8 +221,8 @@ const ContextField: React.FC = () => {
   const frame = useCurrentFrame();
   // Timings unchanged from the bars they replace: both are pinned to the VO and
   // the word layer, and moving them would desync the claim from the sentence.
-  const sweep = decel(prog(frame, 2600, 900));   // grep takes the whole corpus
-  const slice = decel(prog(frame, 4200, 700));   // search narrows to what matters
+  const sweep = decel(prog(frame, 2600, ENTER));   // grep takes the whole corpus
+  const slice = decel(prog(frame, 4200, ENTER));   // search narrows to what matters
   const tw = (VIZ_W - (FIELD_COLS - 1) * FIELD_GAP) / FIELD_COLS;
   const n = FIELD_COLS * FIELD_ROWS;
   const litTo = Math.round(n * sweep);
@@ -207,7 +238,7 @@ const ContextField: React.FC = () => {
         return (
           <div key={i} style={{position: 'absolute',
             left: VIZ_L + col * (tw + FIELD_GAP),
-            top: VIZ_TOP + 70 + row * (FIELD_TH + FIELD_RGAP),
+            top: VIZ_TOP + PLATE_TOP + row * (FIELD_TH + FIELD_RGAP),
             width: tw, height: FIELD_TH, background: HAIR_I}}>
             <div style={{position: 'absolute', inset: 0, background: CREAM,
               opacity: grepOn * (1 - slice)}} />
@@ -217,9 +248,9 @@ const ContextField: React.FC = () => {
         );
       })}
       <div style={{position: 'absolute', left: VIZ_L,
-        top: VIZ_TOP + 70 + FIELD_ROWS * (FIELD_TH + FIELD_RGAP) + 34, width: VIZ_W,
+        top: VIZ_TOP + PLATE_TOP + FIELD_ROWS * (FIELD_TH + FIELD_RGAP) + 34, width: VIZ_W,
         display: 'flex', justifyContent: 'space-between',
-        fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_I}}>
+        fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_I}}>
         {/* Both labels take the readable ink-field colour and the ACTIVE one goes
             to full cream. Red was doing the emphasis here and measured 4.49:1 on
             ink — under the 4.5 floor by a hundredth, at 20px. Red also belongs on
@@ -326,28 +357,28 @@ const AbPlate: React.FC = () => {
   return (
     <>
       {cols.map((c, i) => {
-        const p = decel(prog(frame, c.at, 340));
+        const p = decel(prog(frame, c.at, ENTER));
         if (p <= 0) return null;
         return (
           <div key={c.k} style={{position: 'absolute', left: VIZ_L + i * (cw + 24),
-            top: VIZ_TOP + 60, width: cw, height: 280,
+            top: VIZ_TOP + PLATE_TOP, width: cw, height: 280,
             border: `2px solid ${c.live ? CREAM : LABEL_I}`,
             background: c.live ? WASH_I : 'transparent',
-            opacity: p, transform: `translateY(${(1 - p) * 16}px)`,
+            opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`,
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
             alignItems: 'center', rowGap: 16, padding: '0 16px'}}>
-            <div style={{fontFamily: FONT_UI, fontSize: 22, letterSpacing: 2, fontWeight: 600,
+            <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.label, fontWeight: 600,
               color: CREAM}}>{c.k}</div>
             <div style={{fontFamily: FONT, fontSize: 44, color: CREAM, textAlign: 'center'}}>{c.tool}</div>
-            <div style={{fontFamily: FONT_UI, fontSize: 19, letterSpacing: 2, color: LABEL_I}}>
+            <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.label, color: LABEL_I}}>
               30 FIXES · 3 RUNS
             </div>
           </div>
         );
       })}
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 386, width: VIZ_W,
-        opacity: decel(prog(frame, 22600, 500)), textAlign: 'center',
-        fontFamily: FONT_UI, fontSize: 22, letterSpacing: 3, color: LABEL_I}}>
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 326, width: VIZ_W,
+        opacity: decel(prog(frame, 22600, ENTER)), textAlign: 'center',
+        fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug, color: LABEL_I}}>
         SAME ANSWER QUALITY
       </div>
     </>
@@ -366,22 +397,22 @@ const AbPlate: React.FC = () => {
 // is 4.65:1 against this field where cream is 4.04:1.
 const DropPlate: React.FC = () => (
   <>
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 50, width: VIZ_W,
-      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_R}}>
+    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
+      fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_R}}>
       TOKENS PER FIX
     </div>
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 94, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 44, width: VIZ_W,
       fontFamily: FONT, fontSize: 107, color: WHITE, lineHeight: 1}}>
       <Odometer values={rampValues(73373, 44449, 20, (n) => n.toLocaleString('en-US'))}
         fromMs={25200} tickMs={80} />
     </div>
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 234, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 184, width: VIZ_W,
       height: 2, background: RULE_R}} />
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 276, width: VIZ_W,
-      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_R}}>
+    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 226, width: VIZ_W,
+      fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_R}}>
       TOOL CALLS
     </div>
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 320, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 270, width: VIZ_W,
       fontFamily: FONT, fontSize: 86, color: WHITE, lineHeight: 1}}>
       <Odometer values={rampValues(8, 5, 6, (n) => String(n))} fromMs={27600} tickMs={110} />
     </div>
@@ -423,7 +454,7 @@ const DropPlate: React.FC = () => (
 // command reads as a UI control; two rules read as a document.
 const CostPlate: React.FC = () => {
   const frame = useCurrentFrame();
-  const p = decel(prog(frame, 30200, 400));
+  const p = decel(prog(frame, 30200, ENTER));
   // Both items are in facts.md#G11, sourced to the evaluation's own setup step:
   // `export OPENAI_API_KEY` and `export MILVUS_ADDRESS`. Milvus is Zilliz's store,
   // which is why the second line names the account and not the variable.
@@ -432,34 +463,29 @@ const CostPlate: React.FC = () => {
     {k: 'ZILLIZ ACCOUNT', why: 'vector store', at: 33600},
   ];
   // The total lands after both items, on the clause that states it.
-  const tot = decel(prog(frame, 34600, 560));
+  const tot = decel(prog(frame, 34600, ENTER));
   return (
     <>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP - 40, width: VIZ_W,
-        opacity: p, transform: `translateY(${(1 - p) * 14}px)`}}>
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
+        opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`}}>
         <div style={{height: 2, background: WHITE, opacity: 0.5}} />
-        <div style={{padding: '30px 4px', fontFamily: FONT_UI, fontSize: 27,
+        <div style={{padding: '30px 4px', fontFamily: FONT_UI, fontSize: UI.m,
           letterSpacing: 0.5, color: WHITE}}>
           <span style={{opacity: 0.55}}>$ </span>claude mcp add claude-context
         </div>
         <div style={{height: 2, background: WHITE, opacity: 0.5}} />
       </div>
 
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 124, width: VIZ_W,
-        opacity: p, fontFamily: FONT_UI, fontSize: 19, letterSpacing: 4, color: LABEL_R}}>
-        WHAT IT COSTS
-      </div>
-
       {keys.map((r, i) => {
-        const rp = decel(prog(frame, r.at, 320));
+        const rp = decel(prog(frame, r.at, DETAIL));
         if (rp <= 0) return null;
         return (
-          <div key={r.k} style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 176 + i * 104,
+          <div key={r.k} style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 140 + i * 104,
             width: VIZ_W, opacity: rp}}>
             <div style={{display: 'flex', alignItems: 'baseline',
               justifyContent: 'space-between', paddingBottom: 18}}>
               <span style={{fontFamily: FONT, fontSize: 44, color: WHITE, lineHeight: 1}}>{r.k}</span>
-              <span style={{fontFamily: FONT_UI, fontSize: 19, letterSpacing: 4,
+              <span style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
                 color: WHITE, opacity: 0.72}}>{r.why}</span>
             </div>
             <div style={{height: 1, background: WHITE, opacity: 0.32}} />
@@ -471,13 +497,13 @@ const CostPlate: React.FC = () => {
           heavy rule on the plate and the largest type. It reads DOWN — label,
           then the amount on its own line — rather than across, because a
           right-aligned phrase competes with the two reasons above it. */}
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 380, width: VIZ_W,
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 344, width: VIZ_W,
         height: 3, background: WHITE, opacity: tot}} />
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 408, width: VIZ_W,
-        opacity: tot, fontFamily: FONT_UI, fontSize: 19, letterSpacing: 4, color: LABEL_R}}>
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 372, width: VIZ_W,
+        opacity: tot, fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_R}}>
         TOTAL
       </div>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 442, width: VIZ_W,
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 406, width: VIZ_W,
         opacity: tot, fontFamily: FONT, fontSize: 44, lineHeight: 1.06, whiteSpace: 'nowrap', color: WHITE}}>
         someone else&rsquo;s tokens
       </div>
@@ -488,19 +514,19 @@ const CostPlate: React.FC = () => {
 // ---- S6 -- where to get it -------------------------------------------------
 const FindPlate: React.FC = () => {
   const frame = useCurrentFrame();
-  const p = decel(prog(frame, 36600, 400));
+  const p = decel(prog(frame, 36600, ENTER));
   return (
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 90, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
       border: `2px solid ${INK}`, background: WASH_C, padding: '30px 34px', opacity: p,
-      transform: `translateY(${(1 - p) * 16}px)`, display: 'flex',
+      transform: `translateY(${(1 - p) * TRAVEL}px)`, display: 'flex',
       flexDirection: 'column', rowGap: 12}}>
-      <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_C}}>GITHUB.COM</div>
+      <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_C}}>GITHUB.COM</div>
       <div style={{fontFamily: FONT, fontSize: 55, color: INK}}>zilliztech / claude-context</div>
       {/* A star count is the one figure in this film with a shelf life. Read at
           primary source (`gh api repos/zilliztech/claude-context`) on 2026-08-15;
           it was 12,395 on 2026-08-14, so it moves several a day. Re-read it on
           the day the film renders and update both here and facts.md#G10. */}
-      <div style={{fontFamily: FONT_UI, fontSize: 22, letterSpacing: 2, color: LABEL_C}}>
+      <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.label, color: LABEL_C}}>
         12,402 stars · MIT
       </div>
     </div>
@@ -736,13 +762,13 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
           at y240 and the footer slugs at y1372, not at the rail. NO. 033 put the
           footer at y1560 as a founder override scoped to that film only; this
           one is back inside the box. */}
-      <div style={{position: 'absolute', top: 240, left: VIZ_L, fontSize: 40, fontWeight: 600,
+      <div style={{position: 'absolute', top: 240, left: VIZ_L, fontSize: UI.l, fontWeight: 600,
         letterSpacing: '-0.045em', color: WORDMARK_ON[bg] ?? CREAM,
         fontFamily: FONT_UI}}>vektor</div>
-      <div style={{position: 'absolute', top: 1372, left: VIZ_L, fontSize: 22, letterSpacing: 3,
+      <div style={{position: 'absolute', top: 1372, left: VIZ_L, fontSize: UI.m, letterSpacing: TRACK.slug,
         color: furn}}>vektor /// claude context</div>
       <div style={{position: 'absolute', top: 1372, left: VIZ_L, width: VIZ_W, textAlign: 'right',
-        fontSize: 22, letterSpacing: 3, color: furn}}>comment. context.</div>
+        fontSize: UI.m, letterSpacing: TRACK.slug, color: furn}}>comment. context.</div>
       </>) : null}
     </AbsoluteFill>
   );
