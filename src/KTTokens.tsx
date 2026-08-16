@@ -171,8 +171,20 @@ const Window: React.FC<{fromMs: number; toMs: number; children: React.ReactNode}
 // The three lit ticks are FIXED indices, never seeded or random. A random pick
 // would differ between a verification still and the video render, and a gate that
 // measures a different frame than the one that ships is worthless.
-const HITS = [27, 64, 111];
-const FIELD_COLS = 20, FIELD_ROWS = 6, FIELD_GAP = 8, FIELD_RGAP = 10, FIELD_TH = 18;
+// FEWER AND LARGER (founder, 2026-08-15: "make it look more premium").
+//
+// The first build was 20x6 — 120 ticks at 31x18 with 8px gutters. At phone size
+// that is texture, not a diagram: the eye reads a grey rasterised block and the
+// three survivors do not survive anything, because nothing was ever legible as a
+// unit. Premium in this format is restraint, so the count comes down and the unit
+// goes up: 12x4 at 52x30 with real air between them. Same idea, half the noise,
+// and the three that remain now sit in obvious isolation.
+//
+// The hit indices are spread across different rows and columns on purpose. Three
+// adjacent ticks would read as one surviving block rather than as a search
+// returning scattered results from across a codebase.
+const HITS = [7, 21, 40];
+const FIELD_COLS = 12, FIELD_ROWS = 4, FIELD_GAP = 14, FIELD_RGAP = 18, FIELD_TH = 30;
 
 const ContextField: React.FC = () => {
   const frame = useCurrentFrame();
@@ -576,6 +588,29 @@ const wipeField = (frame: number): string | null => {
   return w ? w.field : null;
 };
 
+// THE PLATES, AS DATA. The render maps over this and the type anchor reads it, so
+// there is exactly one statement of when each visualisation is on screen. When the
+// windows lived inline in the JSX the anchor had no way to consult them, which is
+// why it fell back to a per-beat flag and left type stranded over 4.9s of empty
+// frame.
+//
+// `showsAt` is when the plate first puts a pixel on screen, which is NOT always
+// when it mounts. AbPlate staggers its two columns from 20600 and FindPlate fades
+// in from 36600, so both are mounted and blank for half a second. The anchor asks
+// about VISIBILITY, not mounting — using the mount window left the type pinned to
+// the top of an empty frame for 0.54s at 36.06s even after the anchor was fixed,
+// which is the WIPE_LEAD mistake exactly: a declared window is not an arrival.
+// check-type-fit fails the build if a top-anchored frame has no viz on it, so
+// these two numbers cannot quietly drift away from the components.
+const PLATES: {from: number; to: number; showsAt?: number; node: React.ReactElement}[] = [
+  {from: 1600,  to: 9920,                          node: <ContextField />},
+  {from: 20080, to: 24540, showsAt: 20600,         node: <AbPlate />},
+  {from: 24540, to: 30200,                         node: <DropPlate />},
+  {from: 30200, to: 36060,                         node: <CostPlate />},
+  {from: 36060, to: 41760, showsAt: 36600,         node: <FindPlate />},
+  {from: 41760, to: TOKENS_END_MS,                 node: <TokensOutro />},
+];
+
 // ---- composition -----------------------------------------------------------
 export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> = ({layer = 'all'}) => {
   const frame = useCurrentFrame();
@@ -598,6 +633,30 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
   // one so white text clears the floor. Mapped here, once, rather than edited
   // into KTTokensWords.ts — the words file is generated and would lose it.
   const bg = asField(wipeField(frame) ?? beat.bg);
+  // THE ANCHOR FOLLOWS WHAT IS ON SCREEN, NOT WHAT THE BEAT IS ABOUT (founder, 2026-08-15).
+  //
+  // typeAnchor.onVizBeats says type on a VISUALISATION beat sits at the top so it
+  // never rests on the plate. Correct — but it was applied per BEAT, and a beat is
+  // not uniformly a viz beat. Measured with check-type-fit --dense 15, three
+  // stretches had type pinned to the top with nothing at all beneath it:
+  //
+  //    9.92-11.80s  1.88s  the capture has not started
+  //   17.60-20.08s  2.48s  the capture has ended, AbPlate not yet mounted
+  //   36.06-36.60s  0.54s  FindPlate not yet mounted
+  //
+  // Roughly 4.9 seconds with type ending around y500-650 and the safe box running
+  // to y1420 — about 800px of empty frame under it. The founder: "it looks unclean
+  // if we place it at the top and there is a lot of unused space in the bottom".
+  //
+  // So the anchor asks whether a plate is actually mounted THIS FRAME. A beat that
+  // declares top:false stays centred regardless — that is the house outro, whose
+  // marquee is a full-bleed background rather than something the type sits above,
+  // and it is standardised across every film.
+  //
+  // The move is a hard cut on an exact frame, which is the format's grammar:
+  // everything cuts, nothing glides.
+  const plateNow = PLATES.some((pl) => frame >= f(pl.showsAt ?? pl.from) && frame < f(pl.to));
+  const topNow = beat.top && plateNow && !shot && !wiping;
   const lightField = bg === CREAM;
   // Footer contrast is field-aware (design review 2026-08-08). It was
   // cream-at-34% on every dark field, which measures 1.47:1 against RED —
@@ -617,21 +676,18 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
       {layer !== 'type' && layer !== 'furniture' && !wiping && shot ? <ShotPlate shot={shot} /> : null}
 
       {layer !== 'type' && layer !== 'furniture' && !wiping && !shot ? (<>
-      <Window fromMs={1600}  toMs={9920}> <ContextField /></Window>
-      <Window fromMs={20080} toMs={24540}><AbPlate /></Window>
-      <Window fromMs={24540} toMs={30200}><DropPlate /></Window>
-      <Window fromMs={30200} toMs={36060}><CostPlate /></Window>
-      <Window fromMs={36060} toMs={41760}><FindPlate /></Window>
-      <Window fromMs={41760} toMs={TOKENS_END_MS}><TokensOutro /></Window>
+      {PLATES.map((pl) => (
+        <Window key={pl.from} fromMs={pl.from} toMs={pl.to}>{pl.node}</Window>
+      ))}
       </>) : null}
 
       {layer !== 'viz' && layer !== 'furniture' && !wiping && !shot ? (
       <AbsoluteFill style={{alignItems: 'center',
-        justifyContent: beat.top ? 'flex-start' : 'center',
+        justifyContent: topNow ? 'flex-start' : 'center',
         flexDirection: 'column', rowGap: 26,
         // 330 not 260: the wordmark sits at y240 to clear Instagram's Reels
         // header, so the type block starts below its baseline.
-        padding: beat.top ? '330px 150px 0' : '0 150px',
+        padding: topNow ? '330px 150px 0' : '0 150px',
         textAlign: 'center'}}>
         {beat.rows.map((row, ri) => (
           <div key={`${beat.from}-${ri}`} style={{lineHeight: 1.14}}>
