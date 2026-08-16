@@ -37,6 +37,14 @@ const walk = (dir, out = []) => {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) {
       if (path.relative(srcDir, p) === 'generated') continue; // codegen output is exempt
+      // src/kt IS the token module, not drift from it (2026-08-16). system.ts is
+      // GENERATED from canon/kt-tokens.json#system and is the one sanctioned home
+      // for these literals - the whole point is that films import them instead of
+      // retyping them. Counting it here would score the cure as the disease, and
+      // would make the ratchet rise every time the canon gains a colour.
+      // It cannot drift silently: check-kt's systemInSync fails the build if this
+      // file stops matching the canon it was generated from.
+      if (path.relative(srcDir, p) === 'kt') continue;
       walk(p, out);
     } else out.push(p);
   }
