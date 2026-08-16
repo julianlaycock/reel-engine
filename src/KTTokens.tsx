@@ -224,6 +224,25 @@ const TRAVEL = 16;                  // one distance, always
 const TRACK = {label: 2, slug: 3};  // tracking: labels, and all-caps slugs
 const PLATE_TOP = 60;               // one origin for every plate
 
+// ---- a plate paints itself for the field it lands on ------------------------
+// TWICE IN ONE DAY a plate was invisible because it was authored against one field
+// and mounted on another. AbPlate was built in the cream palette and sat on an ink
+// beat - ink on ink, 1.00:1, 100% of the viz layer one flat colour. DropPlate was
+// built for ink and sat on red. Both were fixed by hand. Then re-anchoring the
+// plates to the voiceover moved AbPlate onto the cream beat and ContextField
+// across a field boundary, and BOTH went invisible again - the same bug, twice,
+// within an hour, because the fix had been "repaint this plate" rather than "stop
+// plates from hardcoding a field".
+//
+// A plate now asks the field what to use. Moving a plate to a different beat can
+// no longer make it disappear, which matters because moving plates to the words
+// they belong to is exactly what the film needed.
+type FieldPalette = {text: string; label: string; hair: string; wash: string; accent: string};
+const onField = (bg: string): FieldPalette =>
+  bg === CREAM ? {text: INK, label: LABEL_C, hair: HAIR_C, wash: WASH_C, accent: RED_DEEP}
+  : bg === RED_DEEP ? {text: WHITE, label: WHITE, hair: RULE_R, wash: WASH_I, accent: WHITE}
+  : {text: CREAM, label: LABEL_I, hair: HAIR_I, wash: WASH_I, accent: RED_DEEP};
+
 // ---- S1 -- the claim -------------------------------------------------------
 // THE CONTEXT FIELD (founder, 2026-08-15). Replaces two bars.
 //
@@ -259,7 +278,8 @@ const PLATE_TOP = 60;               // one origin for every plate
 const HITS = [7, 21, 40];
 const FIELD_COLS = 12, FIELD_ROWS = 4, FIELD_GAP = 14, FIELD_RGAP = 18, FIELD_TH = 30;
 
-const ContextField: React.FC = () => {
+const ContextField: React.FC<{field: string}> = ({field}) => {
+  const pal = onField(field);
   const frame = useCurrentFrame();
   // Timings unchanged from the bars they replace: both are pinned to the VO and
   // the word layer, and moving them would desync the claim from the sentence.
@@ -281,10 +301,10 @@ const ContextField: React.FC = () => {
           <div key={i} style={{position: 'absolute',
             left: VIZ_L + col * (tw + FIELD_GAP),
             top: VIZ_TOP + PLATE_TOP + row * (FIELD_TH + FIELD_RGAP),
-            width: tw, height: FIELD_TH, background: HAIR_I}}>
-            <div style={{position: 'absolute', inset: 0, background: CREAM,
+            width: tw, height: FIELD_TH, background: pal.hair}}>
+            <div style={{position: 'absolute', inset: 0, background: pal.text,
               opacity: grepOn * (1 - slice)}} />
-            {hit ? <div style={{position: 'absolute', inset: 0, background: RED,
+            {hit ? <div style={{position: 'absolute', inset: 0, background: pal.accent,
               opacity: slice}} /> : null}
           </div>
         );
@@ -292,14 +312,14 @@ const ContextField: React.FC = () => {
       <div style={{position: 'absolute', left: VIZ_L,
         top: VIZ_TOP + PLATE_TOP + FIELD_ROWS * (FIELD_TH + FIELD_RGAP) + 34, width: VIZ_W,
         display: 'flex', justifyContent: 'space-between',
-        fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_I}}>
+        fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>
         {/* Both labels take the readable ink-field colour and the ACTIVE one goes
             to full cream. Red was doing the emphasis here and measured 4.49:1 on
             ink — under the 4.5 floor by a hundredth, at 20px. Red also belongs on
             the data, not on the commentary: the canon keeps marks on type and off
             the graphics, and here the three lit ticks are the mark. */}
         <span style={{opacity: 1 - slice}}>GREP READS EVERYTHING</span>
-        <span style={{color: CREAM, opacity: slice}}>SEARCH READS THE PART THAT MATTERS</span>
+        <span style={{color: pal.text, opacity: slice}}>SEARCH READS THE PART THAT MATTERS</span>
       </div>
     </>
   );
@@ -389,11 +409,12 @@ const ShotPlate: React.FC<{shot: {from: number; to: number; src: string}}> = ({s
 // column and the comparison did not land as a comparison. Both columns are now
 // visible shapes; the difference between them is carried by the FILL and the
 // full-strength border on the live one, not by the other being almost invisible.
-const AbPlate: React.FC = () => {
+const AbPlate: React.FC<{field: string}> = ({field}) => {
+  const pal = onField(field);
   const frame = useCurrentFrame();
   const cols = [
-    {k: 'METHOD A', tool: 'grep', at: 20080},
-    {k: 'METHOD B', tool: 'semantic search', at: 20880, live: true},
+    {k: 'METHOD A', tool: 'grep', at: 17600},
+    {k: 'METHOD B', tool: 'semantic search', at: 18000, live: true},
   ];
   const cw = (VIZ_W - 24) / 2;
   return (
@@ -410,17 +431,17 @@ const AbPlate: React.FC = () => {
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
             alignItems: 'center', rowGap: 16, padding: '0 16px'}}>
             <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.label, fontWeight: 600,
-              color: CREAM}}>{c.k}</div>
-            <div style={{fontFamily: FONT, fontSize: 44, color: CREAM, textAlign: 'center'}}>{c.tool}</div>
-            <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.label, color: LABEL_I}}>
+              color: pal.text}}>{c.k}</div>
+            <div style={{fontFamily: FONT, fontSize: 44, color: pal.text, textAlign: 'center'}}>{c.tool}</div>
+            <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.label, color: pal.label}}>
               30 FIXES · 3 RUNS
             </div>
           </div>
         );
       })}
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 326, width: VIZ_W,
-        opacity: decel(prog(frame, 22600, ENTER)), textAlign: 'center',
-        fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug, color: LABEL_I}}>
+        opacity: decel(prog(frame, 18600, ENTER)), textAlign: 'center',
+        fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug, color: pal.label}}>
         SAME ANSWER QUALITY
       </div>
     </>
@@ -437,29 +458,32 @@ const AbPlate: React.FC = () => {
 // as AbPlate above: a plate authored against one field and mounted on another.
 // The labels take the red-field colour and the odometers go to full white, which
 // is 4.65:1 against this field where cream is 4.04:1.
-const DropPlate: React.FC = () => (
+const DropPlate: React.FC<{field: string}> = ({field}) => {
+  const pal = onField(field);
+  return (
   <>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
-      fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_R}}>
+      fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>
       TOKENS PER FIX
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 44, width: VIZ_W,
       fontFamily: FONT, fontSize: 107, color: WHITE, lineHeight: 1}}>
       <Odometer values={rampValues(73373, 44449, 20, (n) => n.toLocaleString('en-US'))}
-        fromMs={25200} tickMs={80} />
+        fromMs={20240} tickMs={80} />
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 184, width: VIZ_W,
-      height: 2, background: RULE_R}} />
+      height: 2, background: pal.hair}} />
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 226, width: VIZ_W,
-      fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_R}}>
+      fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>
       TOOL CALLS
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 270, width: VIZ_W,
       fontFamily: FONT, fontSize: 86, color: WHITE, lineHeight: 1}}>
-      <Odometer values={rampValues(8, 5, 6, (n) => String(n))} fromMs={27600} tickMs={110} />
+      <Odometer values={rampValues(8, 5, 6, (n) => String(n))} fromMs={22810} tickMs={110} />
     </div>
   </>
-);
+  );
+};
 
 // ---- S5 -- what it costs ---------------------------------------------------
 // THE RECEIPT (founder, 2026-08-15). Replaces two label-left / reason-right rows.
@@ -494,28 +518,29 @@ const DropPlate: React.FC = () => (
 //
 // The install line loses its full border for a rule above and below. A boxed
 // command reads as a UI control; two rules read as a document.
-const CostPlate: React.FC = () => {
+const CostPlate: React.FC<{field: string}> = ({field}) => {
+  const pal = onField(field);
   const frame = useCurrentFrame();
-  const p = decel(prog(frame, 30200, ENTER));
+  const p = decel(prog(frame, 24540, ENTER));
   // Both items are in facts.md#G11, sourced to the evaluation's own setup step:
   // `export OPENAI_API_KEY` and `export MILVUS_ADDRESS`. Milvus is Zilliz's store,
   // which is why the second line names the account and not the variable.
   const keys = [
-    {k: 'OPENAI API KEY', why: 'embeddings', at: 32400},
-    {k: 'ZILLIZ ACCOUNT', why: 'vector store', at: 33600},
+    {k: 'OPENAI API KEY', why: 'embeddings', at: 29660},
+    {k: 'ZILLIZ ACCOUNT', why: 'vector store', at: 31420},
   ];
   // The total lands after both items, on the clause that states it.
-  const tot = decel(prog(frame, 34600, ENTER));
+  const tot = decel(prog(frame, 33590, ENTER));
   return (
     <>
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
         opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`}}>
-        <div style={{height: 2, background: WHITE, opacity: 0.5}} />
+        <div style={{height: 2, background: pal.hair, opacity: 0.5}} />
         <div style={{padding: '30px 4px', fontFamily: FONT_UI, fontSize: UI.m,
-          letterSpacing: 0.5, color: WHITE}}>
+          letterSpacing: 0.5, color: pal.text}}>
           <span style={{opacity: 0.55}}>$ </span>claude mcp add claude-context
         </div>
-        <div style={{height: 2, background: WHITE, opacity: 0.5}} />
+        <div style={{height: 2, background: pal.hair, opacity: 0.5}} />
       </div>
 
       {keys.map((r, i) => {
@@ -530,7 +555,7 @@ const CostPlate: React.FC = () => {
               <span style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
                 color: WHITE, opacity: 0.72}}>{r.why}</span>
             </div>
-            <div style={{height: 1, background: WHITE, opacity: 0.32}} />
+            <div style={{height: 1, background: pal.hair, opacity: 0.32}} />
           </div>
         );
       })}
@@ -540,13 +565,13 @@ const CostPlate: React.FC = () => {
           then the amount on its own line — rather than across, because a
           right-aligned phrase competes with the two reasons above it. */}
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 344, width: VIZ_W,
-        height: 3, background: WHITE, opacity: tot}} />
+        height: 3, background: pal.hair, opacity: tot}} />
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 372, width: VIZ_W,
-        opacity: tot, fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_R}}>
+        opacity: tot, fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>
         TOTAL
       </div>
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 406, width: VIZ_W,
-        opacity: tot, fontFamily: FONT, fontSize: 44, lineHeight: 1.06, whiteSpace: 'nowrap', color: WHITE}}>
+        opacity: tot, fontFamily: FONT, fontSize: 44, lineHeight: 1.06, whiteSpace: 'nowrap', color: pal.text}}>
         someone else&rsquo;s tokens
       </div>
     </>
@@ -554,21 +579,22 @@ const CostPlate: React.FC = () => {
 };
 
 // ---- S6 -- where to get it -------------------------------------------------
-const FindPlate: React.FC = () => {
+const FindPlate: React.FC<{field: string}> = ({field}) => {
+  const pal = onField(field);
   const frame = useCurrentFrame();
   const p = decel(prog(frame, 36060, ENTER));
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
-      border: `2px solid ${INK}`, background: WASH_C, padding: '30px 34px', opacity: p,
+      border: `2px solid ${pal.text}`, background: pal.wash, padding: '30px 34px', opacity: p,
       transform: `translateY(${(1 - p) * TRAVEL}px)`, display: 'flex',
       flexDirection: 'column', rowGap: 12}}>
-      <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: LABEL_C}}>GITHUB.COM</div>
-      <div style={{fontFamily: FONT, fontSize: 55, color: INK}}>zilliztech / claude-context</div>
+      <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>GITHUB.COM</div>
+      <div style={{fontFamily: FONT, fontSize: 55, color: pal.text}}>zilliztech / claude-context</div>
       {/* A star count is the one figure in this film with a shelf life. Read at
           primary source (`gh api repos/zilliztech/claude-context`) on 2026-08-15;
           it was 12,395 on 2026-08-14, so it moves several a day. Re-read it on
           the day the film renders and update both here and facts.md#G10. */}
-      <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.label, color: LABEL_C}}>
+      <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.label, color: pal.label}}>
         12,402 stars · MIT
       </div>
     </div>
@@ -584,10 +610,13 @@ const FindPlate: React.FC = () => {
 // The unit's trailing DOUBLE SPACE is load-bearing: rowDelta = amp*4/period =
 // 260*4/13 = 80px must stay under the inter-word gap or adjacent rows shear.
 // These are NO. 030's shipped numbers.
-const TokensOutro: React.FC = () => (
+const TokensOutro: React.FC<{field: string}> = ({field}) => {
+  const pal = onField(field);
+  return (
   <ZigzagMarquee fromMs={41760} unit={'vektor  '} amp={260} period={13} rows={14}
     rowH={136} fontSize={150} dur={75} color={'rgba(244,239,223,0.13)'} />
-);
+  );
+};
 
 // ---- seams -----------------------------------------------------------------
 // ONE COLOUR PER WIPE (founder, 2026-08-08: "make them cleaner, with 1 colour,
@@ -696,13 +725,42 @@ const wipeField = (frame: number): string | null => {
 // which is the WIPE_LEAD mistake exactly: a declared window is not an arrival.
 // check-type-fit fails the build if a top-anchored frame has no viz on it, so
 // these two numbers cannot quietly drift away from the components.
-const PLATES: {from: number; to: number; showsAt?: number; node: React.ReactElement}[] = [
-  {from: 120,   to: 9920,                          node: <ContextField />},
-  {from: 20080, to: 24540,         node: <AbPlate />},
-  {from: 24540, to: 30200,                         node: <DropPlate />},
-  {from: 30200, to: 36060,                         node: <CostPlate />},
-  {from: 36060, to: 41760,         node: <FindPlate />},
-  {from: 41760, to: TOKENS_END_MS,                 node: <TokensOutro />},
+// The plate is stored as a COMPONENT, not an element, so the field it lands on can
+// be handed to it at render time. Storing elements is what made a plate's palette a
+// property of where it was WRITTEN rather than where it is SHOWN.
+const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
+// THE PICTURE RAN A BEAT BEHIND THE VOICE (founder review, 2026-08-16).
+//
+// Read the script against what was on screen and the film was arguing with
+// itself. At 20.08-24.54s the VO says "73,373 tokens down to 44,449, and 8 tool
+// calls down to 5" - and the screen showed the static METHOD A / METHOD B boxes.
+// Then at 24.54-30.20s the VO moved on to "you can install it in one command" -
+// and THAT is when the odometers counted those numbers down. Every figure was
+// visualised about three seconds after it was spoken, against the wrong words.
+//
+// The canon already has the law this breaks: "one composition change per spoken
+// phrase - rubato, cut to the word", and "every visible change lands within +/-2
+// frames of its caption timestamp". Written for the word layer and, like every
+// other law in this file, never carried across to the plates.
+//
+// Nothing here changes the VO, the script or a caption. The plates are moved to
+// the words they belong to:
+//
+//   17.60-20.08s  AbPlate     "the same answer quality either way" (16.81-19.32),
+//                             which also fills the 2.5s that had no plate at all
+//   20.08-24.54s  DropPlate   the odometers, on the sentence that says the numbers
+//   24.54-36.06s  CostPlate   install (25.77) -> the two credentials (29.66, 31.42)
+//                             -> the total on "spending someone else's" (33.59)
+//
+// ContextField holds to 11800 instead of stopping at 9920 so the beat does not
+// open with type over an empty frame - the locked ruling "visualisations enter
+// EARLY and hold LONG" doing exactly what it exists for.
+  {from: 120,   to: 11800,         Node: ContextField},
+  {from: 17600, to: 20080,         Node: AbPlate},
+  {from: 20080, to: 24540,         Node: DropPlate},
+  {from: 24540, to: 36060,         Node: CostPlate},
+  {from: 36060, to: 41760,         Node: FindPlate},
+  {from: 41760, to: TOKENS_END_MS,                 Node: TokensOutro},
 ];
 
 // ---- composition -----------------------------------------------------------
@@ -789,7 +847,7 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; s
 
       {layer !== 'type' && layer !== 'furniture' && !wiping && !shot ? (<>
       {PLATES.map((pl) => (
-        <Window key={pl.from} fromMs={pl.from} toMs={pl.to}>{pl.node}</Window>
+        <Window key={pl.from} fromMs={pl.from} toMs={pl.to}><pl.Node field={bg} /></Window>
       ))}
       </>) : null}
 
