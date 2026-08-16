@@ -283,8 +283,8 @@ const ContextField: React.FC<{field: string}> = ({field}) => {
   const frame = useCurrentFrame();
   // Timings unchanged from the bars they replace: both are pinned to the VO and
   // the word layer, and moving them would desync the claim from the sentence.
-  const sweep = decel(prog(frame, 2600, ENTER));   // grep takes the whole corpus
-  const slice = decel(prog(frame, 4200, ENTER));   // search narrows to what matters
+  const sweep = decel(prog(frame, 1280, ENTER));   // grep takes the whole corpus
+  const slice = decel(prog(frame, 13000, ENTER));   // search narrows to what matters
   const tw = (VIZ_W - (FIELD_COLS - 1) * FIELD_GAP) / FIELD_COLS;
   const n = FIELD_COLS * FIELD_ROWS;
   const litTo = Math.round(n * sweep);
@@ -341,7 +341,7 @@ const ContextField: React.FC<{field: string}> = ({field}) => {
 //
 // FULL BLEED MEANS FULL BLEED: no wordmark, no footer and no type while it is up.
 const SHOTS: {from: number; to: number; src: string}[] = [
-  {from: 11800, to: 17600, src: 'screens/no034-evaluation.png'},
+  {from: 18680, to: 23770, src: 'screens/no034-evaluation.png'},
 ];
 
 const ShotPlate: React.FC<{shot: {from: number; to: number; src: string}}> = ({shot}) => {
@@ -419,8 +419,8 @@ const AbPlate: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
   const cols = [
-    {k: 'METHOD A', tool: 'grep', at: 17600},
-    {k: 'METHOD B', tool: 'semantic search', at: 18000, live: true},
+    {k: 'METHOD A', tool: 'grep', at: 23770},
+    {k: 'METHOD B', tool: 'semantic search', at: 26810, live: true},
   ];
   const cw = (VIZ_W - 24) / 2;
   return (
@@ -446,7 +446,7 @@ const AbPlate: React.FC<{field: string}> = ({field}) => {
         );
       })}
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 326, width: VIZ_W,
-        opacity: decel(prog(frame, 18600, ENTER)), textAlign: 'center',
+        opacity: decel(prog(frame, 29500, ENTER)), textAlign: 'center',
         fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug, color: pal.label}}>
         SAME ANSWER QUALITY
       </div>
@@ -475,7 +475,7 @@ const DropPlate: React.FC<{field: string}> = ({field}) => {
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 44, width: VIZ_W,
       fontFamily: FONT, fontSize: 107, color: WHITE, lineHeight: 1}}>
       <Odometer values={rampValues(73373, 44449, 20, (n) => n.toLocaleString('en-US'))}
-        fromMs={20240} tickMs={80} />
+        fromMs={31840} tickMs={80} />
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 184, width: VIZ_W,
       height: 2, background: pal.hair}} />
@@ -485,7 +485,7 @@ const DropPlate: React.FC<{field: string}> = ({field}) => {
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 270, width: VIZ_W,
       fontFamily: FONT, fontSize: 86, color: WHITE, lineHeight: 1}}>
-      <Odometer values={rampValues(8, 5, 6, (n) => String(n))} fromMs={22810} tickMs={110} />
+      <Odometer values={rampValues(8, 5, 6, (n) => String(n))} fromMs={35950} tickMs={110} />
     </div>
   </>
   );
@@ -527,16 +527,16 @@ const DropPlate: React.FC<{field: string}> = ({field}) => {
 const CostPlate: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
-  const p = decel(prog(frame, 24540, ENTER));
+  const p = decel(prog(frame, 41640, ENTER));
   // Both items are in facts.md#G11, sourced to the evaluation's own setup step:
   // `export OPENAI_API_KEY` and `export MILVUS_ADDRESS`. Milvus is Zilliz's store,
   // which is why the second line names the account and not the variable.
   const keys = [
-    {k: 'OPENAI API KEY', why: 'embeddings', at: 29660},
-    {k: 'ZILLIZ ACCOUNT', why: 'vector store', at: 31420},
+    {k: 'OPENAI API KEY', why: 'embeddings', at: 45200},
+    {k: 'ZILLIZ ACCOUNT', why: 'vector store', at: 47900},
   ];
   // The total lands after both items, on the clause that states it.
-  const tot = decel(prog(frame, 33590, ENTER));
+  const tot = decel(prog(frame, 50600, ENTER));
   return (
     <>
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
@@ -588,7 +588,7 @@ const CostPlate: React.FC<{field: string}> = ({field}) => {
 const FindPlate: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
-  const p = decel(prog(frame, 36060, ENTER));
+  const p = decel(prog(frame, 52870, ENTER));
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
       border: `2px solid ${pal.text}`, background: pal.wash, padding: '30px 34px', opacity: p,
@@ -619,7 +619,7 @@ const FindPlate: React.FC<{field: string}> = ({field}) => {
 const TokensOutro: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   return (
-  <ZigzagMarquee fromMs={41760} unit={'vektor  '} amp={260} period={13} rows={14}
+  <ZigzagMarquee fromMs={56070} unit={'vektor  '} amp={260} period={13} rows={14}
     rowH={136} fontSize={150} dur={75} color={'rgba(244,239,223,0.13)'} />
   );
 };
@@ -633,19 +633,16 @@ const TokensOutro: React.FC<{field: string}> = ({field}) => {
 // Each entry's field MUST equal the bg of the beat it lands on — check-kt's
 // seamCarriesIncomingField rule, which caught NO. 033 wiping ink onto a red beat.
 const FLIPS: {ms: number; field: string}[] = [
-  {ms: 9920, field: CREAM},
-  {ms: 20080, field: INK},
-  {ms: 24540, field: RED_DEEP},
-  // PUNCTUATION, NOT A FLIP (founder, 2026-08-16). The red beat runs 24.54-36.06s -
-  // 11.5 seconds on one field, against current guidance of a meaningful visual shift
-  // every 2.5-4s. This is a SAME-COLOUR wipe: the field does not change, so it reads
-  // as a deliberate cut rather than a transition. NO. 033 used the same device to
-  // split its own 26.3s stretch. Placed at 30200 because that is exactly where
-  // DropPlate hands over to CostPlate, so the punctuation lands on a real change of
-  // subject rather than on an arbitrary clock position.
-  {ms: 30200, field: RED_DEEP},
-  {ms: 36060, field: CREAM},
-  {ms: 41760, field: RED_DEEP},
+  // A SAME-COLOUR CUT, not a field change. The film opens with 18.7 seconds on ink
+  // - the claim and then the new explanation of why it works - which is well past
+  // the 10s the canon now allows on one field without punctuation. This lands where
+  // the sentence turns, so it reads as a paragraph break rather than a transition.
+  {ms: 7040,  field: INK},
+  {ms: 18680, field: CREAM},
+  {ms: 31840, field: INK},
+  {ms: 41640, field: RED_DEEP},
+  {ms: 52870, field: CREAM},
+  {ms: 56070, field: RED_DEEP},
 ];
 const Seams: React.FC = () => (
   <>
@@ -735,43 +732,21 @@ const wipeField = (frame: number): string | null => {
 // be handed to it at render time. Storing elements is what made a plate's palette a
 // property of where it was WRITTEN rather than where it is SHOWN.
 const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
-// THE PICTURE RAN A BEAT BEHIND THE VOICE (founder review, 2026-08-16).
-//
-// Read the script against what was on screen and the film was arguing with
-// itself. At 20.08-24.54s the VO says "73,373 tokens down to 44,449, and 8 tool
-// calls down to 5" - and the screen showed the static METHOD A / METHOD B boxes.
-// Then at 24.54-30.20s the VO moved on to "you can install it in one command" -
-// and THAT is when the odometers counted those numbers down. Every figure was
-// visualised about three seconds after it was spoken, against the wrong words.
-//
-// The canon already has the law this breaks: "one composition change per spoken
-// phrase - rubato, cut to the word", and "every visible change lands within +/-2
-// frames of its caption timestamp". Written for the word layer and, like every
-// other law in this file, never carried across to the plates.
-//
-// Nothing here changes the VO, the script or a caption. The plates are moved to
-// the words they belong to:
-//
-//   17.60-20.08s  AbPlate     "the same answer quality either way" (16.81-19.32),
-//                             which also fills the 2.5s that had no plate at all
-//   20.08-24.54s  DropPlate   the odometers, on the sentence that says the numbers
-//   24.54-36.06s  CostPlate   install (25.77) -> the two credentials (29.66, 31.42)
-//                             -> the total on "spending someone else's" (33.59)
-//
-// ContextField holds to 11800 instead of stopping at 9920 so the beat does not
-// open with type over an empty frame - the locked ruling "visualisations enter
-// EARLY and hold LONG" doing exactly what it exists for.
-  // ENDS WITH ITS OWN BEATS. It ran to 11800 to fill the gap before the capture,
-  // and the founder caught the result: "why is the hook visualisation shown in the
-  // first slide and then in the second slide as well... just shown extremely
-  // briefly, which doesn't make any sense for the viewer". A graphic that reappears
-  // for 1.9s on a different field reads as a mistake, because it is one.
-  {from: 120,   to: 9920,          Node: ContextField},
-  {from: 17600, to: 20080,         Node: AbPlate},
-  {from: 20080, to: 24540,         Node: DropPlate},
-  {from: 24540, to: 36060,         Node: CostPlate},
-  {from: 36060, to: 41760,         Node: FindPlate},
-  {from: 41760, to: TOKENS_END_MS,                 Node: TokensOutro},
+  // Every window below is measured against the take, and every one clears the
+  // readable-time rule (3s + 0.6s per word) that the canon now carries. The old
+  // cut could not: its six graphics needed 56 seconds between them and the film
+  // was 48.3 seconds long, so the A/B panel got 2.5 seconds against the 12 it
+  // needed. That is the arithmetic the longer take was recorded to fix.
+  //
+  // THE BLOCK GRAPHIC HOLDS for the whole opening - founder, 2026-08-16. It is the
+  // picture of the idea the new section explains, and giving it room instead of a
+  // second graphic is what the extra seconds were bought for.
+  {from: 90,    to: 18680,         Node: ContextField},   // 18.6s  needs 6.6
+  {from: 23770, to: 31840,         Node: AbPlate},        //  8.1s  needs 7.8
+  {from: 31840, to: 41640,         Node: DropPlate},      //  9.8s  needs 7.8
+  {from: 41640, to: 52870,         Node: CostPlate},      // 11.2s  needs 9.0
+  {from: 52870, to: 56070,         Node: FindPlate},      //  3.2s  needs 4.8 - SHORT
+  {from: 56070, to: TOKENS_END_MS, Node: TokensOutro},    //  8.5s  needs 6.0
 ];
 
 // ---- composition -----------------------------------------------------------
