@@ -46,6 +46,47 @@ export const fieldOf = (hex: string): Field => {
   return hit ? hit[0] : 'ink';
 };
 
+// ---- timing -----------------------------------------------------------------
+// How long a thing must be up to count as having been shown. This category did not
+// exist, which is why a graphic could be on screen for 2.5 seconds and nothing
+// objected.
+export const READABLE = {"base":3000,"perWord":600} as const;
+export const MIN_ON_SCREEN_MS = 1000;
+export const MAX_ON_ONE_FIELD_MS = 10000;
+export const LANDS_WITHIN_FRAMES = 2;
+
+/** How long a graphic carrying this many words must stay on screen. */
+export const readableMs = (words: number) => READABLE.base + READABLE.perWord * words;
+
+// ---- hierarchy --------------------------------------------------------------
+// Text that describes a graphic sits ONE gap above it, never pinned to the top of
+// the frame with a void between. Proximity: things close together read as related,
+// things far apart read as unrelated.
+export const TEXT_ABOVE_PLATE_GAP = 64;
+export const MAX_ELEMENTS_ON_SCREEN = 3;
+
+/** Where the type block's baseline sits when a graphic is on screen. */
+export const textBottomWhenPlateShown = () => PLATE_TOP - TEXT_ABOVE_PLATE_GAP;
+
+// ---- furniture --------------------------------------------------------------
+export const WORDMARK = {"role":"wordmark","x":150,"y":240} as const;
+export const FURNITURE_HIDDEN_DURING = ["fullBleed","wipe"] as const;
+
+// ---- sound ------------------------------------------------------------------
+export const SOUND = {"k":-14,"tol":1.5,"peak":-1,"music":false,"maxSilenceMs":1200} as const;
+
+// ---- open and close ---------------------------------------------------------
+export const HOOK_BY_MS = 1000;
+
+// ---- words ------------------------------------------------------------------
+export const STABLE_LINE = true;
+
+// ---- export -----------------------------------------------------------------
+export const EXPORT = {"w":1080,"h":1920,"fps":30,"codec":"h264","minSec":12,"maxSec":90} as const;
+
+// ---- evidence ---------------------------------------------------------------
+export const CAPTURE_SCROLL_PX_PER_SEC = 120;
+
 // ---- motion -----------------------------------------------------------------
 export const ENTER_MS = 500;
 export const DETAIL_MS = 300;
