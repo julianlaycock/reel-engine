@@ -32,7 +32,7 @@
 // inside x150-930 / y220-1420, drop shadows included. VIZ_L/VIZ_W below are that
 // box and nothing may exceed it.
 import React from 'react';
-import {AbsoluteFill, Img, staticFile, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Audio, Img, staticFile, useCurrentFrame} from 'remotion';
 import {INK, CREAM, RED, f, Word} from './KTHook';
 import {TOKENS_BEATS, TOKENS_END_MS} from './KTTokensWords';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
@@ -843,6 +843,16 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; s
   const furn = FOOTER_ON[bg] ?? LABEL_I;
   return (
     <AbsoluteFill style={{backgroundColor: bg, fontFamily: FONT}}>
+      {/* THE VOICE, IN THE COMPOSITION (2026-08-16). Previously the film rendered
+          silent and the take was muxed on afterwards, which meant Studio played
+          nothing - so GATE 2, the founder's scrub, could not check the one thing
+          this rebuild was for: whether each visual lands on the word that says it.
+          Reviewing sync in silence is not reviewing sync.
+          Only on the composite; the layer renders that the gates measure stay
+          silent so nothing waits on audio decoding. */}
+      {layer === 'all' ? (
+        <Audio src={staticFile('audio/2026-08-14-token-claims-kt/vo-master-v3.wav')} />
+      ) : null}
       {layer !== 'type' && layer !== 'furniture' && !wiping && shot ? <ShotPlate shot={shot} /> : null}
 
       {layer !== 'type' && layer !== 'furniture' && !wiping && !shot ? (<>
