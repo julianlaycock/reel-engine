@@ -299,6 +299,23 @@ const ShotPlate: React.FC<{shot: {from: number; to: number; src: string}}> = ({s
 // found the plate's geometry exactly where it belonged. Only a check that asks
 // what colour a mark is against what is behind it can see a thing that is present,
 // correct and invisible.
+// STILL BARELY READABLE AFTER IT BECAME VISIBLE (founder, 2026-08-15).
+//
+// Making the plate visible was not the same as making it legible. METHOD A / B
+// were cream at 55% - 5.04:1 on the column fill, which CLEARS the 4.5 floor and
+// still read badly, because three things were working against legibility at once:
+// 55% opacity, 20px, and 3px of letter-spacing. Thin, small and spread out. A
+// contrast ratio measures a colour pair; it says nothing about stroke weight or
+// tracking, and the founder's eye caught what the number could not.
+//
+// So the labels go to FULL cream at 13.13:1, up a size to 22, semibold, and the
+// tracking comes down from 3 to 2 so the letters group into words instead of
+// floating apart.
+//
+// The control column also had a 26% border - 2.14:1 - so it barely read as a
+// column and the comparison did not land as a comparison. Both columns are now
+// visible shapes; the difference between them is carried by the FILL and the
+// full-strength border on the live one, not by the other being almost invisible.
 const AbPlate: React.FC = () => {
   const frame = useCurrentFrame();
   const cols = [
@@ -314,12 +331,13 @@ const AbPlate: React.FC = () => {
         return (
           <div key={c.k} style={{position: 'absolute', left: VIZ_L + i * (cw + 24),
             top: VIZ_TOP + 60, width: cw, height: 280,
-            border: `2px solid ${c.live ? CREAM : HAIR_I}`,
+            border: `2px solid ${c.live ? CREAM : LABEL_I}`,
             background: c.live ? WASH_I : 'transparent',
             opacity: p, transform: `translateY(${(1 - p) * 16}px)`,
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
             alignItems: 'center', rowGap: 16, padding: '0 16px'}}>
-            <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_I}}>{c.k}</div>
+            <div style={{fontFamily: FONT_UI, fontSize: 22, letterSpacing: 2, fontWeight: 600,
+              color: CREAM}}>{c.k}</div>
             <div style={{fontFamily: FONT, fontSize: 44, color: CREAM, textAlign: 'center'}}>{c.tool}</div>
             <div style={{fontFamily: FONT_UI, fontSize: 19, letterSpacing: 2, color: LABEL_I}}>
               30 FIXES · 3 RUNS
