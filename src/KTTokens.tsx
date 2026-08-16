@@ -350,7 +350,13 @@ const ShotPlate: React.FC<{shot: {from: number; to: number; src: string}}> = ({s
   // Slow, linear scroll. A drift that eases would read as a camera move; this is
   // a page being read.
   const t = clamp01((frame - f(shot.from)) / Math.max(1, f(shot.to - shot.from)));
-  const y = -(IMG_H - 1920) * t;
+  // SLOWER, founder 2026-08-16: "way too quick, and it looks cheap like that".
+  // The shot ran the full 3160px page past the frame in 5.8s - about 214px/sec,
+  // which is faster than anyone can read a line of code. It now travels 55% of the
+  // page in the same time, roughly 118px/sec, so the eye can actually follow it.
+  // Showing less of the page is the right trade: the point is that the evaluation
+  // EXISTS and is legible, not that every line of it is seen.
+  const y = -(IMG_H - 1920) * t * 0.55;
   return (
     <AbsoluteFill style={{overflow: 'hidden', backgroundColor: INK}}>
       <Img src={staticFile(shot.src)}
@@ -755,7 +761,12 @@ const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
 // ContextField holds to 11800 instead of stopping at 9920 so the beat does not
 // open with type over an empty frame - the locked ruling "visualisations enter
 // EARLY and hold LONG" doing exactly what it exists for.
-  {from: 120,   to: 11800,         Node: ContextField},
+  // ENDS WITH ITS OWN BEATS. It ran to 11800 to fill the gap before the capture,
+  // and the founder caught the result: "why is the hook visualisation shown in the
+  // first slide and then in the second slide as well... just shown extremely
+  // briefly, which doesn't make any sense for the viewer". A graphic that reappears
+  // for 1.9s on a different field reads as a mistake, because it is one.
+  {from: 120,   to: 9920,          Node: ContextField},
   {from: 17600, to: 20080,         Node: AbPlate},
   {from: 20080, to: 24540,         Node: DropPlate},
   {from: 24540, to: 36060,         Node: CostPlate},
@@ -764,8 +775,22 @@ const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
 ];
 
 // ---- composition -----------------------------------------------------------
-export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; stableLine?: boolean}> =
-  ({layer = 'all', stableLine = true}) => {
+// HOW THE WORDS AND THE GRAPHIC SHARE THE FRAME (founder, 2026-08-16).
+//
+// "the viewer doesn't know whether to concentrate on the visualization or on the
+// words, and they're positioned in a weird way... maybe three lines is too much."
+// Both questions are taste calls the founder wants to SEE rather than be told
+// about, so they are modes rather than a change:
+//
+//   'full'    what the film does now - up to three rows at full size, over the
+//             graphic. Everything competes.
+//   'two'     at most the two most recent rows. A third less text at once.
+//   'caption' one row only, dropped to label size and pinned above the graphic,
+//             so the graphic clearly owns the frame and the words annotate it.
+export type Layout = 'full' | 'two' | 'caption';
+
+export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; stableLine?: boolean; mode?: Layout}> =
+  ({layer = 'all', stableLine = true, mode = 'full'}) => {
   const frame = useCurrentFrame();
   // Every hook is called before any early return. A hook after an early return
   // passes every still and fails the video render with React error 310, and
@@ -853,13 +878,21 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; s
 
       {layer !== 'viz' && layer !== 'furniture' && !wiping && !shot ? (
       <AbsoluteFill style={{alignItems: 'center',
+        ...(mode === 'caption' && topNow ? {fontSize: UI.m, opacity: 0.92} : {}),
         justifyContent: topNow ? 'flex-start' : 'center',
         flexDirection: 'column', rowGap: 26,
         // 330 not 260: the wordmark sits at y240 to clear Instagram's Reels
         // header, so the type block starts below its baseline.
         padding: topNow ? '330px 150px 0' : '0 150px',
         textAlign: 'center'}}>
-        {beat.rows.map((row, ri) => (
+        {(() => {
+          // Only rows with a word already on screen count as "showing", so the cap
+          // trims what is actually visible rather than what is declared.
+          const live = beat.rows.filter((r) => r.words.some((w) => frame >= f(w.ms)));
+          const keep = mode === 'caption' ? 1 : mode === 'two' ? 2 : 3;
+          const shown = live.slice(-keep);
+          return beat.rows.filter((r) => shown.includes(r));
+        })().map((row, ri) => (
           <div key={`${beat.from}-${ri}`} style={{lineHeight: 1.14}}>
             {row.words.map((w, wi) => {
               const gone = w.out !== undefined && frame >= f(w.out);

@@ -64,6 +64,27 @@ export const Root: React.FC = () => {
         width={1080}
         height={1920}
       />
+      {/* LAYOUT OPTIONS for the founder to compare in Studio (2026-08-16).
+          Same film, same timings. Only how much text shares the frame with the
+          graphic differs. Delete the two extras once a choice is ruled. */}
+      <Composition
+        id="KTTokens-B-two-lines"
+        component={KTTokens}
+        defaultProps={{layer: 'all' as const, mode: 'two' as const}}
+        durationInFrames={KT_TOKENS_FRAMES}
+        fps={FPS}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="KTTokens-C-caption"
+        component={KTTokens}
+        defaultProps={{layer: 'all' as const, mode: 'caption' as const}}
+        durationInFrames={KT_TOKENS_FRAMES}
+        fps={FPS}
+        width={1080}
+        height={1920}
+      />
       <Composition
         id="KTStack"
         component={KTStack}
