@@ -64,6 +64,30 @@ export const Root: React.FC = () => {
         width={1080}
         height={1920}
       />
+      {/* WORD-ENTRANCE OPTIONS, for the founder to compare in Studio (2026-08-16).
+          Identical films in every respect except how each word arrives. The canon
+          locks 1-frame pops; the founder finds them harsh, so these exist to be
+          chosen between rather than argued about. Same timings, same everything -
+          only the arrival differs. Delete the two extra entries once a choice is
+          ruled and written into the canon. */}
+      <Composition
+        id="KTTokens-B-soft"
+        component={KTTokens}
+        defaultProps={{layer: 'all' as const, wordEnter: 'soft' as const}}
+        durationInFrames={KT_TOKENS_FRAMES}
+        fps={FPS}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="KTTokens-C-rise"
+        component={KTTokens}
+        defaultProps={{layer: 'all' as const, wordEnter: 'rise' as const}}
+        durationInFrames={KT_TOKENS_FRAMES}
+        fps={FPS}
+        width={1080}
+        height={1920}
+      />
       <Composition
         id="KTStack"
         component={KTStack}

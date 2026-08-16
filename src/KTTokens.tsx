@@ -151,6 +151,31 @@ const Window: React.FC<{fromMs: number; toMs: number; children: React.ReactNode}
     return <>{children}</>;
   };
 
+// ---- word entrance options (founder review, 2026-08-16) ---------------------
+// The canon's `type.wordEntrance` is locked: "1-FRAME pops on the exact caption
+// frame. No fades, no ramps, no springs." That is the format's signature and it
+// came from NO. 030. The founder now finds it harsh - "the words transition too
+// harshly and not smooth or clean enough" - which makes this a canon question,
+// not a bug, so it is offered as options to choose between rather than changed.
+//
+// THE SHARED <Word> IS NOT TOUCHED. It is imported by NO. 026, 027, 030, 031 and
+// 033, all published, and the Approval Protocol forbids changing a shipped
+// artefact. The softening is a wrapper around it in THIS film only. <Word> returns
+// null before its caption frame, so the wrapper's ramp begins exactly on the frame
+// the word was always going to appear - the timing is identical in every option,
+// only the arrival differs.
+export type WordEnter = 'pop' | 'soft' | 'rise';
+
+const enterStyle = (frame: number, ms: number, mode: WordEnter): React.CSSProperties => {
+  if (mode === 'pop') return {};
+  const dur = mode === 'soft' ? 3 : 5;
+  const t = clamp01((frame - f(ms)) / dur);
+  const e = decel(t);
+  return mode === 'soft'
+    ? {opacity: e}
+    : {opacity: e, transform: `translateY(${(1 - e) * 10}px)`};
+};
+
 // ---- the plate system -------------------------------------------------------
 // THE CANON GOVERNED THE WORD LAYER AND NOT THE PLATES (founder review, 2026-08-16).
 //
@@ -350,8 +375,8 @@ const ShotPlate: React.FC<{shot: {from: number; to: number; src: string}}> = ({s
 const AbPlate: React.FC = () => {
   const frame = useCurrentFrame();
   const cols = [
-    {k: 'METHOD A', tool: 'grep', at: 20600},
-    {k: 'METHOD B', tool: 'semantic search', at: 21400, live: true},
+    {k: 'METHOD A', tool: 'grep', at: 20080},
+    {k: 'METHOD B', tool: 'semantic search', at: 20880, live: true},
   ];
   const cw = (VIZ_W - 24) / 2;
   return (
@@ -514,7 +539,7 @@ const CostPlate: React.FC = () => {
 // ---- S6 -- where to get it -------------------------------------------------
 const FindPlate: React.FC = () => {
   const frame = useCurrentFrame();
-  const p = decel(prog(frame, 36600, ENTER));
+  const p = decel(prog(frame, 36060, ENTER));
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
       border: `2px solid ${INK}`, background: WASH_C, padding: '30px 34px', opacity: p,
@@ -559,6 +584,14 @@ const FLIPS: {ms: number; field: string}[] = [
   {ms: 9920, field: CREAM},
   {ms: 20080, field: INK},
   {ms: 24540, field: RED_DEEP},
+  // PUNCTUATION, NOT A FLIP (founder, 2026-08-16). The red beat runs 24.54-36.06s -
+  // 11.5 seconds on one field, against current guidance of a meaningful visual shift
+  // every 2.5-4s. This is a SAME-COLOUR wipe: the field does not change, so it reads
+  // as a deliberate cut rather than a transition. NO. 033 used the same device to
+  // split its own 26.3s stretch. Placed at 30200 because that is exactly where
+  // DropPlate hands over to CostPlate, so the punctuation lands on a real change of
+  // subject rather than on an arbitrary clock position.
+  {ms: 30200, field: RED_DEEP},
   {ms: 36060, field: CREAM},
   {ms: 41760, field: RED_DEEP},
 ];
@@ -647,16 +680,17 @@ const wipeField = (frame: number): string | null => {
 // check-type-fit fails the build if a top-anchored frame has no viz on it, so
 // these two numbers cannot quietly drift away from the components.
 const PLATES: {from: number; to: number; showsAt?: number; node: React.ReactElement}[] = [
-  {from: 1600,  to: 9920,                          node: <ContextField />},
-  {from: 20080, to: 24540, showsAt: 20600,         node: <AbPlate />},
+  {from: 120,   to: 9920,                          node: <ContextField />},
+  {from: 20080, to: 24540,         node: <AbPlate />},
   {from: 24540, to: 30200,                         node: <DropPlate />},
   {from: 30200, to: 36060,                         node: <CostPlate />},
-  {from: 36060, to: 41760, showsAt: 36600,         node: <FindPlate />},
+  {from: 36060, to: 41760,         node: <FindPlate />},
   {from: 41760, to: TOKENS_END_MS,                 node: <TokensOutro />},
 ];
 
 // ---- composition -----------------------------------------------------------
-export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> = ({layer = 'all'}) => {
+export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; wordEnter?: WordEnter}> =
+  ({layer = 'all', wordEnter = 'pop'}) => {
   const frame = useCurrentFrame();
   // Every hook is called before any early return. A hook after an early return
   // passes every still and fails the video render with React error 310, and
@@ -699,8 +733,25 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
   //
   // The move is a hard cut on an exact frame, which is the format's grammar:
   // everything cuts, nothing glides.
-  const plateNow = PLATES.some((pl) => frame >= f(pl.showsAt ?? pl.from) && frame < f(pl.to));
-  const topNow = beat.top && plateNow && !shot && !wiping;
+  // ONE ANCHOR PER BEAT (founder, 2026-08-16).
+  //
+  // The first version of this asked, every frame, whether a plate was on screen.
+  // It removed the dead space and introduced something worse: the type block
+  // JUMPED from centre to top the moment a plate arrived, mid-beat, five times in
+  // the film. The founder: "a lot of the times the words are shown in the middle
+  // and then they automatically jump to the top in a harsh manner". Trading a
+  // static problem for a moving one is not a fix - motion draws the eye, so a jump
+  // costs more than the empty space it saved.
+  //
+  // The anchor is now constant for the whole beat: if this beat carries a plate at
+  // any point, its type sits at the top for the entire beat. Nothing moves.
+  //
+  // The dead space that started all this is solved at the other end instead - the
+  // plates now open WITH their beat rather than half a second into it, which is
+  // also what the locked ruling "visualisations enter EARLY and hold LONG" asks
+  // for. No gap to fill, so nothing has to move to fill it.
+  const beatHasPlate = PLATES.some((pl) => pl.from < beat.to && pl.to > beat.from);
+  const topNow = beat.top && beatHasPlate;
   const lightField = bg === CREAM;
   // Footer contrast is field-aware (design review 2026-08-08). It was
   // cream-at-34% on every dark field, which measures 1.47:1 against RED —
@@ -736,7 +787,10 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
         {beat.rows.map((row, ri) => (
           <div key={`${beat.from}-${ri}`} style={{lineHeight: 1.14}}>
             {row.words.map((w, wi) => (
-              <Word key={wi} w={w} base={row.size} baseColor={beat.type} />
+              <span key={wi} style={{display: 'inline-block',
+                ...enterStyle(frame, w.ms, wordEnter)}}>
+                <Word w={w} base={row.size} baseColor={beat.type} />
+              </span>
             ))}
           </div>
         ))}
@@ -765,10 +819,13 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
       <div style={{position: 'absolute', top: 240, left: VIZ_L, fontSize: UI.l, fontWeight: 600,
         letterSpacing: '-0.045em', color: WORDMARK_ON[bg] ?? CREAM,
         fontFamily: FONT_UI}}>vektor</div>
-      <div style={{position: 'absolute', top: 1372, left: VIZ_L, fontSize: UI.m, letterSpacing: TRACK.slug,
-        color: furn}}>vektor /// claude context</div>
-      <div style={{position: 'absolute', top: 1372, left: VIZ_L, width: VIZ_W, textAlign: 'right',
-        fontSize: UI.m, letterSpacing: TRACK.slug, color: furn}}>comment. context.</div>
+      {/* THE FOOTER IS GONE (founder, 2026-08-16): "we have to get rid of the
+          footer, it serves no purpose and conflicts with some content".
+          It said `vektor /// claude context` and `comment. context.` at y1372,
+          which is inside the band the plates need - the receipt collided with it
+          this morning and had to be pulled up 40px to clear it. It repeated the
+          wordmark and pre-announced the CTA the outro delivers properly. Removing
+          it returns the whole 1352-1420 band to the plates. The wordmark stays. */}
       </>) : null}
     </AbsoluteFill>
   );
