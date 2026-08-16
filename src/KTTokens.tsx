@@ -111,6 +111,27 @@ const LABEL_R = WHITE;                   // on the deeper red — 4.65:1
 // GENERATED and a hand-edit there is lost on the next run. The substitution
 // happens once, here, so there is exactly one place that decides which red this
 // film renders.
+const RULE_R = 'rgba(255,255,255,0.5)';  // a hairline that survives the red field
+
+// FURNITURE COLOUR BY FIELD — a MAP, not a ternary, and that is deliberate.
+//
+// check-contrast reads text colours out of this source. A ternary hides which
+// colour lands on which field behind an expression, so the gate either skips the
+// furniture entirely (which is how the footer's 4.05:1 survived two films unnoticed)
+// or checks every branch against every field and reports nonsense. A map states
+// the pairing the gate needs to know, and states it for a human too.
+//
+// Measured 2026-08-15. Footer is 22px, so the 4.5 body floor applies to all three:
+//   on cream  ink at 62%     5.07:1
+//   on red    white          4.65:1
+//   on ink    cream at 55%   5.57:1
+// Wordmark is 40px, which is large text at a 3.0 floor, and clears with room:
+//   on cream  ink            16.54:1
+//   on red    cream           4.04:1
+//   on ink    cream          16.54:1
+const FOOTER_ON: Record<string, string> = {[CREAM]: LABEL_C, [RED_DEEP]: WHITE, [INK]: LABEL_I};
+const WORDMARK_ON: Record<string, string> = {[CREAM]: INK, [RED_DEEP]: CREAM, [INK]: CREAM};
+
 const asField = (c: string) => (c === RED ? RED_DEEP : c);
 
 // The safe box. Nothing below may leave it.
@@ -187,8 +208,13 @@ const ContextField: React.FC = () => {
         top: VIZ_TOP + 70 + FIELD_ROWS * (FIELD_TH + FIELD_RGAP) + 34, width: VIZ_W,
         display: 'flex', justifyContent: 'space-between',
         fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_I}}>
+        {/* Both labels take the readable ink-field colour and the ACTIVE one goes
+            to full cream. Red was doing the emphasis here and measured 4.49:1 on
+            ink — under the 4.5 floor by a hundredth, at 20px. Red also belongs on
+            the data, not on the commentary: the canon keeps marks on type and off
+            the graphics, and here the three lit ticks are the mark. */}
         <span style={{opacity: 1 - slice}}>GREP READS EVERYTHING</span>
-        <span style={{color: RED, opacity: slice}}>SEARCH READS THE PART THAT MATTERS</span>
+        <span style={{color: CREAM, opacity: slice}}>SEARCH READS THE PART THAT MATTERS</span>
       </div>
     </>
   );
@@ -247,6 +273,20 @@ const ShotPlate: React.FC<{shot: {from: number; to: number; src: string}}> = ({s
 // contradicts itself, and the viewer resolves that by ignoring one of them. The
 // repo's own word is method — "We ran each method 3 times independently" — so the
 // header is METHOD A and the count beneath it now reads as what it is.
+//
+// AND IT WAS INVISIBLE (found by check-contrast, 2026-08-15). This plate is
+// mounted 20080-24540ms, which is an INK beat, and every colour on it came from
+// the CREAM-field palette: LABEL_C is ink at 62%, the tool name was INK, the
+// border HAIR_C, the wash WASH_C. Ink on ink measures 1.00:1. Rendering the viz
+// layer at 22.0s returned 141414 across 100% of the frame — the plate carrying
+// METHOD A, METHOD B, 30 FIXES · 3 RUNS and SAME ANSWER QUALITY has never drawn a
+// visible pixel, and a still of it was sent to the founder as evidence the label
+// fix had landed. Nobody could have seen it, because there was nothing to see.
+//
+// No gate could catch it before today: the fit gate measures WHERE boxes are and
+// found the plate's geometry exactly where it belonged. Only a check that asks
+// what colour a mark is against what is behind it can see a thing that is present,
+// correct and invisible.
 const AbPlate: React.FC = () => {
   const frame = useCurrentFrame();
   const cols = [
@@ -262,14 +302,14 @@ const AbPlate: React.FC = () => {
         return (
           <div key={c.k} style={{position: 'absolute', left: VIZ_L + i * (cw + 24),
             top: VIZ_TOP + 60, width: cw, height: 280,
-            border: `2px solid ${c.live ? INK : HAIR_C}`,
-            background: c.live ? WASH_C : 'transparent',
+            border: `2px solid ${c.live ? CREAM : HAIR_I}`,
+            background: c.live ? WASH_I : 'transparent',
             opacity: p, transform: `translateY(${(1 - p) * 16}px)`,
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
             alignItems: 'center', rowGap: 16, padding: '0 16px'}}>
-            <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_C}}>{c.k}</div>
-            <div style={{fontFamily: FONT, fontSize: 44, color: INK, textAlign: 'center'}}>{c.tool}</div>
-            <div style={{fontFamily: FONT_UI, fontSize: 19, letterSpacing: 2, color: LABEL_C}}>
+            <div style={{fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_I}}>{c.k}</div>
+            <div style={{fontFamily: FONT, fontSize: 44, color: CREAM, textAlign: 'center'}}>{c.tool}</div>
+            <div style={{fontFamily: FONT_UI, fontSize: 19, letterSpacing: 2, color: LABEL_I}}>
               30 FIXES · 3 RUNS
             </div>
           </div>
@@ -277,7 +317,7 @@ const AbPlate: React.FC = () => {
       })}
       <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 386, width: VIZ_W,
         opacity: decel(prog(frame, 22600, 500)), textAlign: 'center',
-        fontFamily: FONT_UI, fontSize: 22, letterSpacing: 3, color: LABEL_C}}>
+        fontFamily: FONT_UI, fontSize: 22, letterSpacing: 3, color: LABEL_I}}>
         SAME ANSWER QUALITY
       </div>
     </>
@@ -287,25 +327,32 @@ const AbPlate: React.FC = () => {
 // ---- S4 -- the drop --------------------------------------------------------
 // Both figures counted down. The odometer SNAPS by design: anything smooth reads
 // as a slider and loses the mechanical feel the effect exists for.
+//
+// PAINTED FOR RED, not for ink (check-contrast, 2026-08-15). This plate is mounted
+// 24540-30200ms, inside the RED beat, and its labels were LABEL_I — cream at 55%,
+// which is the INK-field constant and measures 2.10:1 on red. Same class of error
+// as AbPlate above: a plate authored against one field and mounted on another.
+// The labels take the red-field colour and the odometers go to full white, which
+// is 4.65:1 against this field where cream is 4.04:1.
 const DropPlate: React.FC = () => (
   <>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 50, width: VIZ_W,
-      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_I}}>
+      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_R}}>
       TOKENS PER FIX
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 94, width: VIZ_W,
-      fontFamily: FONT, fontSize: 107, color: CREAM, lineHeight: 1}}>
+      fontFamily: FONT, fontSize: 107, color: WHITE, lineHeight: 1}}>
       <Odometer values={rampValues(73373, 44449, 20, (n) => n.toLocaleString('en-US'))}
         fromMs={25200} tickMs={80} />
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 234, width: VIZ_W,
-      height: 2, background: HAIR_I}} />
+      height: 2, background: RULE_R}} />
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 276, width: VIZ_W,
-      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_I}}>
+      fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_R}}>
       TOOL CALLS
     </div>
     <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 320, width: VIZ_W,
-      fontFamily: FONT, fontSize: 86, color: CREAM, lineHeight: 1}}>
+      fontFamily: FONT, fontSize: 86, color: WHITE, lineHeight: 1}}>
       <Odometer values={rampValues(8, 5, 6, (n) => String(n))} fromMs={27600} tickMs={110} />
     </div>
   </>
@@ -555,9 +602,16 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
   // Footer contrast is field-aware (design review 2026-08-08). It was
   // cream-at-34% on every dark field, which measures 1.47:1 against RED —
   // effectively invisible, and on the beat that carries the CTA.
-  const furn = lightField
-    ? 'rgba(16,16,16,0.55)'
-    : (bg === RED_DEEP ? WHITE : 'rgba(244,239,223,0.55)');
+  // THE FOOTER TAKES THE LABEL COLOURS (founder ruling, 2026-08-15).
+  //
+  // This was ink-at-55% on cream, which measures 4.05:1 — and that shortfall has
+  // been an OPEN QUESTION in kt-canon.yml since 2026-08-08, phrased as "raise the
+  // opacity, or grant the footer an exemption at 3.0". Nobody ruled, so it sat
+  // there for two films while the same class of colour spread onto the plates.
+  // "Text clears 4.5, no exceptions" answers it: raise the opacity. Ink at 62% is
+  // 5.07:1 on cream, cream at 55% is 5.57:1 on ink, white is 4.65:1 on the deeper
+  // red. Named constants, not literals, so the contrast gate can see them.
+  const furn = FOOTER_ON[bg] ?? LABEL_I;
   return (
     <AbsoluteFill style={{backgroundColor: bg, fontFamily: FONT}}>
       {layer !== 'type' && layer !== 'furniture' && !wiping && shot ? <ShotPlate shot={shot} /> : null}
@@ -609,7 +663,7 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'}> 
           footer at y1560 as a founder override scoped to that film only; this
           one is back inside the box. */}
       <div style={{position: 'absolute', top: 240, left: VIZ_L, fontSize: 40, fontWeight: 600,
-        letterSpacing: '-0.045em', color: lightField ? INK : CREAM,
+        letterSpacing: '-0.045em', color: WORDMARK_ON[bg] ?? CREAM,
         fontFamily: FONT_UI}}>vektor</div>
       <div style={{position: 'absolute', top: 1372, left: VIZ_L, fontSize: 22, letterSpacing: 3,
         color: furn}}>vektor /// claude context</div>
