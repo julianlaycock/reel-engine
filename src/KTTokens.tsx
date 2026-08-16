@@ -151,30 +151,47 @@ const Window: React.FC<{fromMs: number; toMs: number; children: React.ReactNode}
     return <>{children}</>;
   };
 
-// ---- word entrance options (founder review, 2026-08-16) ---------------------
-// The canon's `type.wordEntrance` is locked: "1-FRAME pops on the exact caption
-// frame. No fades, no ramps, no springs." That is the format's signature and it
-// came from NO. 030. The founder now finds it harsh - "the words transition too
-// harshly and not smooth or clean enough" - which makes this a canon question,
-// not a bug, so it is offered as options to choose between rather than changed.
+// ---- how a line arrives (founder review, 2026-08-16) ------------------------
+// THE HARSHNESS WAS NEVER THE FADE. The founder said the words "transition too
+// harshly and not smooth or clean enough", so the first attempt offered a 3-frame
+// fade and a 5-frame rise. Both were rejected, correctly - they were treating a
+// symptom that was not there.
 //
-// THE SHARED <Word> IS NOT TOUCHED. It is imported by NO. 026, 027, 030, 031 and
-// 033, all published, and the Approval Protocol forbids changing a shipped
-// artefact. The softening is a wrapper around it in THIS film only. <Word> returns
-// null before its caption frame, so the wrapper's ramp begins exactly on the frame
-// the word was always going to appear - the timing is identical in every option,
-// only the arrival differs.
-export type WordEnter = 'pop' | 'soft' | 'rise';
-
-const enterStyle = (frame: number, ms: number, mode: WordEnter): React.CSSProperties => {
-  if (mode === 'pop') return {};
-  const dur = mode === 'soft' ? 3 : 5;
-  const t = clamp01((frame - f(ms)) / dur);
-  const e = decel(t);
-  return mode === 'soft'
-    ? {opacity: e}
-    : {opacity: e, transform: `translateY(${(1 - e) * 10}px)`};
-};
+// Measuring the type layer frame by frame while a line types on:
+//
+//   f105  3.50s   left x468  right x598     one word
+//   f108  3.60s   left x406  right x658     +2 words
+//   f114  3.80s   left x346  right x720
+//   f117  3.90s   left x272  right x794
+//
+// The words already on screen MOVE. Every row is centre-aligned, so each new word
+// pushes everything before it outward by half its own width - about 200px of
+// sideways slide in under half a second. The reader is tracking text that will not
+// hold still. No easing curve fixes that, because nothing is easing: the line is
+// being re-laid-out on every word.
+//
+// THE FIX IS TO RESERVE THE SPACE. Each word gets a hidden spacer of its exact
+// final width from the first frame of its row, and the visible word is drawn on
+// top of it. The line's geometry is settled before the first word lands, so words
+// arrive in place and nothing that is already readable ever moves again.
+//
+// The shared <Word> is untouched - it is imported by five published films. The
+// spacer mirrors the two properties that decide width (fontSize and whiteSpace)
+// and carries the same text, so it reserves exactly what <Word> will draw.
+//
+// The spacer follows the word out of the row when the word leaves, so a row that
+// edits in place still collapses as it should.
+//
+// RULED 2026-08-16. The founder compared both and chose this. The trade is real
+// and worth writing down: a line can grow outward from its centre, or it can hold
+// still, and it cannot do both. Reserving the width makes the row full-measure, so
+// the text now reads from the left rather than expanding symmetrically. That is a
+// change to how this format looks, chosen deliberately over 200px of slide.
+const lineWidthSpacer = (w: {t: string; caps?: boolean; size?: number}, base: number) => (
+  <span aria-hidden style={{visibility: 'hidden', fontSize: w.size ?? base, whiteSpace: 'pre'}}>
+    {w.caps ? w.t.toUpperCase() : w.t}
+  </span>
+);
 
 // ---- the plate system -------------------------------------------------------
 // THE CANON GOVERNED THE WORD LAYER AND NOT THE PLATES (founder review, 2026-08-16).
@@ -689,8 +706,8 @@ const PLATES: {from: number; to: number; showsAt?: number; node: React.ReactElem
 ];
 
 // ---- composition -----------------------------------------------------------
-export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; wordEnter?: WordEnter}> =
-  ({layer = 'all', wordEnter = 'pop'}) => {
+export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; stableLine?: boolean}> =
+  ({layer = 'all', stableLine = true}) => {
   const frame = useCurrentFrame();
   // Every hook is called before any early return. A hook after an early return
   // passes every still and fails the video render with React error 310, and
@@ -786,12 +803,19 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; w
         textAlign: 'center'}}>
         {beat.rows.map((row, ri) => (
           <div key={`${beat.from}-${ri}`} style={{lineHeight: 1.14}}>
-            {row.words.map((w, wi) => (
-              <span key={wi} style={{display: 'inline-block',
-                ...enterStyle(frame, w.ms, wordEnter)}}>
-                <Word w={w} base={row.size} baseColor={beat.type} />
-              </span>
-            ))}
+            {row.words.map((w, wi) => {
+              const gone = w.out !== undefined && frame >= f(w.out);
+              if (!stableLine) return <Word key={wi} w={w} base={row.size} baseColor={beat.type} />;
+              if (gone) return null;
+              return (
+                <span key={wi} style={{position: 'relative', display: 'inline-block'}}>
+                  {lineWidthSpacer(w, row.size)}
+                  <span style={{position: 'absolute', left: 0, top: 0}}>
+                    <Word w={w} base={row.size} baseColor={beat.type} />
+                  </span>
+                </span>
+              );
+            })}
           </div>
         ))}
       </AbsoluteFill>
