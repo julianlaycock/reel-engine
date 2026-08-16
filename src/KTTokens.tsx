@@ -35,9 +35,11 @@ import React from 'react';
 import {AbsoluteFill, Audio, Img, staticFile, useCurrentFrame} from 'remotion';
 import {INK, CREAM, RED, f, Word} from './KTHook';
 import {TOKENS_BEATS, TOKENS_END_MS} from './KTTokensWords';
-import {CAPTURE_SCROLL_PX_PER_SEC, gap} from './kt/system';
+import {CAPTURE_SCROLL_PX_PER_SEC, gap, FAMILY, WORDMARK, ROLES,
+  PLATE_TOP as PLATE_TOP_CANON} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer, rampValues} from './KTEffects';
+import {ClaudeMascot} from './scenes/ClaudeMascot';
 import './style.css';
 
 export const KT_TOKENS_FRAMES = f(TOKENS_END_MS);
@@ -137,6 +139,14 @@ const asField = (c: string) => (c === RED ? RED_DEEP : c);
 
 // The safe box. Nothing below may leave it.
 const VIZ_L = 150, VIZ_W = 780, VIZ_TOP = 800;
+
+// THE BAND THE WORDS LIVE IN (founder, 2026-08-16). It opens at the wordmark's
+// baseline and closes at the top of the graphic, and the type block sits centred
+// in it. Both edges are canon values — the wordmark's position and role size, and
+// the one plate origin — so there is no frame position stated anywhere in this
+// film. See the comment on the type layer for why this replaced a fixed gap.
+const TYPE_BAND_TOP = WORDMARK.y + ROLES.wordmark.size;
+const TYPE_BAND_H = PLATE_TOP_CANON - TYPE_BAND_TOP;
 
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const decel = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);
@@ -324,124 +334,140 @@ const ContextField: React.FC<{field: string}> = ({field}) => {
   );
 };
 
-// ---- S1b -- the context window as a container -------------------------------
-// FOUNDER, 2026-08-16: "the first visualization with all those little boxes, it's
-// fine for the first slide, but for the second slide, it just becomes too
-// monotonous to just see that. So we have to come up with a different
-// visualization to show for the second slide."
+// ---- S1b -- the page, and what each method read of it -----------------------
+// FOUNDER, 2026-08-16, on the first answer to this (a bounded box that grep filled
+// past the brim): "i do not like that visualisation at all". Three researched
+// directions replaced it and the founder chose THIS one: show the real source and
+// mark what was read.
 //
-// Three directions were put to the founder — re-time the block field, draw the
-// context window as a container, or split the section into two plates — and the
-// founder chose the container. It draws what the sentence literally says:
+// It is the pattern retrieval is credibly shown with — source highlighting, the
+// thing RAG tools build to let a reader check an answer against the passage it
+// came from. It also happens to be the only one of the three that puts EVIDENCE on
+// screen, which is this film's entire argument.
 //
-//   "Grep reads your whole repo looking for a match, so everything it touches
-//    GOES INTO THE CONTEXT WINDOW. Semantic search reads only the part that
-//    actually matters, and hands the model that instead."
+// THE CODE IS REAL. `packages/core/src/context.ts` from zilliztech/claude-context
+// at commit 6fc318b, lines 264-279, read 2026-08-16, verbatim including the
+// indentation. Line 264 runs to 120 characters and is CLIPPED by the column, which
+// is what a code window does and is not a crop worth hiding. Recorded in facts.md.
 //
-// So: a bounded box. Grep fills it past the brim. Search puts a fraction in.
+// The lit passage is lines 268-273 — a doc comment and the whole function under
+// it. That is not a decorative choice: this repo splits with an AST splitter, so a
+// chunk IS a syntactic unit, and a whole function with its comment is exactly the
+// shape of thing its search hands back.
 //
-// STILL NO NUMBERS, for the reason ContextField carries none. The repo publishes
-// tokens and tool calls; it does not publish how many chunks either method read,
-// and facts.md has no such figure. The rows are units of "stuff" — no axis, no
-// count, nothing labelled with a quantity. If a figure ever goes on this plate it
-// comes from facts.md or it does not go on.
+// STILL NO NUMBERS. Nothing is counted, nothing is labelled with a quantity, there
+// is no axis. Six lit rows out of sixteen is a picture of a mechanism, the same
+// standing as ContextField's three ticks — the repo does not publish how many
+// chunks either method read and facts.md has no such figure.
 //
-// RED KEEPS ITS MEANING ACROSS THE SEAM. In ContextField red marks what search
-// KEPT. Painting the overflow red here would have been the obvious move — the
-// overflow is the waste — and it would have made one colour mean "kept" six
-// seconds after it meant "wasted". The spill is cream, like the rest of grep's
-// haul; POSITION carries it, because the rows that matter are the ones outside the
-// box. Red returns on the search state meaning exactly what it meant before.
+// RED IS A MARK, NOT TYPE. Red on ink measures 4.49:1, under the 4.5 floor, so the
+// kept passage does not turn red — it STAYS full cream, 16.54:1, and a red rule is
+// drawn beside it in the margin. That is the editorial change-bar, and it keeps the
+// canon's rule that marks go on the data and never on the reading.
 //
-// The window is drawn quiet on three sides and HEAVY on the brim, because the brim
-// is the line being exceeded. That is the only thing on the plate the eye has to
-// find.
-//
-// TIMINGS ARE THE WORD LAYER'S, not round numbers. Every one below is a word's
-// `ms` from KTTokensWords.ts, so the picture moves when the sentence moves:
-const WIN_IN = 7040;        // the box arrives on "Here is why that works."
-const WIN_FILL_FROM = 8450; // "Grep reads your whole repo" — the stacking starts
-const WIN_FILL_TO = 12760;  // the last row lands as the VO reaches "window." (12960)
-const WIN_CLEAR = 13660;    // "Semantic search" — grep's haul goes
-const WIN_KEEP_1 = 14450;   // "reads"
-const WIN_KEEP_2 = 15330;   // "part"
+// The mono face is FAMILY.mono, added to canon/kt-tokens.json#system on 2026-08-16.
+// IBM Plex Mono is already a Vektor face — the landing pages are set in it and the
+// engine already loads it — so this canonises a face the brand owns. It is not a
+// role, so no film can set a headline in it.
+const CODE_LINES = [
+  '    async getEffectiveIgnorePatterns(codebasePath: string, additionalIgnorePatterns: string[] = []): Promise<string[]> {',
+  '        return this.loadIgnorePatterns(codebasePath, additionalIgnorePatterns);',
+  '    }',
+  '',
+  '    /**',
+  '     * Public wrapper for prepareCollection private method',
+  '     */',
+  '    async getPreparedCollection(codebasePath: string): Promise<void> {',
+  '        return this.prepareCollection(codebasePath);',
+  '    }',
+  '',
+  '    /**',
+  '     * Get isHybrid setting from environment variable with default true',
+  '     */',
+  '    private getIsHybrid(): boolean {',
+  "        const isHybridEnv = envManager.get('HYBRID_MODE');",
+];
+const CODE_KEPT_FROM = 4, CODE_KEPT_TO = 9;   // source lines 268-273, comment and all
 
-// Geometry off the ladder. ROW_H is ContextField's tick height, so the unit of
-// "stuff" is the same size in both pictures and the eye reads them as one idea.
-const ROW_H = FIELD_TH;
-const ROW_GAP = gap('xs');
-const WIN_ROWS = 6;          // what the window holds
-const WIN_SPILL = 3;         // what will not fit
-const WIN_KEPT = 2;          // what search puts in
-const WIN_PAD = gap('s');
-const WIN_H = WIN_ROWS * ROW_H + (WIN_ROWS - 1) * ROW_GAP + WIN_PAD * 2;
-const WIN_SPILL_H = WIN_SPILL * (ROW_H + ROW_GAP);
-// The spill needs headroom, so the box starts BELOW the plate origin by exactly
-// the height of what will overflow it. Top of the topmost spill row is then the
-// plate origin itself and nothing leaves the safe box.
-const WIN_TOP = VIZ_TOP + PLATE_TOP + WIN_SPILL_H;
-const WIN_ROW_L = VIZ_L + WIN_PAD;
-const WIN_ROW_W = VIZ_W - WIN_PAD * 2;
+// TIMINGS ARE THE WORD LAYER'S, not round numbers, so the picture moves when the
+// sentence moves. Every one is a word's `ms` from KTTokensWords.ts.
+const CODE_IN = 7040;         // the page arrives on "Here is why that works."
+const CODE_READ_FROM = 8450;  // "Grep reads your whole repo" — the head starts down
+const CODE_READ_TO = 12960;   // it reaches the bottom on "window."
+const CODE_DROP = 13660;      // "Semantic search" — everything grep lit falls away
+const CODE_MARK_FROM = 14450; // "reads"
+const CODE_MARK_TO = 16190;   // the rule finishes drawing on "matters,"
 
-const WindowPlate: React.FC<{field: string}> = ({field}) => {
+const CODE_SIZE = UI.s;
+const CODE_LH = UI.s + gap('xs');
+const CODE_L = VIZ_L + gap('m');            // the margin the red rule lives in
+const CODE_W = VIZ_W - gap('m');
+const CODE_TOP = VIZ_TOP + PLATE_TOP;
+const CODE_H = CODE_LINES.length * CODE_LH;
+
+const CodePage: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
-  // THE PLATE CANNOT ARRIVE WHILE A WIPE IS OVER IT. The beat opens at 7040 and so
-  // does a same-colour paragraph-break wipe, which suppresses every plate for
-  // WIPE_TAIL frames. Starting the entrance at 7040 measured BLANK at 7.20s and
-  // then popped the box on at 70% opacity the frame the wipe released — the
-  // WIPE_LEAD mistake again, in the other direction: a declared window is not an
-  // arrival. The ramp starts when the screen is actually handed back.
-  const box = decel(clamp01((frame - (f(WIN_IN) + WIPE_TAIL)) / f(ENTER)));
-  const clear = decel(prog(frame, WIN_CLEAR, ENTER));
-  // One row's arrival: the stack fills evenly across the sentence rather than in
-  // one gesture, which is the whole point — the section had nothing moving in it.
-  const step = (WIN_FILL_TO - WIN_FILL_FROM) / (WIN_ROWS + WIN_SPILL - 1);
-  const rowY = (i: number) => WIN_TOP + WIN_H - WIN_PAD - (i + 1) * ROW_H - i * ROW_GAP;
-  const spillY = (j: number) => WIN_TOP - (j + 1) * (ROW_H + ROW_GAP);
-  const bar = (key: string, top: number, at: number, colour: string, fade: number) => {
-    const t = decel(prog(frame, at, DETAIL));
-    if (t <= 0 || fade <= 0) return null;
-    return (
-      <div key={key} style={{position: 'absolute', left: WIN_ROW_L,
-        top: top + (1 - t) * TRAVEL, width: WIN_ROW_W, height: ROW_H,
-        background: colour, opacity: t * fade}} />
-    );
-  };
+  // The plate cannot arrive while a wipe is over it: the beat opens at 7040 and so
+  // does a same-colour paragraph-break wipe, which suppresses plates for WIPE_TAIL
+  // frames. Starting the ramp at 7040 renders BLANK and then pops the plate on
+  // mid-ramp — measured. It starts when the screen is handed back.
+  const page = decel(clamp01((frame - (f(CODE_IN) + WIPE_TAIL)) / f(ENTER)));
+  // The read-head is LINEAR. It is a machine scanning a file, not something
+  // arriving, and the one eased curve in the system is for arrivals.
+  const scan = clamp01((frame - f(CODE_READ_FROM)) / (f(CODE_READ_TO) - f(CODE_READ_FROM)));
+  const drop = decel(prog(frame, CODE_DROP, 740));
+  const mark = clamp01((frame - f(CODE_MARK_FROM)) / (f(CODE_MARK_TO) - f(CODE_MARK_FROM)));
+  const headY = scan * CODE_H;
   return (
-    <div style={{opacity: box, transform: `translateY(${(1 - box) * TRAVEL}px)`}}>
-      {/* the window: quiet on three sides */}
-      <div style={{position: 'absolute', left: VIZ_L, top: WIN_TOP,
-        width: VIZ_W, height: WIN_H, boxSizing: 'border-box',
-        borderLeft: `2px solid ${pal.hair}`, borderRight: `2px solid ${pal.hair}`,
-        borderBottom: `2px solid ${pal.hair}`}} />
-      {/* the brim: the one line that matters, so it is the one heavy rule */}
-      <div style={{position: 'absolute', left: VIZ_L, top: WIN_TOP - 3,
-        width: VIZ_W, height: 3, background: pal.text, opacity: 0.5}} />
+    <div style={{opacity: page, transform: `translateY(${(1 - page) * TRAVEL}px)`}}>
+      {/* THE MARGIN RULE — drawn before the code so it can never sit over a glyph. */}
+      <div style={{position: 'absolute', left: VIZ_L,
+        top: CODE_TOP + CODE_KEPT_FROM * CODE_LH, width: 3,
+        height: (CODE_KEPT_TO - CODE_KEPT_FROM + 1) * CODE_LH * mark,
+        background: pal.accent}} />
 
-      {/* grep — the box fills, then keeps going */}
-      {Array.from({length: WIN_ROWS}, (_, i) =>
-        bar(`in${i}`, rowY(i), WIN_FILL_FROM + i * step, pal.text, 1 - clear))}
-      {Array.from({length: WIN_SPILL}, (_, j) =>
-        bar(`out${j}`, spillY(j), WIN_FILL_FROM + (WIN_ROWS + j) * step, pal.text, 1 - clear))}
+      {/* THE PAGE. Every line is drawn twice: once at hairline, which is the file
+          sitting there unread, and once in full cream on top at the opacity grep
+          has reached. Two canon colours crossfading, rather than one colour being
+          interpolated into values the canon does not contain. */}
+      <div style={{position: 'absolute', left: CODE_L, top: CODE_TOP,
+        width: CODE_W, height: CODE_H, overflow: 'hidden',
+        fontFamily: FAMILY.mono, fontSize: CODE_SIZE, lineHeight: `${CODE_LH}px`,
+        whiteSpace: 'pre'}}>
+        {CODE_LINES.map((line, i) => {
+          const kept = i >= CODE_KEPT_FROM && i <= CODE_KEPT_TO;
+          // A line lights over the one line-height the head takes to cross it, so
+          // the page brightens continuously instead of in sixteen steps.
+          const read = clamp01((headY - i * CODE_LH) / CODE_LH);
+          const lit = read * (kept ? 1 : 1 - drop);
+          return (
+            <div key={i} style={{position: 'relative', height: CODE_LH}}>
+              <div style={{color: pal.hair}}>{line}</div>
+              <div style={{position: 'absolute', left: 0, top: 0, color: pal.text,
+                opacity: lit}}>{line}</div>
+            </div>
+          );
+        })}
+      </div>
 
-      {/* search — a fraction of it, in red, which is what red has meant since 1.28s */}
-      {bar('keep0', rowY(0), WIN_KEEP_1, pal.accent, clear)}
-      {WIN_KEPT > 1 ? bar('keep1', rowY(1), WIN_KEEP_2, pal.accent, clear) : null}
+      {/* THE READ-HEAD. It exists only while grep is reading and is gone the frame
+          the scan ends — a marker left parked on the last line would read as a
+          cursor, which is a different claim. */}
+      <div style={{position: 'absolute', left: CODE_L, top: CODE_TOP + headY,
+        width: CODE_W, height: 2, background: pal.text,
+        opacity: 0.5 * (scan > 0 && scan < 1 ? 1 : 0)}} />
 
-      <div style={{position: 'absolute', left: VIZ_L, top: WIN_TOP + WIN_H + gap('l'),
+      <div style={{position: 'absolute', left: VIZ_L, top: CODE_TOP + CODE_H + gap('l'),
         width: VIZ_W, height: UI.s * 1.2,
         fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug}}>
-        {/* The label NAMES THE METHOD and stops. The first draft read "GREP PUTS IN
-            EVERYTHING IT TOUCHES" / "SEARCH PUTS IN THE PART THAT MATTERS", which
-            failed twice over: it restates words the VO is speaking and the word
-            layer is already printing, and at seven words the second label needed
-            7.2s of readable time in a 5.0s state. The picture says what goes in;
-            the label only has to say whose. */}
+        {/* The label names the METHOD and stops. The picture already says what was
+            read; restating the VO's own words on the plate costs readable time and
+            gives the viewer the same sentence twice. */}
         <span style={{position: 'absolute', left: 0, top: 0, color: pal.label,
-          opacity: 1 - clear}}>GREP</span>
+          opacity: 1 - drop}}>GREP</span>
         <span style={{position: 'absolute', left: 0, top: 0, color: pal.text,
-          opacity: clear}}>SEMANTIC SEARCH</span>
+          opacity: drop}}>SEMANTIC SEARCH</span>
       </div>
     </div>
   );
@@ -876,12 +902,54 @@ const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
   // on the seam in the sentence — the claim gets the field, the explanation gets
   // the window it actually names. Two plates, still never two at once.
   {from: 90,    to: 7040,          Node: ContextField},   //  7.0s  needs 4.8
-  {from: 7040,  to: 18680,         Node: WindowPlate},    // 11.6s  needs 9.0
+  {from: 7040,  to: 18680,         Node: CodePage},       // 11.6s  needs 4.8
   {from: 23770, to: 31840,         Node: AbPlate},        //  8.1s  needs 7.8
   {from: 31840, to: 41640,         Node: DropPlate},      //  9.8s  needs 7.8
   {from: 41640, to: 52870,         Node: CostPlate},      // 11.2s  needs 9.0
   {from: 52870, to: 56070,         Node: FindPlate},      //  3.2s  needs 4.8 - SHORT
   {from: 56070, to: TOKENS_END_MS, Node: TokensOutro},    //  8.5s  needs 6.0
+];
+
+// ---- the mascot -------------------------------------------------------------
+// FOUNDER, 2026-08-16: "add the mascot in the hook and in a couple of other
+// slides", then "hook, 1 middle, 1 outro", with the position marked as a green dot
+// on a Studio screenshot.
+//
+// THE DOT WAS MEASURED, NOT EYEBALLED. A sub-agent decoded the screenshot to raw
+// RGB and found the green blob's centroid at (165, 445) in a 357x632 image whose
+// video frame runs x10-342 / y15-606 — which maps to x504, y1397 on the 1080x1920
+// frame. That is below the graphic, in the empty lower third, a touch left of
+// centre. The sprite is placed on the founder's x and as close to their y as the
+// safe floor allows: feet on SAFE.y1 less one gap, which is 39px above the mark.
+//
+// WHICH BEATS IS A MEASUREMENT, NOT A PREFERENCE. check-type-fit reports the
+// lowest graphic pixel per beat; the mascot may only stand where it clears that by
+// at least gap('xl'). Measured, with feet at 1404:
+//
+//   hook       viz to 1105   clearance 200   OK
+//   code page  viz to 1367   overlaps        NO
+//   capture    full bleed    no furniture    NO
+//   A/B        viz to 1200   clearance 105   OK
+//   drop       viz to 1212   clearance  93   OK   <- the middle, the payoff beat
+//   cost       viz to 1303   clearance   2   NO
+//   repo card  viz to 1064   clearance 241   OK
+//   outro      no viz layer                  OK
+//
+// AN EARLIER VERSION OF THIS TABLE WAS WRONG and would have cut two of those
+// beats. It assumed the sprite was as tall as `size` is wide. The rig is 13 cells
+// across and 8 down, so at size 160 it is 160 wide and 98 TALL. Reading the
+// component instead of assuming its aspect is the difference between "only the
+// repo card fits" and "four beats fit".
+//
+// The component is NEVER edited — NO. 026, 030 and 031 render it and are locked
+// artefacts. Everything here is props. The pose is `walk` because the canon motion
+// law is that mascots SLIDE, never pop, and the bubble is off because a speech
+// bubble is a second thing to read on a frame that already carries three.
+const MASCOT = {size: 160, xPct: 46.7, yPct: 70.7} as const;
+const MASCOTS: {from: number; until: number; look: {xPct: number; yPct: number}}[] = [
+  {from: 90,    until: 7040,          look: {xPct: 50, yPct: 50}},  // the hook
+  {from: 31840, until: 41640,         look: {xPct: 50, yPct: 52}},  // the payoff
+  {from: 56070, until: TOKENS_END_MS, look: {xPct: 50, yPct: 44}},  // the outro
 ];
 
 // ---- composition -----------------------------------------------------------
@@ -996,14 +1064,79 @@ export const KTTokens: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; s
       ))}
       </>) : null}
 
+      {/* The mascot rides the VIZ layer so check-type-fit measures it as something
+          the type must clear, and is suppressed on wipes and full-bleed exactly
+          like a plate. It is deliberately NOT in PLATES: onePlateAtATime would
+          read it as a second plate and fail every beat it stands on, and it is not
+          a plate — it carries the brand, not the argument (kt-tokens.json#system
+          .hierarchy.mascotIsCompanion, founder 2026-08-16). */}
+      {layer !== 'type' && layer !== 'furniture' && !wiping && !shot
+        ? MASCOTS.filter((m) => frame >= f(m.from) && frame < f(m.until)).map((m) => (
+          /* BLACK EYES, EVERY FIELD (founder, 2026-08-16). The pupils are filled
+              `var(--fg)` so eye colour is set from OUTSIDE by this wrapper — the
+              shared rig is never touched. It was field-aware (cream eyes on the
+              dark fields), which made the mascot look at you differently depending
+              on the beat. INK on every field, like NO. 033's mini mascots. The
+              pupils sit inside the sprite's own eye whites, not on the field, so
+              this reads the same on ink, cream and red. */
+          <AbsoluteFill key={m.from} style={{['--fg' as any]: INK}}>
+            <ClaudeMascot frames={KT_TOKENS_FRAMES}
+              config={{pose: 'walk', xPct: MASCOT.xPct, yPct: MASCOT.yPct,
+                size: MASCOT.size, delay: f(m.from) + f(ENTER), bubble: false,
+                lookAt: m.look}} />
+          </AbsoluteFill>
+        ))
+        : null}
+
       {layer !== 'viz' && layer !== 'furniture' && !wiping && !shot ? (
+      /* THE TYPE HANGS OFF THE GRAPHIC, NOT OFF THE TOP OF THE FRAME
+          (founder, 2026-08-16, with an arrow drawn on the gap).
+
+          This was `padding: 330px` and `justifyContent: flex-start` — the block
+          pinned under the wordmark, the plate starting at y860, and however much
+          empty frame fell between them. On a two-row beat that is roughly 300px
+          of nothing sitting between a sentence and the picture of the sentence.
+
+          The canon had already ruled on it and the ruling had never been wired to
+          anything. kt-tokens.json#system.hierarchy.proximityDoc, in its own words:
+          "Type at y330 above a graphic at y860 was actively telling the viewer the
+          two had nothing to do with each other." That is the whole defect, written
+          down, in the file the composition is generated from, unread by the
+          composition. It is the fifth mechanism in WHY-THE-CANON-ISNT-APPLIED.md.
+
+          So the block is BOTTOM-ANCHORED to textBottomWhenPlateShown() and grows
+          upward. A one-row beat and a three-row beat both end the same distance
+          above the graphic, which is what proximity means; before, they started
+          at the same place and ended wherever they happened to end.
+
+          FIRST ATTEMPT BOTTOM-ANCHORED IT to textBottomWhenPlateShown() and the
+          founder rejected it: "they should sit in the middle between vektor at the
+          top left and the visualisation, not that close to the visualisation."
+          Hanging the block off the graphic solved the void above it by creating a
+          void below the wordmark instead — the same defect upside down.
+
+          So the block CENTRES IN THE BAND between the wordmark's baseline and the
+          graphic. That is the founder's rule stated twice, and it is a rule rather
+          than a position: a one-row beat and a three-row beat both sit centred in
+          the same band, and no beat has anywhere to state a top.
+
+          Every number is derived, none typed. The band opens at the wordmark's
+          baseline (WORDMARK.y + the wordmark role's size, both canon) and closes at
+          PLATE_TOP. TEXT_ABOVE_PLATE_GAP stops being the positioner and becomes
+          what it should always have been — a FLOOR, checked by the gate. It was
+          raised 64 -> 96 in this same change because 64 could never be obeyed: it
+          fails typeToVizClearancePx, the 80px floor check-type-fit has enforced
+          since NO. 033. Two canon files, two numbers, and the unreachable one was
+          the one nothing used. */
       <AbsoluteFill style={{alignItems: 'center',
         ...(mode === 'caption' && topNow ? {fontSize: UI.m, opacity: 0.92} : {}),
-        justifyContent: topNow ? 'flex-start' : 'center',
+        justifyContent: 'center',
+        // `bottom: auto` because AbsoluteFill pins all four sides: with top,
+        // bottom and height all set the browser drops one of them, and which one
+        // is not a thing to leave to a resolution rule.
+        ...(topNow ? {top: TYPE_BAND_TOP, height: TYPE_BAND_H, bottom: 'auto'} : {}),
         flexDirection: 'column', rowGap: 26,
-        // 330 not 260: the wordmark sits at y240 to clear Instagram's Reels
-        // header, so the type block starts below its baseline.
-        padding: topNow ? '330px 150px 0' : '0 150px',
+        padding: '0 150px',
         textAlign: 'center'}}>
         {(() => {
           // Only rows with a word already on screen count as "showing", so the cap

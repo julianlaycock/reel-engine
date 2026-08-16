@@ -25,7 +25,7 @@ const GAP_INDEX: Record<Gap, number> = {xs: 0, s: 1, m: 2, l: 3, xl: 4, xxl: 5};
 export const gap = (g: Gap): number => LADDER[GAP_INDEX[g]];
 
 // ---- type -------------------------------------------------------------------
-export const FAMILY = {"display":"\"Printvetica\", \"Helvetica Neue\", sans-serif","ui":"\"Inter Tight\", sans-serif"} as const;
+export const FAMILY = {"display":"\"Printvetica\", \"Helvetica Neue\", sans-serif","ui":"\"Inter Tight\", sans-serif","mono":"\"IBM Plex Mono\", monospace"} as const;
 export const ROLES = {"hero":{"family":"display","size":134,"weight":400,"tracking":0,"leading":1.06},"title":{"family":"display","size":86,"weight":400,"tracking":0,"leading":1.1},"line":{"family":"display","size":55,"weight":400,"tracking":0,"leading":1.14},"body":{"family":"display","size":44,"weight":400,"tracking":0,"leading":1.14},"slug":{"family":"ui","size":26,"weight":400,"tracking":3,"leading":1.2},"label":{"family":"ui","size":20,"weight":400,"tracking":2,"leading":1.2},"wordmark":{"family":"ui","size":40,"weight":600,"tracking":-1.8,"leading":1}} as const;
 export const MAX_LINES_ON_SCREEN = 1;
 
@@ -62,7 +62,7 @@ export const readableMs = (words: number) => READABLE.base + READABLE.perWord * 
 // Text that describes a graphic sits ONE gap above it, never pinned to the top of
 // the frame with a void between. Proximity: things close together read as related,
 // things far apart read as unrelated.
-export const TEXT_ABOVE_PLATE_GAP = 64;
+export const TEXT_ABOVE_PLATE_GAP = 96;
 export const MAX_ELEMENTS_ON_SCREEN = 3;
 
 /** Where the type block's baseline sits when a graphic is on screen. */
