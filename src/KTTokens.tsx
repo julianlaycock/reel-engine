@@ -324,9 +324,26 @@ const DropPlate: React.FC = () => (
 // "you're spending someone else's tokens to save your own". The layout carries
 // the point instead of sitting under it.
 //
-// It stays inside the format: rules, set type and a red accent, no new device.
-// The line-leader dots are the one new mark and they are what makes it read as a
-// bill rather than a table.
+// PREMIUM PASS, founder 2026-08-15: "make the table more visually appealing and
+// premium looking". In this idiom premium is restraint, not addition. Four moves,
+// every one of them a removal or a widening:
+//
+//   1. The dot leaders are gone. A row of full stops is a spreadsheet tell — it
+//      is the cheapest mark in typography and it was the loudest thing on the
+//      plate. The item and its reason now sit at the two ends of the measure and
+//      the space between them does the joining, which is what a bill actually
+//      looks like when it is set properly.
+//   2. A hairline UNDER each row instead. One stroke per item, at low opacity,
+//      so the eye gets the ledger rhythm without a dotted texture.
+//   3. Room. Rows move from 78px apart to 104, and the box gains padding. Dense
+//      is what cheap looks like at phone size.
+//   4. Hierarchy. Item names take the DISPLAY face and grow; the reasons drop and
+//      take wide tracking so they read as annotation, not as a second column of
+//      equal weight. The total keeps the display face at the largest size on the
+//      plate, because it is the line the whole beat exists to deliver.
+//
+// The install line loses its full border for a rule above and below. A boxed
+// command reads as a UI control; two rules read as a document.
 const CostPlate: React.FC = () => {
   const frame = useCurrentFrame();
   const p = decel(prog(frame, 30200, 400));
@@ -341,15 +358,18 @@ const CostPlate: React.FC = () => {
   const tot = decel(prog(frame, 34600, 560));
   return (
     <>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 40, width: VIZ_W,
-        border: `2px solid ${WHITE}`, padding: '22px 26px', opacity: p,
-        transform: `translateY(${(1 - p) * 14}px)`,
-        fontFamily: FONT_UI, fontSize: 26, color: WHITE}}>
-        <span style={{color: LABEL_R}}>$ </span>claude mcp add claude-context
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP - 40, width: VIZ_W,
+        opacity: p, transform: `translateY(${(1 - p) * 14}px)`}}>
+        <div style={{height: 2, background: WHITE, opacity: 0.5}} />
+        <div style={{padding: '30px 4px', fontFamily: FONT_UI, fontSize: 27,
+          letterSpacing: 0.5, color: WHITE}}>
+          <span style={{opacity: 0.55}}>$ </span>claude mcp add claude-context
+        </div>
+        <div style={{height: 2, background: WHITE, opacity: 0.5}} />
       </div>
 
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 158, width: VIZ_W,
-        opacity: p, fontFamily: FONT_UI, fontSize: 20, letterSpacing: 3, color: LABEL_R}}>
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 124, width: VIZ_W,
+        opacity: p, fontFamily: FONT_UI, fontSize: 19, letterSpacing: 4, color: LABEL_R}}>
         WHAT IT COSTS
       </div>
 
@@ -357,29 +377,32 @@ const CostPlate: React.FC = () => {
         const rp = decel(prog(frame, r.at, 320));
         if (rp <= 0) return null;
         return (
-          <div key={r.k} style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 210 + i * 78,
-            width: VIZ_W, opacity: rp,
-            display: 'flex', alignItems: 'baseline', columnGap: 12,
-            fontFamily: FONT_UI, fontSize: 24, letterSpacing: 2, color: WHITE}}>
-            <span>{r.k}</span>
-            {/* The leader. A repeated glyph clipped by its own overflow, so it
-                always meets the right-hand column exactly and never wraps. */}
-            <span style={{flex: 1, overflow: 'hidden', whiteSpace: 'nowrap',
-              color: FURN_R, letterSpacing: 6}}>
-              ........................................................
-            </span>
-            <span style={{fontSize: 20, letterSpacing: 3, color: LABEL_R}}>{r.why}</span>
+          <div key={r.k} style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 176 + i * 104,
+            width: VIZ_W, opacity: rp}}>
+            <div style={{display: 'flex', alignItems: 'baseline',
+              justifyContent: 'space-between', paddingBottom: 18}}>
+              <span style={{fontFamily: FONT, fontSize: 44, color: WHITE, lineHeight: 1}}>{r.k}</span>
+              <span style={{fontFamily: FONT_UI, fontSize: 19, letterSpacing: 4,
+                color: WHITE, opacity: 0.72}}>{r.why}</span>
+            </div>
+            <div style={{height: 1, background: WHITE, opacity: 0.32}} />
           </div>
         );
       })}
 
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 378, width: VIZ_W,
-        height: 2, background: WHITE, opacity: tot}} />
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 400, width: VIZ_W,
-        opacity: tot, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-        fontFamily: FONT_UI, letterSpacing: 3, color: WHITE}}>
-        <span style={{fontSize: 20, color: LABEL_R}}>TOTAL</span>
-        <span style={{fontFamily: FONT, fontSize: 44, letterSpacing: 0}}>someone else&rsquo;s tokens</span>
+      {/* The total is the line the beat exists to deliver, so it gets the only
+          heavy rule on the plate and the largest type. It reads DOWN — label,
+          then the amount on its own line — rather than across, because a
+          right-aligned phrase competes with the two reasons above it. */}
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 380, width: VIZ_W,
+        height: 3, background: WHITE, opacity: tot}} />
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 408, width: VIZ_W,
+        opacity: tot, fontFamily: FONT_UI, fontSize: 19, letterSpacing: 4, color: LABEL_R}}>
+        TOTAL
+      </div>
+      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + 442, width: VIZ_W,
+        opacity: tot, fontFamily: FONT, fontSize: 44, lineHeight: 1.06, whiteSpace: 'nowrap', color: WHITE}}>
+        someone else&rsquo;s tokens
       </div>
     </>
   );
