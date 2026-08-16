@@ -85,7 +85,7 @@ export const STABLE_LINE = true;
 export const EXPORT = {"w":1080,"h":1920,"fps":30,"codec":"h264","minSec":12,"maxSec":90} as const;
 
 // ---- evidence ---------------------------------------------------------------
-export const CAPTURE_SCROLL_PX_PER_SEC = 120;
+export const CAPTURE_SCROLL_PX_PER_SEC = 75;
 
 // ---- motion -----------------------------------------------------------------
 export const ENTER_MS = 500;

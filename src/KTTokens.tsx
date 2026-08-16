@@ -35,6 +35,7 @@ import React from 'react';
 import {AbsoluteFill, Audio, Img, staticFile, useCurrentFrame} from 'remotion';
 import {INK, CREAM, RED, f, Word} from './KTHook';
 import {TOKENS_BEATS, TOKENS_END_MS} from './KTTokensWords';
+import {CAPTURE_SCROLL_PX_PER_SEC} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer, rampValues} from './KTEffects';
 import './style.css';
@@ -356,7 +357,14 @@ const ShotPlate: React.FC<{shot: {from: number; to: number; src: string}}> = ({s
   // page in the same time, roughly 118px/sec, so the eye can actually follow it.
   // Showing less of the page is the right trade: the point is that the evaluation
   // EXISTS and is legible, not that every line of it is seen.
-  const y = -(IMG_H - 1920) * t * 0.55;
+  // TRAVEL IS DERIVED FROM THE CANON'S READING SPEED, not from a fraction tuned by
+  // eye. system.CAPTURE_SCROLL_PX_PER_SEC is the rate a viewer can actually follow;
+  // how far the page moves is that rate times how long the shot is up, clamped to
+  // the image. Twice now the fraction was adjusted and twice it was still too fast,
+  // because a percentage of an arbitrary image height is not a speed.
+  const shotSec = (shot.to - shot.from) / 1000;
+  const travel = Math.min(IMG_H - 1920, CAPTURE_SCROLL_PX_PER_SEC * shotSec);
+  const y = -travel * t;
   return (
     <AbsoluteFill style={{overflow: 'hidden', backgroundColor: INK}}>
       <Img src={staticFile(shot.src)}
