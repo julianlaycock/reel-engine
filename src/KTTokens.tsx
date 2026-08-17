@@ -39,6 +39,11 @@ import {CAPTURE_SCROLL_PX_PER_SEC, gap, FAMILY, WORDMARK, ROLES, MARGIN_X, COLUM
   ENTER_MS, DETAIL_MS, TRAVEL_PX, WIPE, PLATE_TOP as PLATE_TOP_CANON} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer, rampValues} from './KTEffects';
+// THE SHARED ARGUMENT LIBRARY. Two of this film's plates were extracted into it
+// on 2026-08-18 and are imported back here — ONE implementation, no look-alikes.
+// The alias exists only because the film's own wrapper keeps the name the PLATES
+// array and every gate already key off.
+import {CodePage as SharedCodePage, SourceCard} from './kt/argument';
 import {ClaudeMascot} from './scenes/ClaudeMascot';
 import './style.css';
 
@@ -405,80 +410,31 @@ const CODE_DROP = 13660;      // "Semantic search" — everything grep lit falls
 const CODE_MARK_FROM = 14450; // "reads"
 const CODE_MARK_TO = 16190;   // the rule finishes drawing on "matters,"
 
-const CODE_SIZE = UI.s;
-const CODE_LH = UI.s + gap('xs');
-const CODE_L = VIZ_L + gap('m');            // the margin the red rule lives in
-const CODE_W = VIZ_W - gap('m');
-const CODE_TOP = PLATE_TOP;
-const CODE_H = CODE_LINES.length * CODE_LH;
-
-const CodePage: React.FC<{field: string}> = ({field}) => {
-  const pal = onField(field);
-  const frame = useCurrentFrame();
-  // The plate cannot arrive while a wipe is over it: the beat opens at 7040 and so
-  // does a same-colour paragraph-break wipe, which suppresses plates for WIPE_TAIL
-  // frames. Starting the ramp at 7040 renders BLANK and then pops the plate on
-  // mid-ramp — measured. It starts when the screen is handed back.
-  const page = decel(clamp01((frame - (f(CODE_IN) + WIPE_TAIL)) / f(ENTER)));
-  // The read-head is LINEAR. It is a machine scanning a file, not something
-  // arriving, and the one eased curve in the system is for arrivals.
-  const scan = clamp01((frame - f(CODE_READ_FROM)) / (f(CODE_READ_TO) - f(CODE_READ_FROM)));
-  const drop = decel(prog(frame, CODE_DROP, 740));
-  const mark = clamp01((frame - f(CODE_MARK_FROM)) / (f(CODE_MARK_TO) - f(CODE_MARK_FROM)));
-  const headY = scan * CODE_H;
-  return (
-    <div style={{opacity: page, transform: `translateY(${(1 - page) * TRAVEL}px)`}}>
-      {/* THE MARGIN RULE — drawn before the code so it can never sit over a glyph. */}
-      <div style={{position: 'absolute', left: VIZ_L,
-        top: CODE_TOP + CODE_KEPT_FROM * CODE_LH, width: 3,
-        height: (CODE_KEPT_TO - CODE_KEPT_FROM + 1) * CODE_LH * mark,
-        background: pal.accent}} />
-
-      {/* THE PAGE. Every line is drawn twice: once at hairline, which is the file
-          sitting there unread, and once in full cream on top at the opacity grep
-          has reached. Two canon colours crossfading, rather than one colour being
-          interpolated into values the canon does not contain. */}
-      <div style={{position: 'absolute', left: CODE_L, top: CODE_TOP,
-        width: CODE_W, height: CODE_H, overflow: 'hidden',
-        fontFamily: FAMILY.mono, fontSize: CODE_SIZE, lineHeight: `${CODE_LH}px`,
-        whiteSpace: 'pre'}}>
-        {CODE_LINES.map((line, i) => {
-          const kept = i >= CODE_KEPT_FROM && i <= CODE_KEPT_TO;
-          // A line lights over the one line-height the head takes to cross it, so
-          // the page brightens continuously instead of in sixteen steps.
-          const read = clamp01((headY - i * CODE_LH) / CODE_LH);
-          const lit = read * (kept ? 1 : 1 - drop);
-          return (
-            <div key={i} style={{position: 'relative', height: CODE_LH}}>
-              <div style={{color: pal.hair}}>{line}</div>
-              <div style={{position: 'absolute', left: 0, top: 0, color: pal.text,
-                opacity: lit}}>{line}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* THE READ-HEAD. It exists only while grep is reading and is gone the frame
-          the scan ends — a marker left parked on the last line would read as a
-          cursor, which is a different claim. */}
-      <div style={{position: 'absolute', left: CODE_L, top: CODE_TOP + headY,
-        width: CODE_W, height: 2, background: pal.text,
-        opacity: 0.5 * (scan > 0 && scan < 1 ? 1 : 0)}} />
-
-      <div style={{position: 'absolute', left: VIZ_L, top: CODE_TOP + CODE_H + gap('l'),
-        width: VIZ_W, height: UI.s * 1.2,
-        fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug}}>
-        {/* The label names the METHOD and stops. The picture already says what was
-            read; restating the VO's own words on the plate costs readable time and
-            gives the viewer the same sentence twice. */}
-        <span style={{position: 'absolute', left: 0, top: 0, color: pal.label,
-          opacity: 1 - drop}}>GREP</span>
-        <span style={{position: 'absolute', left: 0, top: 0, color: pal.text,
-          opacity: drop}}>SEMANTIC SEARCH</span>
-      </div>
-    </div>
-  );
-};
+// EXTRACTED 2026-08-18 into kt/argument.tsx, the shared argument library.
+//
+// NO. 034 IS A LOCKED ARTEFACT AND ITS RENDER DOES NOT CHANGE. What moved is
+// where the device is DECLARED, not what it draws — every geometry value, colour
+// and curve is carried across verbatim, and canon/goldens/no-034/signature.json
+// is the proof: nine founder-approved frames, two of them this plate, all inside
+// tolerance after the move. Extraction that alters published work is not
+// extraction, it is a re-approval nobody asked for.
+//
+// WHY IT HAD TO MOVE. This device was sealed inside this film, so NO. 035 — the
+// very next film built — could not import it and had to invent its own argument
+// graphics from nothing. That is the 13-vs-72 split costing real work, and it is
+// the actual enemy of consistency: while argument devices live inside films,
+// every film reinvents its visual language.
+//
+// The film keeps what is ITS OWN: the source lines, and every timing, each of
+// which is a word's `ms` from KTTokensWords.ts so the picture moves when the
+// sentence moves.
+const CodePage: React.FC<{field: string}> = ({field}) => (
+  <SharedCodePage field={field} lines={CODE_LINES}
+    keptFrom={CODE_KEPT_FROM} keptTo={CODE_KEPT_TO}
+    inMs={CODE_IN} readFromMs={CODE_READ_FROM} readToMs={CODE_READ_TO}
+    dropMs={CODE_DROP} markFromMs={CODE_MARK_FROM} markToMs={CODE_MARK_TO}
+    label="GREP" labelAfter="SEMANTIC SEARCH" />
+);
 
 // ---- S2 -- the thing nobody else has ---------------------------------------
 // A REAL capture of the repo's evaluation directory, full-bleed, scrolling.
@@ -747,27 +703,24 @@ const CostPlate: React.FC<{field: string}> = ({field}) => {
 };
 
 // ---- S6 -- where to get it -------------------------------------------------
-const FindPlate: React.FC<{field: string}> = ({field}) => {
-  const pal = onField(field);
-  const frame = useCurrentFrame();
-  const p = decel(prog(frame, 52870, ENTER));
-  return (
-    <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W,
-      border: `2px solid ${pal.text}`, background: pal.wash, padding: '30px 34px', opacity: p,
-      transform: `translateY(${(1 - p) * TRAVEL}px)`, display: 'flex',
-      flexDirection: 'column', rowGap: 12}}>
-      <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>GITHUB.COM</div>
-      <div style={{fontFamily: FONT, fontSize: 55, color: pal.text}}>zilliztech / claude-context</div>
-      {/* A star count is the one figure in this film with a shelf life. Read at
-          primary source (`gh api repos/zilliztech/claude-context`) on 2026-08-15;
-          it was 12,395 on 2026-08-14, so it moves several a day. Re-read it on
-          the day the film renders and update both here and facts.md#G10. */}
-      <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.label, color: pal.label}}>
-        12,402 stars · MIT
-      </div>
-    </div>
-  );
-};
+// EXTRACTED 2026-08-18 into kt/argument.tsx as `SourceCard`. Same terms as
+// CodePage above: the declaration moved, the render did not, and the goldens are
+// the proof. The film keeps its own content and its own arrival time.
+//
+// THE SHARED DEVICE IS DELIBERATELY NOT CALLED A REPO CARD. kt-canon.yml#rules
+// .repoCapture (founder, 2026-08-17) says a film RECOMMENDING a repository owes
+// the viewer a real scrolling capture of it, never a drawn card. NO. 034 shipped
+// this card before that ruling existed and is grandfathered by it; the extracted
+// device is for a named source that is not a repo recommendation.
+//
+// A star count is the one figure in this film with a shelf life. Read at primary
+// source (`gh api repos/zilliztech/claude-context`) on 2026-08-15; it was 12,395
+// on 2026-08-14, so it moves several a day. It is frozen here because the film is
+// shipped — the value belongs to the render, not to today.
+const FindPlate: React.FC<{field: string}> = ({field}) => (
+  <SourceCard field={field} atMs={52870}
+    where="GITHUB.COM" name="zilliztech / claude-context" meta="12,402 stars · MIT" />
+);
 
 // ---- S7 -- the end card ----------------------------------------------------
 // THE HOUSE OUTRO. NO. 030 ends on a red field with fourteen rows of "vektor"

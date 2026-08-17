@@ -38,6 +38,7 @@ import {INK, CREAM, RED, f} from './KTHook';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer, PumpRect, ContainerBreach} from './KTEffects';
 import {Stage, T, Stack, Row, Plate, Rule, Wash, Enter} from './kt/blocks';
+import {CodePage, SourceCard, CountGrid, HopChain} from './kt/argument';
 import {FIELD, ROLES, LADDER, MARGIN_X, COLUMN_W, PLATE_TOP, SAFE, CANVAS,
   ENTER_MS, DETAIL_MS, WASH_ON, TEXT_ON, FAMILY} from './kt/system';
 import './style.css';
@@ -309,6 +310,87 @@ const DemoWash: React.FC = () => (
   </AbsoluteFill>
 );
 
+// ── the argument devices ─────────────────────────────────────────────────────
+// Added 2026-08-18 with kt/argument.tsx. Every segment above this line is
+// LAYOUT, SEAM or OUTRO furniture — the fx catalog counted 13 shared devices and
+// not one of them said anything, so NO. 035 had to invent all four of its
+// argument graphics while two of them already existed inside NO. 034.
+//
+// These four demos are therefore the point of this file rather than an addition
+// to it: a film choosing how to draw a mechanism now has somewhere to look.
+
+const DemoCodePage: React.FC = () => {
+  const at = useAt();
+  // The whole arc in five seconds — arrive, scan, drop, mark. A demo that showed
+  // only the scan would sell the device as a decoration; the argument is the
+  // DIFFERENCE between the read state and the kept state, so both are here.
+  return (
+    <AbsoluteFill style={{backgroundColor: INK}}>
+      <CodePage field={INK}
+        lines={['function handler(req, res) {', '  const all = readEverything();',
+          '  // the part that matters', '  const hit = all.find(match);',
+          '  return res.send(hit);', '}', '', 'export default handler;']}
+        keptFrom={2} keptTo={4}
+        inMs={at(0)} readFromMs={at(500)} readToMs={at(2400)}
+        dropMs={at(2900)} markFromMs={at(3200)} markToMs={at(4000)}
+        label="READ EVERYTHING" labelAfter="READ WHAT MATTERS" />
+      <Caption name="code-page" note="a page scanned, then all but the kept passage dropped" />
+    </AbsoluteFill>
+  );
+};
+
+const DemoSourceCard: React.FC = () => {
+  const at = useAt();
+  // Two arrivals on two fields, because the card is a border and a wash and both
+  // are decided entirely by what it stands on — the one property worth showing.
+  return (
+    <AbsoluteFill style={{flexDirection: 'row'}}>
+      <div style={{flex: 1, background: FIELD.ink, position: 'relative'}}>
+        <SourceCard field={INK} atMs={at(400)}
+          where="EXAMPLE.ORG" name="a specification" meta="published 2026 · CC BY" />
+      </div>
+      <div style={{flex: 1, background: FIELD.cream, position: 'relative'}}>
+        <SourceCard field={FIELD.cream} atMs={at(1800)}
+          where="EXAMPLE.ORG" name="a specification" meta="published 2026 · CC BY" />
+      </div>
+      <Caption name="source-card" note="where it lives, what it is called, what it costs" />
+    </AbsoluteFill>
+  );
+};
+
+const DemoCountGrid: React.FC = () => {
+  const at = useAt();
+  // The full arc: an empty grid filling, its factors named, then the interior
+  // going and the margins surviving. Both numbers a film would put in the voice.
+  return (
+    <AbsoluteFill style={{backgroundColor: INK}}>
+      <CountGrid field={INK} cols={8} rows={4}
+        buildFromMs={at(200)} buildToMs={at(1800)}
+        axisFromMs={at(1800)} collapseAtMs={at(3200)}
+        colAxis="8 SERVICES" rowAxis="4 APPS"
+        colMargin="8 SERVERS" rowMargin="4 CLIENTS" />
+      <Caption name="count-grid" note="8 x 4 crossings collapsing to 8 + 4 margins" />
+    </AbsoluteFill>
+  );
+};
+
+const DemoHopChain: React.FC = () => {
+  const at = useAt();
+  // Three stations rather than NO. 035's four, so the demo is not a re-run of the
+  // film, and the return rule fires inside the segment — it is the half of the
+  // device most likely to be forgotten by whoever imports this.
+  return (
+    <AbsoluteFill style={{backgroundColor: INK}}>
+      <HopChain field={INK}
+        stations={[{k: 'CALLER', at: at(200), live: at(900)},
+          {k: 'MIDDLE', at: at(500), live: at(1900)},
+          {k: 'THE THING', at: at(800), live: at(2900)}]}
+        returnAtMs={at(3600)} caption="ONE MARK, MOVING" />
+      <Caption name="hop-chain" note="a call handed along, and the answer coming back" />
+    </AbsoluteFill>
+  );
+};
+
 // THE ORDER IS THE CONTRACT — scripts/fx-demos.mjs cuts by index. Append only.
 export const SEGMENTS: {slug: string; moves: boolean; Node: React.FC}[] = [
   {slug: 'matte-wipe', moves: true, Node: DemoMatteWipe},
@@ -324,6 +406,10 @@ export const SEGMENTS: {slug: string; moves: boolean; Node: React.FC}[] = [
   {slug: 'plate', moves: false, Node: DemoPlate},
   {slug: 'rule', moves: false, Node: DemoRule},
   {slug: 'wash', moves: false, Node: DemoWash},
+  {slug: 'code-page', moves: true, Node: DemoCodePage},
+  {slug: 'source-card', moves: true, Node: DemoSourceCard},
+  {slug: 'count-grid', moves: true, Node: DemoCountGrid},
+  {slug: 'hop-chain', moves: true, Node: DemoHopChain},
 ];
 
 export const KT_FX_LAB_FRAMES = SEGMENTS.length * SEG;

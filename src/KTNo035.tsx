@@ -37,6 +37,10 @@ import {gap, FAMILY, WORDMARK, ROLES, MARGIN_X, COLUMN_W, SAFE, FIELD, TEXT_ON,
   ENTER_MS, DETAIL_MS, TRAVEL_PX, WIPE, PLATE_TOP,
   CAPTURE_SCROLL_PX_PER_SEC} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
+// THE SHARED ARGUMENT LIBRARY (2026-08-18). Both of this film's diagrams live
+// there now — ONE implementation each, importable by the next film instead of
+// reinvented by it, which is the whole reason the library exists.
+import {CountGrid, HopChain, Station} from './kt/argument';
 import {ClaudeMascot} from './scenes/ClaudeMascot';
 import './style.css';
 
@@ -124,9 +128,10 @@ const lineWidthSpacer = (w: {t: string; caps?: boolean; size?: number}, base: nu
 );
 
 // ═══ THE GRID ════════════════════════════════════════════════════════════════
-// SOLID CELLS. The founder picked the ruled treatment from three rendered options
-// on 2026-08-17 and reversed it the same day once a design review agreed with the
-// measurement. See GridCells below for both signals.
+// THE DEVICE IS `CountGrid` IN kt/argument.tsx. Its treatment — solid cells, a
+// hairline for the unlit state, a hard-cut collapse — is settled there, with the
+// founder's 2026-08-17 reversal and the measurement behind it. What stays here is
+// what this film ARGUES with it.
 //
 // WHAT THE COLLAPSE ACTUALLY IS. The 50 are the CROSSINGS of 5 apps and 10
 // services — one integration per pair. The 15 are the MARGINS: one server per
@@ -142,69 +147,26 @@ const lineWidthSpacer = (w: {t: string; caps?: boolean; size?: number}, base: nu
 // read as evidence, which is the drawn-evidence mistake of 2026-08-14.
 const COLS = 10;   // services
 const ROWS = 5;    // apps
-const CELL_GAP = gap('xs');
-const CELL_W = (COLUMN_W - (COLS - 1) * CELL_GAP) / COLS;
-const CELL_H = 44;
-const ROW_GAP = gap('xs') + 4;
-const GRID_H = ROWS * CELL_H + (ROWS - 1) * ROW_GAP;
 
-// Cells light in reading order. The order is FIXED, never seeded — a random fill
-// would differ between a verification still and the video render, and a gate that
-// measures a different frame than the one that ships is worthless.
-// SOLID, NOT OUTLINED (founder, 2026-08-17, reversing the earlier B pick).
+// EXTRACTED 2026-08-18 into kt/argument.tsx as `CountGrid`. The three components
+// this film declared — the cells, the building hook state and the collapsing
+// arithmetic state — are one shared device with its states as props. NO. 035 is
+// not a locked artefact, so this is a real refactor rather than a re-wrapping,
+// and the film keeps what is its own: the two factors and every timing.
 //
-// Two independent signals said the same thing and the founder changed the call.
-// Measured: the ruled collapse left 0.4% of the frame in ink against solid's
-// 2.3% — six times sparser, an almost-empty frame. Reviewed: 2px keylines on ink
-// read as a WIREFRAME rather than letterpress, and NO. 034's approved golden used
-// solid blocks. A keyline is a drawing of a thing; a solid block is the thing.
-//
-// The unlit state keeps the hairline, so a cell always occupies its space and the
-// grid's geometry is legible before anything fills it. One element, one state,
-// nothing appearing on top of anything.
-//
-// `gone` IS A BOOLEAN, NOT A RAMP. It was `fade`, an opacity interpolation, which
-// crossfaded the interior out over 640ms and left ghost cells at ~5% sitting under
-// the live margin marks — a fade across a cut, which this format does not do.
-// Everything cuts on an exact frame.
-const GridCells: React.FC<{field: string; lit: number; gone?: boolean}> = ({field, lit, gone = false}) => {
-  const pal = onField(field);
-  if (gone) return null;
-  const out = [];
-  for (let i = 0; i < COLS * ROWS; i++) {
-    const col = i % COLS, row = Math.floor(i / COLS);
-    out.push(
-      <div key={i} style={{position: 'absolute',
-        left: VIZ_L + col * (CELL_W + CELL_GAP),
-        top: PLATE_TOP + row * (CELL_H + ROW_GAP),
-        width: CELL_W, height: CELL_H,
-        background: pal.hair}}>
-        <div style={{position: 'absolute', inset: 0,
-          background: pal.text, opacity: i < lit ? 1 : 0}} />
-      </div>,
-    );
-  }
-  return <>{out}</>;
-};
+// The three treatments the founder chose between on 2026-08-17 lived in
+// KTNo035Variants.tsx. That file is deleted in the same change: the choice is
+// made, and a spent decision surface holding a third copy of this graphic is
+// exactly the look-alike the Approval Protocol forbids.
 
 // S1 — the hook. The grid builds to fifty while the voice says "fifty".
 const GRID_BUILD_FROM = 1270;   // "MCP" — the grid starts as the subject is named
 const GRID_BUILD_TO = 5160;     // "50" is spoken exactly as the last cell lands
-const HookGrid: React.FC<{field: string}> = ({field}) => {
-  const pal = onField(field);
-  const frame = useCurrentFrame();
-  const build = clamp01((frame - f(GRID_BUILD_FROM)) / Math.max(1, f(GRID_BUILD_TO) - f(GRID_BUILD_FROM)));
-  return (
-    <>
-      <GridCells field={field} lit={Math.round(COLS * ROWS * build)} />
-      <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + GRID_H + gap('l'),
-        width: VIZ_W, fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
-        color: pal.label}}>
-        ONE PER APP, PER SERVICE
-      </div>
-    </>
-  );
-};
+const HookGrid: React.FC<{field: string}> = ({field}) => (
+  <CountGrid field={field} cols={COLS} rows={ROWS}
+    buildFromMs={GRID_BUILD_FROM} buildToMs={GRID_BUILD_TO}
+    caption="ONE PER APP, PER SERVICE" />
+);
 
 // S3 — the arithmetic. The same grid, now with its two factors named, then the
 // interior goes and the margins remain.
@@ -229,59 +191,18 @@ const GRID_FACTORS = 22240;   // "Five apps talking to 10 services"
 // the spoken "15." at 30610 lands on a picture already there, which is the locked
 // ruling "visualisations enter EARLY and hold LONG". The payoff gets 4.3s.
 const GRID_COLLAPSE = 26800;
-const ArithmeticGrid: React.FC<{field: string}> = ({field}) => {
-  const pal = onField(field);
-  const frame = useCurrentFrame();
-  const factors = decel(prog(frame, GRID_FACTORS, ENTER));
-  // A HARD CUT. `collapse` was an eased 640ms ramp and the interior crossfaded
-  // out under the margins — a fade across a cut, which this format does not do.
-  // The interior is there or it is not, on one exact frame.
-  const collapsed = frame >= f(GRID_COLLAPSE);
-  const marginIn = decel(prog(frame, GRID_COLLAPSE, ENTER));
-  const axis: React.CSSProperties = {position: 'absolute', fontFamily: FONT_UI,
-    fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label, opacity: collapsed ? 0 : factors};
-  return (
-    <>
-      <GridCells field={field} lit={COLS * ROWS} gone={collapsed} />
-      <div style={{...axis, left: VIZ_L, top: PLATE_TOP - gap('l')}}>10 SERVICES</div>
-      <div style={{...axis, left: VIZ_L, top: PLATE_TOP + GRID_H + gap('m'), width: VIZ_W}}>
-        5 APPS
-      </div>
-
-      {/* THE MARGINS. Ten and five, on their own rows, named — the same cells the
-          grid had around its edge, now the only thing left. */}
-      {collapsed ? (
-        <div style={{opacity: marginIn, transform: `translateY(${(1 - marginIn) * TRAVEL}px)`}}>
-          {/* THE LABELS NAME THE THING AND STOP. They read "10 SERVERS — ONE PER
-              SERVICE" and "5 CLIENTS — ONE PER APP", which is the voice's own
-              sentence at this exact moment ("One server per service, one client
-              per app"). readableTime failed the plate by 0.5s at 18 words, and
-              the six words it wanted back were the six that gave the viewer the
-              same sentence twice — NO. 034's CodePage ruling, applying itself. */}
-          {([[COLS, '10 SERVERS', 0],
-             [ROWS, '5 CLIENTS', CELL_H + gap('xxl')]] as const).map(([n, label, dy]) => (
-            <div key={label} style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + dy}}>
-              <div style={{display: 'flex', columnGap: CELL_GAP}}>
-                {Array.from({length: n as number}, (_, i) => (
-                  /* SOLID, like the grid they came out of. These stayed
-                     outlined when GridCells went solid, so the collapse ran
-                     from a solid block of 50 to fifteen hollow keylines —
-                     measured at 0.5% of the frame in ink against the grid's
-                     7.8%, when 15/50 of a solid grid should be about 2.3%. The
-                     arithmetic on screen has to look like the arithmetic. */
-                  <div key={i} style={{width: CELL_W, height: CELL_H,
-                    background: pal.text}} />
-                ))}
-              </div>
-              <div style={{marginTop: gap('s'), fontFamily: FONT_UI, fontSize: UI.s,
-                letterSpacing: TRACK.slug, color: pal.label}}>{label}</div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </>
-  );
-};
+// THE LABELS NAME THE THING AND STOP. They read "10 SERVERS" and "5 CLIENTS"
+// rather than "10 SERVERS — ONE PER SERVICE", because the longer form is the
+// voice's own sentence at this exact moment ("One server per service, one client
+// per app"). readableTime failed the plate by 0.5s at 18 words and the six words
+// it wanted back were the six that gave the viewer the same sentence twice —
+// NO. 034's CodePage ruling, applying itself to a different film.
+const ArithmeticGrid: React.FC<{field: string}> = ({field}) => (
+  <CountGrid field={field} cols={COLS} rows={ROWS}
+    axisFromMs={GRID_FACTORS} collapseAtMs={GRID_COLLAPSE}
+    colAxis="10 SERVICES" rowAxis="5 APPS"
+    colMargin="10 SERVERS" rowMargin="5 CLIENTS" />
+);
 
 // ═══ THE HOP CHAIN ═══════════════════════════════════════════════════════════
 // S2 — the mechanism, and the film's central correction drawn rather than said.
@@ -322,7 +243,10 @@ const ArithmeticGrid: React.FC<{field: string}> = ({field}) => {
 // in the film and was right. The chain now BUILDS over the first 1.4s so the shape
 // is legible immediately, and the travelling mark still lands on the spoken word.
 // The picture is the whole chain; the voice picks out which link is live.
-type Station = {k: string; at: number; live: number; logo?: string};
+// EXTRACTED 2026-08-18 into kt/argument.tsx as `HopChain`. The device — a stack
+// of stations with one mark travelling down them and a rule for the return trip
+// — is shared; the stations, their words and the licence decision below stay
+// with the film that makes the argument.
 const STATIONS: Station[] = [
   {k: 'MODEL', at: 7600, live: 8990},        // "The model never makes the call."
   {k: 'YOUR APP', at: 8000, live: 12070},    // "your application"
@@ -331,82 +255,21 @@ const STATIONS: Station[] = [
 ] as const;
 const RETURN_AT = 16400;         // "the way your code always did" — the answer goes back
 
-const STATION_H = 96;
-const CHAIN_GAPY = gap('l');
+const FullChain: React.FC<{field: string}> = ({field}) => (
+  <HopChain field={field} stations={STATIONS} returnAtMs={RETURN_AT}
+    caption="THE MODEL NEVER MAKES THE CALL" />
+);
 
-const HopChain: React.FC<{field: string; reduced?: boolean}> = ({field, reduced = false}) => {
-  const pal = onField(field);
-  const frame = useCurrentFrame();
-  // REDUCED is the S5 restatement: the same device, two stations, no travel. The
-  // callback is the argument — a socket in front of the thing, not instead of it.
-  const list: Station[] = reduced
-    ? [{k: 'MCP', at: 45900, live: 46980}, {k: 'YOUR API', at: 46300, live: 47610}]
-    : STATIONS;
-  const ret = !reduced ? decel(prog(frame, RETURN_AT, ENTER)) : 0;
-  return (
-    <>
-      {list.map((s, i) => {
-        const p = decel(prog(frame, s.at, ENTER));
-        const top = PLATE_TOP + i * (STATION_H + CHAIN_GAPY);
-        // The mark sits ON the station that is currently live: the last one whose
-        // time has passed. One element moving down the column, never four.
-        const live = list.reduce((n, x, j) => (frame >= f(x.live) ? j : n), -1);
-        return (
-          <div key={s.k} style={{position: 'absolute', left: VIZ_L, top,
-            width: VIZ_W, height: STATION_H, opacity: p,
-            transform: `translateY(${(1 - p) * TRAVEL}px)`,
-            // TWO STATES, NO THIRD COLOUR. The inactive fill was `pal.wash`,
-            // which composites to a grey on ink — a value that reads as a fourth
-            // colour and as a default UI card. A station is either a keyline or a
-            // solid plate; the field shows through otherwise.
-            border: `2px solid ${live === i ? pal.text : pal.hair}`,
-            background: live === i ? pal.text : 'transparent',
-            display: 'flex', alignItems: 'center', paddingLeft: gap('m'),
-            columnGap: gap('m')}}>
-            <div style={{fontFamily: FONT_MONO, fontSize: UI.s,
-              color: live === i ? pal.wash : pal.label}}>
-              {String(i + 1).padStart(2, '0')}
-            </div>
-            {/* The mark sits BEFORE the name, at cap height, so the row still
-                reads as a line of type with a mark on it rather than as a logo
-                lockup. Sized off the body role, not a new number. */}
-            {s.logo ? (
-              <Img src={staticFile(s.logo)}
-                style={{width: ROLES.body.size, height: ROLES.body.size, display: 'block'}} />
-            ) : null}
-            {/* A live station is a solid plate, so its type inverts to the field. */}
-            <div style={{fontFamily: FONT, fontSize: ROLES.body.size,
-              color: live === i ? (field === CREAM ? CREAM : INK) : pal.text}}>{s.k}</div>
-          </div>
-        );
-      })}
-
-      {/* THE RETURN. One rule down the left margin, drawn upward, for the answer
-          going back. It is the half of the round trip everybody forgets, and it
-          is why the model is at the top and not in the middle. */}
-      {ret > 0 ? (
-        // INSIDE THE SAFE BOX. This was `VIZ_L - gap('s')` = x134, sixteen pixels
-        // outside SAFE.x0. Every gate passed it: safeZoneFurniture checks the
-        // wordmark and footer only — its own comment says a block with no fontSize
-        // is "a plate, a mask or a full-bleed container" and skips it. So a PLATE
-        // can leave the safe zone and nothing in the canon can see it. A human
-        // found this, not a gate. Logged as a hole in the canon, not just a bug.
-        <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: 3,
-          height: (list.length - 1) * (STATION_H + CHAIN_GAPY) * ret,
-          background: pal.accent}} />
-      ) : null}
-
-      {!reduced ? (
-        <div style={{position: 'absolute', left: VIZ_L,
-          top: PLATE_TOP + list.length * (STATION_H + CHAIN_GAPY) - CHAIN_GAPY + gap('m'),
-          width: VIZ_W, fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
-          color: pal.label, opacity: ret}}>
-          THE MODEL NEVER MAKES THE CALL
-        </div>
-      ) : null}
-    </>
-  );
-};
+// S5 — the restatement: the same device, two stations, no travel and no return.
+// The callback is the argument — MCP is a socket in FRONT of your API, not
+// instead of it — so the chain shortens rather than changing shape.
+const REDUCED: Station[] = [
+  {k: 'MCP', at: 45900, live: 46980},
+  {k: 'YOUR API', at: 46300, live: 47610},
+];
+const ReducedChain: React.FC<{field: string}> = ({field}) => (
+  <HopChain field={field} stations={REDUCED} />
+);
 
 // ═══ THE DEPRECATION ═════════════════════════════════════════════════════════
 // S4 — the beat the source reel does not have, and the reason this film is worth
@@ -572,18 +435,12 @@ const wipeField = (frame: number): string | null => {
 // check-kt#readableTime). Counted below against each window.
 const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
   {from: 140,   to: 7290,        Node: HookGrid},        //  7.2s  4 words  needs 5.4
-  {from: 7290,  to: 18160,       Node: HopChain},        // 10.9s  6 words  needs 6.6
+  {from: 7290,  to: 18160,       Node: FullChain},       // 10.9s  6 words  needs 6.6
   {from: 18160, to: 31480,       Node: ArithmeticGrid},  // 13.3s  9 words  needs 8.4
   {from: 31480, to: 45440,       Node: DeprecationPlate},// 14.0s 10 words  needs 9.0
   {from: 45440, to: 51680,       Node: ReducedChain},    //  6.2s  3 words  needs 4.8
   {from: 58700, to: NO035_END_MS, Node: OutroMarquee},   //  6.7s  0 words  needs 3.0
 ];
-
-// Declared after PLATES would be a temporal-dead-zone error at module scope, so
-// the reduced chain gets its own named component rather than an inline arrow.
-function ReducedChain({field}: {field: string}) {
-  return <HopChain field={field} reduced />;
-}
 
 // ═══ THE MASCOT ══════════════════════════════════════════════════════════════
 // Founder 2026-08-17: same as NO. 034 — hook, payoff, outro.

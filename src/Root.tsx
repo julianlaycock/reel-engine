@@ -42,7 +42,6 @@ import {Composition} from 'remotion';
 import {FPS} from './video-schema';
 import {KTHook, KT_HOOK_FRAMES} from './KTHook';
 import {KTFxLab, KT_FX_LAB_FRAMES} from './KTFxLab';
-import {KTNo035Variants, KT_NO035_VARIANTS_FRAMES} from './KTNo035Variants';
 import {KTNo035, KT_NO035_FRAMES} from './KTNo035';
 import {KTTax, KT_TAX_FRAMES} from './KTTax';
 import {KTState, KT_STATE_FRAMES} from './KTState';
@@ -129,17 +128,11 @@ export const Root: React.FC = () => {
         width={1080}
         height={1920}
       />
-      {/* NO. 035 spine treatments — a decision surface. The founder chose B
-          (ruled) on 2026-08-17; kept until the film is approved, then deleted
-          along with KTNo035Variants.tsx. Scrub 0s / 10s / 20s for A / B / C. */}
-      <Composition
-        id="lab-no035-spine-variants"
-        component={KTNo035Variants}
-        durationInFrames={KT_NO035_VARIANTS_FRAMES}
-        fps={30}
-        width={1080}
-        height={1920}
-      />
+      {/* REMOVED 2026-08-18 with KTNo035Variants.tsx (founder approved deleting
+          it). It was a decision surface for the grid treatment, the choice was
+          made and then reversed, and once CountGrid moved into kt/argument.tsx
+          the file was a third copy of a shipped graphic — the look-alike the
+          Approval Protocol forbids. The three treatments are in git history. */}
 
       {/* ── REMOVED 2026-08-17 (founder). Uncomment to restore. ─────────────
       <Composition id="Video" component={Video}
