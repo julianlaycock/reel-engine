@@ -35,8 +35,8 @@ import React from 'react';
 import {AbsoluteFill, Audio, Img, staticFile, useCurrentFrame} from 'remotion';
 import {INK, CREAM, RED, f, Word} from './KTHook';
 import {TOKENS_BEATS, TOKENS_END_MS} from './KTTokensWords';
-import {CAPTURE_SCROLL_PX_PER_SEC, gap, FAMILY, WORDMARK, ROLES,
-  PLATE_TOP as PLATE_TOP_CANON} from './kt/system';
+import {CAPTURE_SCROLL_PX_PER_SEC, gap, FAMILY, WORDMARK, ROLES, MARGIN_X, COLUMN_W,
+  ENTER_MS, DETAIL_MS, TRAVEL_PX, WIPE, PLATE_TOP as PLATE_TOP_CANON} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer, rampValues} from './KTEffects';
 import {ClaudeMascot} from './scenes/ClaudeMascot';
@@ -137,8 +137,13 @@ const WORDMARK_ON: Record<string, string> = {[CREAM]: INK, [RED_DEEP]: CREAM, [I
 
 const asField = (c: string) => (c === RED ? RED_DEEP : c);
 
-// The safe box. Nothing below may leave it.
-const VIZ_L = 150, VIZ_W = 780, VIZ_TOP = 800;
+// The safe box, TAKEN FROM THE CANON rather than restated. These were three
+// hand-typed numbers that happened to equal the canon's, which meant the canon
+// could not move them: changing MARGIN_X would have changed nothing this film
+// draws. VIZ_TOP is gone entirely - every one of its sixteen uses was
+// `PLATE_TOP`, i.e. the plate origin, which the canon already names.
+const VIZ_L = MARGIN_X, VIZ_W = COLUMN_W;
+const PLATE_TOP = PLATE_TOP_CANON;
 
 // THE BAND THE WORDS LIVE IN (founder, 2026-08-16). It opens at the wordmark's
 // baseline and closes at the top of the graphic, and the type block sits centred
@@ -229,11 +234,13 @@ const lineWidthSpacer = (w: {t: string; caps?: boolean; size?: number}, base: nu
 // values that stop that, and nothing here touches a timing the VO is pinned to:
 // every one is an entrance ramp or a size.
 const UI = {s: 20, m: 26, l: 40};   // the UI sub-scale, under the display scale
-const ENTER = 500;                  // a plate arriving
-const DETAIL = 300;                 // something landing inside one
-const TRAVEL = 16;                  // one distance, always
+// ARRIVAL COMES FROM THE CANON. Identical values, but restating them meant the
+// canon's motion spec governed nothing - a film that retypes a value is a film the
+// canon cannot reach.
+const ENTER = ENTER_MS;             // a plate arriving
+const DETAIL = DETAIL_MS;           // something landing inside one
+const TRAVEL = TRAVEL_PX;           // one distance, always
 const TRACK = {label: 2, slug: 3};  // tracking: labels, and all-caps slugs
-const PLATE_TOP = 60;               // one origin for every plate
 
 // ---- a plate paints itself for the field it lands on ------------------------
 // TWICE IN ONE DAY a plate was invisible because it was authored against one field
@@ -315,7 +322,7 @@ const ContextField: React.FC<{field: string}> = ({field}) => {
         return (
           <div key={i} style={{position: 'absolute',
             left: VIZ_L + col * (tw + FIELD_GAP),
-            top: VIZ_TOP + PLATE_TOP + row * (FIELD_TH + FIELD_RGAP),
+            top: PLATE_TOP + row * (FIELD_TH + FIELD_RGAP),
             width: tw, height: FIELD_TH, background: pal.hair}}>
             <div style={{position: 'absolute', inset: 0, background: pal.text,
               opacity: i < litTo ? 1 : 0}} />
@@ -326,7 +333,7 @@ const ContextField: React.FC<{field: string}> = ({field}) => {
           here and measured 4.49:1 on ink — under the 4.5 floor by a hundredth, at
           20px. Red also belongs on the data, not on the commentary. */}
       <div style={{position: 'absolute', left: VIZ_L,
-        top: VIZ_TOP + PLATE_TOP + FIELD_ROWS * (FIELD_TH + FIELD_RGAP) + 34, width: VIZ_W,
+        top: PLATE_TOP + FIELD_ROWS * (FIELD_TH + FIELD_RGAP) + 34, width: VIZ_W,
         fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>
         GREP READS EVERYTHING
       </div>
@@ -402,7 +409,7 @@ const CODE_SIZE = UI.s;
 const CODE_LH = UI.s + gap('xs');
 const CODE_L = VIZ_L + gap('m');            // the margin the red rule lives in
 const CODE_W = VIZ_W - gap('m');
-const CODE_TOP = VIZ_TOP + PLATE_TOP;
+const CODE_TOP = PLATE_TOP;
 const CODE_H = CODE_LINES.length * CODE_LH;
 
 const CodePage: React.FC<{field: string}> = ({field}) => {
@@ -585,7 +592,7 @@ const AbPlate: React.FC<{field: string}> = ({field}) => {
         if (p <= 0) return null;
         return (
           <div key={c.k} style={{position: 'absolute', left: VIZ_L + i * (cw + 24),
-            top: VIZ_TOP + PLATE_TOP, width: cw, height: 280,
+            top: PLATE_TOP, width: cw, height: 280,
             border: `2px solid ${c.live ? CREAM : LABEL_I}`,
             background: c.live ? WASH_I : 'transparent',
             opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`,
@@ -600,7 +607,7 @@ const AbPlate: React.FC<{field: string}> = ({field}) => {
           </div>
         );
       })}
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 326, width: VIZ_W,
+      <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 326, width: VIZ_W,
         opacity: decel(prog(frame, 29500, ENTER)), textAlign: 'center',
         fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug, color: pal.label}}>
         SAME ANSWER QUALITY
@@ -623,22 +630,22 @@ const DropPlate: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   return (
   <>
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W,
       fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>
       TOKENS PER FIX
     </div>
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 44, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 44, width: VIZ_W,
       fontFamily: FONT, fontSize: 107, color: WHITE, lineHeight: 1}}>
       <Odometer values={rampValues(73373, 44449, 20, (n) => n.toLocaleString('en-US'))}
         fromMs={31840} tickMs={80} />
     </div>
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 184, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 184, width: VIZ_W,
       height: 2, background: pal.hair}} />
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 226, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 226, width: VIZ_W,
       fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>
       TOOL CALLS
     </div>
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 270, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 270, width: VIZ_W,
       fontFamily: FONT, fontSize: 86, color: WHITE, lineHeight: 1}}>
       <Odometer values={rampValues(8, 5, 6, (n) => String(n))} fromMs={35950} tickMs={110} />
     </div>
@@ -694,7 +701,7 @@ const CostPlate: React.FC<{field: string}> = ({field}) => {
   const tot = decel(prog(frame, 50600, ENTER));
   return (
     <>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
+      <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W,
         opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`}}>
         <div style={{height: 2, background: pal.hair, opacity: 0.5}} />
         <div style={{padding: '30px 4px', fontFamily: FONT_UI, fontSize: UI.m,
@@ -708,7 +715,7 @@ const CostPlate: React.FC<{field: string}> = ({field}) => {
         const rp = decel(prog(frame, r.at, DETAIL));
         if (rp <= 0) return null;
         return (
-          <div key={r.k} style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 140 + i * 104,
+          <div key={r.k} style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 140 + i * 104,
             width: VIZ_W, opacity: rp}}>
             <div style={{display: 'flex', alignItems: 'baseline',
               justifyContent: 'space-between', paddingBottom: 18}}>
@@ -725,13 +732,13 @@ const CostPlate: React.FC<{field: string}> = ({field}) => {
           heavy rule on the plate and the largest type. It reads DOWN — label,
           then the amount on its own line — rather than across, because a
           right-aligned phrase competes with the two reasons above it. */}
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 344, width: VIZ_W,
+      <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 344, width: VIZ_W,
         height: 3, background: pal.hair, opacity: tot}} />
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 372, width: VIZ_W,
+      <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 372, width: VIZ_W,
         opacity: tot, fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug, color: pal.label}}>
         TOTAL
       </div>
-      <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP + 406, width: VIZ_W,
+      <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 406, width: VIZ_W,
         opacity: tot, fontFamily: FONT, fontSize: 44, lineHeight: 1.06, whiteSpace: 'nowrap', color: pal.text}}>
         someone else&rsquo;s tokens
       </div>
@@ -745,7 +752,7 @@ const FindPlate: React.FC<{field: string}> = ({field}) => {
   const frame = useCurrentFrame();
   const p = decel(prog(frame, 52870, ENTER));
   return (
-    <div style={{position: 'absolute', left: VIZ_L, top: VIZ_TOP + PLATE_TOP, width: VIZ_W,
+    <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W,
       border: `2px solid ${pal.text}`, background: pal.wash, padding: '30px 34px', opacity: p,
       transform: `translateY(${(1 - p) * TRAVEL}px)`, display: 'flex',
       flexDirection: 'column', rowGap: 12}}>
@@ -837,8 +844,13 @@ const Seams: React.FC = () => (
 // 09.22 still shows some words like 'vektor' in the top and bottom and it looks
 // messy". Suppressing at the measured arrival closes the hole, and the panel's
 // leading edge is on screen at the instant the type goes, so nothing is stranded.
-const WIPE_LEAD = 10;   // MEASURED first-panel-pixel, scripts/check-seam-colours.mjs
-const WIPE_TAIL = 6;    // the main panel settles at x0 a few frames after
+// MEASURED first-panel-pixel (scripts/check-seam-colours.mjs), and now held in the
+// canon rather than here. WIPE_TAIL decides when a plate may arrive after a seam -
+// NO. 034's code page was rendering blank because it started its entrance under the
+// wipe - so a film reading its own copy of this number is a film that can silently
+// disagree with the gate that measures it.
+const WIPE_LEAD = WIPE.leadFrames;
+const WIPE_TAIL = WIPE.tailFrames;
 const inWipe = (frame: number) =>
   FLIPS.some((w) => frame >= f(w.ms) - WIPE_LEAD && frame < f(w.ms) + WIPE_TAIL);
 
