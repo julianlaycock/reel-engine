@@ -5,6 +5,7 @@ import {defaultVideo, FPS, totalFrames} from './video-schema';
 import {TransitionDemo, demoDuration, type TransitionVariant} from './TransitionDemo';
 import {KTHook, KT_HOOK_FRAMES} from './KTHook';
 import {KTFxDemo, KT_FX_DEMO_FRAMES} from './KTFxDemo';
+import {KTFxLab, KT_FX_LAB_FRAMES} from './KTFxLab';
 import {KTTax, KT_TAX_FRAMES} from './KTTax';
 import {KTState, KT_STATE_FRAMES} from './KTState';
 import {KTFunnel, KT_FUNNEL_FRAMES} from './KTFunnel';
@@ -125,6 +126,14 @@ export const Root: React.FC = () => {
         component={KTFxDemo}
         durationInFrames={KT_FX_DEMO_FRAMES}
         fps={FPS}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="KTFxLab"
+        component={KTFxLab}
+        durationInFrames={KT_FX_LAB_FRAMES}
+        fps={30}
         width={1080}
         height={1920}
       />
