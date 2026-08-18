@@ -9,6 +9,8 @@ export const FIELDS = {
   fog: {bg: '#E8ECEA', fg: '#101010', muted: 'rgba(16,16,16,0.62)', hairline: 'rgba(16,16,16,0.24)'},
   ink: {bg: '#101010', fg: '#EFEADD', muted: 'rgba(239,234,221,0.6)', hairline: 'rgba(239,234,221,0.25)'},
   signal: {bg: '#1B4FA0', fg: '#EFEADD', muted: '#BFD9FF', hairline: 'rgba(191,217,255,0.3)'},
+  lpInk: {bg: '#101010', fg: '#F4EFDF', muted: 'rgba(244,239,223,0.6)', hairline: 'rgba(244,239,223,0.22)'},
+  lpCream: {bg: '#F4EFDF', fg: '#101010', muted: 'rgba(16,16,16,0.6)', hairline: 'rgba(16,16,16,0.18)'},
 } as const;
 
 export type FieldTokens = {bg: string; fg: string; muted: string; hairline: string};
@@ -125,4 +127,6 @@ export const FONTS = {
   labelEmoji: 'var(--label-font), "Noto Color Emoji", sans-serif',
   interTight: '"Inter Tight", sans-serif',
   plexMonoUi: '"IBM Plex Mono", ui-monospace, monospace',
+  lpDisplay: '"Unique", "Anton", sans-serif',
+  lpText: '"Printvetica", "Helvetica Neue", Arial, sans-serif',
 } as const;

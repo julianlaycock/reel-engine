@@ -51,8 +51,8 @@
     "three": "^0.171.0"
   },
   "devDependencies": {
-    "@remotion/captions": "^4.0.483",
-    "@remotion/install-whisper-cpp": "^4.0.483",
+    "@remotion/captions": "^4.0.484",
+    "@remotion/install-whisper-cpp": "^4.0.484",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/three": "^0.171.0",

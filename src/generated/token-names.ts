@@ -6,7 +6,9 @@ export type FieldName =
   | 'cream'
   | 'fog'
   | 'ink'
-  | 'signal';
+  | 'signal'
+  | 'lpInk'
+  | 'lpCream';
 
 export type AccentName =
   | 'acid'
@@ -110,7 +112,9 @@ export type FontName =
   | 'labelSans'
   | 'labelEmoji'
   | 'interTight'
-  | 'plexMonoUi';
+  | 'plexMonoUi'
+  | 'lpDisplay'
+  | 'lpText';
 
-export const FIELD_NAMES = ['orchid', 'aqua', 'cream', 'fog', 'ink', 'signal'] as const;
+export const FIELD_NAMES = ['orchid', 'aqua', 'cream', 'fog', 'ink', 'signal', 'lpInk', 'lpCream'] as const;
 export const ACCENT_NAMES = ['acid', 'paper', 'blueMeta', 'caretTeal'] as const;

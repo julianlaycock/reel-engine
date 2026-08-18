@@ -23,7 +23,11 @@ const brandArg = (() => {
 const brand = resolveBrand(brandArg);
 process.chdir(brand.brandRoot);
 const canon = YAML.load(fs.readFileSync(path.join('canon', 'canon.yml'), 'utf8'));
-const zone = JSON.parse(fs.readFileSync(path.join('canon', 'americana-tokens.json'), 'utf8')).layout.platformSafeZone;
+// canon 2.0: the safe zone shown is the DEFAULT skin's (per-video dispatch happens
+// in check-canon); letterpress mirrors the same content zone + furniture exemptions.
+const briefSkin = canon.skin.default ?? canon.skin.required;
+const briefTokensPath = canon.skin.tokens?.[briefSkin] ?? path.join('canon', 'americana-tokens.json');
+const zone = JSON.parse(fs.readFileSync(briefTokensPath, 'utf8')).layout.platformSafeZone;
 
 const sev = (block) => (block?.severity === 'blocker' ? 'BLOCKER' : 'warn');
 const L = [];
@@ -34,7 +38,11 @@ L.push(`FORMAT [${sev(canon.format)}]: ${canon.format.width}x${canon.format.heig
 L.push(`DURATION [${sev(canon.duration)}]: ${canon.duration.minSec}-${canon.duration.maxSec}s hard; target ${canon.duration.targetMinSec}-${canon.duration.targetMaxSec}s.`);
 if (canon.voice?.wordsPerMinute) L.push(`SCRIPT BUDGET [warn]: the locked voice reads ~${canon.voice.wordsPerMinute} wpm in practice — a script for the ${canon.duration.targetMinSec}-${canon.duration.targetMaxSec}s target budgets ~${(canon.voice.scriptWordBudget || []).join('-')} words (founder calibration 2026-07-14, measured NO.012). Fit by trimming words, never by speeding the read.`);
 if (canon.transcript) L.push(`TRANSCRIPT [${sev(canon.transcript)}]: if the concept is transcript-based (concept.json source_type:"transcript" or transcript_verbatim:true), reproduce the SOURCE's content/structure/hook + human flow but LIGHTLY REWORD into original wording (not a word-for-word copy — minor tweaks, keep the natural flow). EXEMPT from the duration cap. FACTS-POLICY OVERRIDDEN (trust the source, no facts.json/check-facts). ALWAYS adapt the brand layer to Vektor: CTA/keyword+funnel, skin, voice, disclaimer. Footage-rights + safe-zone still apply.`);
-L.push(`SKIN [${sev(canon.skin)}]: ${canon.skin.required}.`);
+{
+  const allowedSkins = canon.skin.allowed ?? [canon.skin.required];
+  const tokenMap = Object.entries(canon.skin.tokens ?? {}).map(([k, v]) => `${k}: ${v}`).join(' · ');
+  L.push(`SKIN [${sev(canon.skin)}]: one of [${allowedSkins.join(', ')}], declared per video in video.json (default ${briefSkin}).${tokenMap ? ` Token SSOT per skin — ${tokenMap}.` : ''}`);
+}
 L.push(`CHROME [${sev(canon.chrome)}]: masthead/chrome on every slide; fields ${(canon.chrome.requireFields || []).join('+')}.`);
 L.push(`AUDIO [${sev(canon.audio)}]: voiceover required; NO transition SFX (music bed + VO only, sfx:false). Music bed default ${canon.audio.musicVolume}, must not exceed ${canon.audio.musicVolumeMax}.`);
 L.push(`SAFE ZONE [${sev(canon.safeZone)}]: all on-screen elements inside top ${zone.topPx} / bottom ${zone.bottomPx} / sides ${zone.sidePx} / rail-right ${zone.railRightPx}px (rail band y ${zone.railBandY[0]}-${zone.railBandY[1]}). Mascot: xPct ~20-62, yPct ~25-66, size <= 160.`);

@@ -277,6 +277,16 @@ const validateVideo = (video) => {
       if (!Number.isInteger(scene.durationInFrames) || scene.durationInFrames < 30) {
         throw new Error(`${at}: durationInFrames must be an integer >= 30`);
       }
+    } else if (scene.kind === 'letterpress') {
+      if (typeof scene.lpBeat !== 'string' || scene.lpBeat.length === 0) {
+        throw new Error(`${at}: letterpress scene needs an "lpBeat"`);
+      }
+      if (scene.lpBeat === 'canvas' && !Array.isArray(scene.canvas?.elements)) {
+        throw new Error(`${at}: letterpress canvas scene needs canvas.elements`);
+      }
+      if (!Number.isInteger(scene.durationInFrames) || scene.durationInFrames < 30) {
+        throw new Error(`${at}: durationInFrames must be an integer >= 30`);
+      }
     } else {
       throw new Error(`${at}: unknown scene.kind "${scene.kind}"`);
     }
@@ -371,7 +381,16 @@ const main = async () => {
 
   const hasAudio = Boolean(video.audio?.voSrc || video.audio?.musicSrc);
 
-  const serveUrl = await bundle({entryPoint: path.join(root, 'src/index.ts'), webpackOverride: withEngineAlias});
+  // Pin the bundle to a stable cache dir. Without outDir, Remotion mints a fresh
+  // ~1.3GB %TEMP%\remotion-webpack-bundle-* per render and never removes it —
+  // 133 of them (~90GB) once filled the disk and throttled the whole machine.
+  const bundleDir = path.join(root, 'node_modules', '.cache', 'remotion-bundle-video');
+  await fs.mkdir(bundleDir, {recursive: true});
+  const serveUrl = await bundle({
+    entryPoint: path.join(root, 'src/index.ts'),
+    webpackOverride: withEngineAlias,
+    outDir: bundleDir,
+  });
   const comps = await getCompositions(serveUrl, {inputProps: {video}});
   const composition = comps.find((candidate) => candidate.id === args.composition);
 

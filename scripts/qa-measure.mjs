@@ -101,6 +101,24 @@ const main = async () => {
     pass,
   };
   console.log(JSON.stringify(out, null, 2));
+
+  // ── THE EXIT CODE MUST AGREE WITH THE REPORT (2026-08-18) ──────────────────
+  //
+  // This printed `"pass": false` and EXITED 0 for its entire life. Every caller
+  // that did the ordinary thing — run it, check the status — was told a film
+  // with a failing loudness or a freeze had passed the technical gate. It bit on
+  // NO. 035, which came out of the renderer at -20.6 LUFS against a -14 target.
+  //
+  // A tool that reports failure only in its output trains people to ignore its
+  // exit code, and then the one time they rely on it, it lies. The JSON is
+  // unchanged and still printed in full, so a caller that parses `pass` keeps
+  // working exactly as before; what changes is that a caller that does NOT parse
+  // it can no longer be misled.
+  if (!pass) {
+    const failed = Object.entries(gates).filter(([, v]) => !v).map(([k]) => k);
+    console.error(`qa-measure FAIL — ${failed.length} gate(s): ${failed.join(', ')}`);
+    process.exitCode = 1;
+  }
 };
 
 main().catch((e) => {

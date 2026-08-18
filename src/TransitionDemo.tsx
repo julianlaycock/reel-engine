@@ -19,7 +19,7 @@ import './style.css';
 // the same 4 as selectable `transition` enum values (see SceneEnvelope).
 // ---------------------------------------------------------------------------
 
-export type TransitionVariant = 'spring-slide' | 'whip' | 'luma-wipe' | 'overshoot';
+export type TransitionVariant = 'spring-slide' | 'whip' | 'luma-wipe' | 'overshoot' | 'shutter-wipe';
 
 // Demo timing: each scene held ~2.2s, transition overlaps in the middle so a
 // ~3s clip spans the whole hand-off.
@@ -102,6 +102,63 @@ const overshoot = (): TransitionPresentation<Record<string, unknown>> => ({
   props: {},
 });
 
+// 5 — SHUTTER WIPE (letterpress canon 2.0 — THE transition between lp beats,
+// never a dissolve): a full-frame ink panel (var(--lp-ink)) wipes across in
+// 6 HARD steps over 6 frames, holds 2 frames at full cover, then exits in 6
+// steps — the incoming scene is revealed behind the departing panel. Coupled
+// via the same TransitionSeries path as spring-slide/whip-real. Hard steps
+// come from flooring the linear progress to whole frames (no easing).
+const SHUTTER_ENTER = 6;
+const SHUTTER_HOLD = 2;
+const SHUTTER_EXIT = 6;
+export const SHUTTER_FRAMES = SHUTTER_ENTER + SHUTTER_HOLD + SHUTTER_EXIT; // 14
+const ShutterWipe: React.FC<{presentationProgress: number; presentationDirection: string; children: React.ReactNode}> = ({
+  presentationProgress,
+  presentationDirection,
+  children,
+}) => {
+  if (presentationDirection === 'exiting') {
+    // The outgoing scene holds beneath until the panel has covered it.
+    return <AbsoluteFill>{children}</AbsoluteFill>;
+  }
+  // Hard-step frame index 0..14 from the linear progress.
+  const f = Math.min(SHUTTER_FRAMES, Math.floor(presentationProgress * SHUTTER_FRAMES + 1e-6));
+  const covered = f >= SHUTTER_ENTER;
+  // Panel geometry: enters from the left covering rightward, holds full, then
+  // its left edge travels right (the wipe continues across — never reverses).
+  let left = 0;
+  let width = 0;
+  if (f < SHUTTER_ENTER) {
+    width = (f / SHUTTER_ENTER) * 100;
+  } else if (f < SHUTTER_ENTER + SHUTTER_HOLD) {
+    width = 100;
+  } else {
+    const k = Math.min(SHUTTER_EXIT, f - SHUTTER_ENTER - SHUTTER_HOLD);
+    left = (k / SHUTTER_EXIT) * 100;
+    width = 100 - left;
+  }
+  return (
+    <AbsoluteFill>
+      {/* incoming scene appears only once the panel is at full cover */}
+      <AbsoluteFill style={{opacity: covered ? 1 : 0}}>{children}</AbsoluteFill>
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: `${left}%`,
+          width: `${width}%`,
+          background: 'var(--lp-ink)',
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+const shutterWipe = (): TransitionPresentation<Record<string, unknown>> => ({
+  component: ShutterWipe as never,
+  props: {},
+});
+
 // --- Variant → {timing, presentation, motion-blur} ------------------------
 export const buildTransition = (
   variant: TransitionVariant,
@@ -129,6 +186,14 @@ export const buildTransition = (
       return {
         timing: linearTiming({durationInFrames: 28, easing: Easing.inOut(Easing.cubic)}),
         presentation: lumaWipe(),
+        blur: false,
+      };
+    case 'shutter-wipe':
+      // Linear timing, NO easing — the hard steps live in the presentation
+      // (frame-floored panel geometry). 14 frames = 6 in + 2 hold + 6 out.
+      return {
+        timing: linearTiming({durationInFrames: SHUTTER_FRAMES}),
+        presentation: shutterWipe(),
         blur: false,
       };
     case 'overshoot':

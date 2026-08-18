@@ -68,4 +68,14 @@
   --am-paper: #EFEADD;
   --am-blue-meta: #BFD9FF;
   --am-caret-teal: #0E9C86;
+
+  /* canon 2.0 letterpress skin (letterpress-tokens.json) */
+  --lp-ink: #101010;
+  --lp-ink-fg: #F4EFDF;
+  --lp-ink-muted: rgba(244,239,223,0.6);
+  --lp-ink-hairline: rgba(244,239,223,0.22);
+  --lp-cream: #F4EFDF;
+  --lp-cream-fg: #101010;
+  --lp-cream-muted: rgba(16,16,16,0.6);
+  --lp-cream-hairline: rgba(16,16,16,0.18);
 }

@@ -105,6 +105,13 @@ export const PersistentChrome: React.FC<{
   // line (style.css .am-footer bottom:500). It hides only with the rest of the
   // chrome (hideRanges: broll + end card — the end card's issue line is its
   // footer analogue).
+  // Letterpress (canon 2.0, 2026-07-29): the LetterpressScene component draws ALL
+  // of its own furniture (chrome bar / ledger strip / footer slug) per scene —
+  // the persistent chrome layer is a no-op so the vmax topbar never doubles it.
+  if (skin === 'letterpress') {
+    return null;
+  }
+
   if (skin === 'americana') {
     const beat = beats?.find((b) => frame >= b.from && frame < b.to);
     // FRAME-ZERO LAW + loop-seam law: the ink bar is part of the finished F0

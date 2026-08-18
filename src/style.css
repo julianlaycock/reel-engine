@@ -1666,6 +1666,688 @@
   font-weight: 400;
 }
 
+/* ============================================================================
+   LETTERPRESS — Vektor canon 2.0 skin (founder-designed, Claude Design 2026-07-29).
+   Selected per video via `"skin": "letterpress"`; scoped to .skin-letterpress —
+   ADDITIVE beside americana, never edits it. Spec: vektor/canon/letterpress-tokens.json.
+   Laws: two colours (ink / cream, values in letterpress-tokens.json) via generated --lp-* vars only ·
+   no gradients, no blur (deboss = hard 0-blur offset shadows) · radius 0 ·
+   steps() motion only · furniture rail 44px / chrome 100px / footer 56px while
+   CONTENT keeps the platform safe zone (hybrid law, founder 2026-07-29).
+   Scene-kind styling lands with the letterpress templates (RENDER→SEE→LOCK).
+   ========================================================================= */
+
+@font-face {
+  font-family: "Unique";
+  src: url("file:///C:/Users/julia/projects/reel-engine/assets/fonts/unique-vf.ttf") format("truetype-variations");
+  font-weight: 100 700; /* the wght axis tops at 700 — the design's "900" intent pins there */
+}
+@font-face {
+  font-family: "Printvetica";
+  src: url("file:///C:/Users/julia/projects/reel-engine/assets/fonts/printvetica-400.otf") format("opentype");
+  font-weight: 400;
+}
+
+/* base frame: flat two-colour fields, Printvetica as the working face; scene
+   components flip ink/cream per beat (negative-print alternation). */
+.skin-letterpress .frame {
+  background: var(--lp-ink);
+  color: var(--lp-ink-fg);
+  font-family: "Printvetica", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---- letterpress scene layout (LetterpressScene.tsx) -----------------------
+   The component maps the scene's field (FIELDS.lpInk / FIELDS.lpCream) onto
+   the field-relative custom properties consumed below:
+     --lp-field          the field ground
+     --lp-field-fg       foreground on that field
+     --lp-field-muted    60% foreground
+     --lp-field-hairline ghost alpha (.18 on cream / .22 on ink)
+   Colors below come ONLY from var(--lp-*). Radius 0 everywhere, no blur, no
+   soft shadows, no CSS animation — motion is frame math in the component. */
+
+/* the display face — headlines, verdicts, headline-scale numerals */
+.skin-letterpress .lp-display {
+  font-family: "Unique", "Anton", sans-serif;
+  font-weight: 700; /* the wght axis tops at 700 — render === approved HTML */
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+}
+
+/* ---- furniture: chrome bar / ledger strip / footer slug (44px rail) ------ */
+.skin-letterpress .lp-chrome {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  padding: 0 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--lp-ink-hairline); /* ink field: transparent + cream hairline */
+  z-index: 40;
+}
+.skin-letterpress .lp-chrome--solid {
+  background: var(--lp-ink); /* cream field: solid ink block */
+  border-bottom: none;
+}
+.skin-letterpress .lp-wordmark {
+  font-family: "Inter Tight", sans-serif;
+  font-weight: 600;
+  font-size: 46px;
+  letter-spacing: -0.045em;
+  text-transform: lowercase;
+  color: var(--lp-ink-fg); /* cream on the ink block / on the ink field */
+}
+.skin-letterpress .lp-marker {
+  font-size: 26px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lp-ink-fg);
+}
+.skin-letterpress .lp-strip {
+  position: absolute;
+  top: 100px;
+  left: 0;
+  right: 0;
+  padding: 20px 44px 0;
+  display: flex;
+  gap: 8px;
+  z-index: 40;
+}
+.skin-letterpress .lp-seg {
+  flex: 1;
+  height: 10px;
+  background: var(--lp-field-hairline); /* unfilled ghost: .18 cream field / .22 ink field */
+}
+.skin-letterpress .lp-seg.on {
+  background: var(--lp-field-fg); /* filled = scenes elapsed */
+}
+.skin-letterpress .lp-slug {
+  position: absolute;
+  left: 44px;
+  right: 44px;
+  bottom: 56px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lp-field-muted); /* Printvetica 22 caps at 60% */
+  z-index: 40;
+}
+
+/* ---- body container: content keeps the v1 platform safe zone ------------- */
+.skin-letterpress .lp-body {
+  position: absolute;
+  top: 220px;
+  bottom: 500px; /* content stays above y1420 */
+  left: 0;
+  right: 0;
+  padding: 0 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.skin-letterpress .lp-kicker {
+  font-size: 28px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+  text-wrap: balance; /* no one-word orphans when a kicker wraps in the content column */
+}
+.skin-letterpress .lp-kicker--wide {
+  letter-spacing: 0.14em;
+  color: var(--lp-field-muted);
+}
+
+/* the hatch semantic — "measured / waiting / unbelieved" */
+.skin-letterpress .lp-hatched {
+  background: repeating-linear-gradient(135deg, var(--lp-field-fg) 0 10px, transparent 10px 22px);
+}
+
+/* stamp chip: inverted block (fg bg / bg text), radius 0 */
+.skin-letterpress .lp-chip {
+  display: inline-block;
+  align-self: flex-start;
+  background: var(--lp-field-fg);
+  color: var(--lp-field);
+  padding: 18px 28px;
+  font-size: 32px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transform-origin: 50% 50%;
+}
+
+/* mascot slot placeholders (halftone treatment lands later) */
+.skin-letterpress .lp-mascot-slot {
+  background: repeating-linear-gradient(135deg, var(--lp-field-hairline) 0 7px, transparent 7px 14px);
+  border: 2px solid var(--lp-field-hairline);
+}
+.skin-letterpress .lp-mascot--avatar {
+  width: 84px;
+  height: 84px;
+  flex: none;
+}
+.skin-letterpress .lp-mascot--bleed {
+  /* ~600px bleeding off the RIGHT edge (bottom 130) — outside the content
+     zone by design (furniture-adjacent; readable half stays inside). */
+  position: absolute;
+  right: -330px; /* relative to the 150px-padded body → crosses the frame edge */
+  bottom: -240px;
+  width: 600px;
+  height: 600px;
+}
+.skin-letterpress .lp-mascot--stamp {
+  width: 150px;
+  height: 150px;
+  flex: none;
+}
+.skin-letterpress .lp-mascot--rail {
+  position: absolute;
+  right: -140px;
+  top: 950px;
+  width: 460px;
+  height: 460px;
+}
+
+/* ---- 1. hook — "The Hook Stack" ------------------------------------------ */
+.skin-letterpress .lp-hook-stack {
+  font-size: 138px;
+  line-height: 1.0;
+}
+.skin-letterpress .lp-hatch-rule {
+  height: 22px;
+  margin: 44px 0;
+  background-image: repeating-linear-gradient(135deg, var(--lp-field-fg) 0 8px, transparent 8px 16px);
+}
+
+/* ---- 2. claim — "The Exhibit Panel" -------------------------------------- */
+.skin-letterpress .lp-claim-headline {
+  font-size: 130px;
+  line-height: 0.94;
+  margin-bottom: 60px;
+}
+.skin-letterpress .lp-panel {
+  border: 2px solid var(--lp-field-fg);
+}
+.skin-letterpress .lp-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 26px;
+  border-bottom: 2px solid var(--lp-field-fg);
+}
+.skin-letterpress .lp-panel-title {
+  font-size: 30px;
+}
+.skin-letterpress .lp-panel-meta {
+  font-size: 24px;
+  color: var(--lp-field-muted);
+  margin-left: auto;
+}
+.skin-letterpress .lp-panel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 26px;
+  font-size: 28px;
+}
+.skin-letterpress .lp-struck {
+  text-decoration: line-through;
+}
+.skin-letterpress .lp-panel-diff {
+  font-size: 24px;
+  letter-spacing: 0.02em;
+  text-align: right;
+}
+.skin-letterpress .lp-terminal {
+  padding: 26px;
+  font-size: 28px;
+  color: var(--lp-field-muted);
+}
+.skin-letterpress .lp-caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.2em;
+  background: currentColor;
+  vertical-align: text-bottom;
+}
+.skin-letterpress .lp-panel-foot {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 26px;
+  border-top: 2px solid var(--lp-field-fg);
+  background: var(--lp-field-fg); /* INVERTED footer bar */
+  color: var(--lp-field);
+  font-size: 26px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform-origin: 50% 100%;
+}
+
+/* ---- 3. method — "The Ledger Rows" --------------------------------------- */
+.skin-letterpress .lp-method-headline {
+  font-size: 158px;
+  line-height: 0.94;
+  margin-bottom: 70px;
+}
+.skin-letterpress .lp-ledger {
+  border-top: 3px solid var(--lp-field-fg);
+}
+.skin-letterpress .lp-ledger-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 26px 0;
+  border-bottom: 2px solid var(--lp-field-fg);
+}
+.skin-letterpress .lp-ledger-row:last-child {
+  border-bottom: none; /* last row no bottom rule */
+}
+.skin-letterpress .lp-ledger-label {
+  font-size: 38px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.skin-letterpress .lp-ledger-value {
+  font-size: 38px;
+  letter-spacing: 0.02em;
+}
+.skin-letterpress .lp-note {
+  margin-top: 44px;
+  font-size: 26px;
+  line-height: 1.5;
+  opacity: 0.7;
+}
+
+/* ---- 4. divergence — "The Divergence" (the money graph) ------------------ */
+.skin-letterpress .lp-div-chart {
+  position: relative;
+  height: 660px;
+  display: flex;
+  gap: 90px;
+  padding: 0 40px;
+}
+.skin-letterpress .lp-div-axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  margin-top: -1px;
+  background: var(--lp-field-fg); /* full-width zero rule */
+}
+.skin-letterpress .lp-div-zero {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  margin-top: -40px;
+  font-size: 24px;
+  letter-spacing: 0.02em;
+}
+.skin-letterpress .lp-div-col {
+  position: relative;
+  flex: 1;
+  height: 100%;
+}
+.skin-letterpress .lp-div-bar {
+  position: absolute;
+  left: 15%;
+  right: 15%;
+}
+.skin-letterpress .lp-div-bar--up {
+  bottom: 50%;
+  background: var(--lp-field-fg); /* SOLID = belief */
+}
+.skin-letterpress .lp-div-bar--down {
+  top: 50%;
+  border: 3px solid var(--lp-field-fg);
+  border-top: none; /* open toward the axis */
+  background-image: repeating-linear-gradient(135deg, var(--lp-field-fg) 0 10px, transparent 10px 22px);
+}
+.skin-letterpress .lp-div-value {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 56px;
+  letter-spacing: 0.02em;
+}
+.skin-letterpress .lp-div-labels {
+  display: flex;
+  gap: 90px;
+  padding: 0 40px;
+  margin-top: 36px;
+}
+.skin-letterpress .lp-div-labels span {
+  flex: 1;
+  text-align: center;
+  font-size: 30px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.skin-letterpress .lp-source {
+  margin-top: 48px;
+  font-size: 26px;
+  color: var(--lp-field-muted);
+}
+
+/* ---- 5. number — "The Odometer" ------------------------------------------ */
+.skin-letterpress .lp-odo-line {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.skin-letterpress .lp-odo {
+  height: 250px; /* clipped window — one row per tick */
+  overflow: hidden;
+}
+.skin-letterpress .lp-odo-row {
+  height: 250px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.skin-letterpress .lp-odo-box {
+  display: inline-flex;
+  width: 72px;
+  justify-content: center;
+  font-size: 96px;
+  letter-spacing: 0.02em; /* working numerals */
+  border: 2px solid var(--lp-field-hairline); /* the fixed-width digit boxes */
+  padding: 10px 0;
+}
+.skin-letterpress .lp-odo-suffix {
+  font-size: 74px;
+}
+.skin-letterpress .lp-subline {
+  margin-top: 30px;
+  font-size: 46px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.skin-letterpress .lp-rule-3 {
+  height: 3px;
+  margin: 44px 0;
+  background: var(--lp-field-fg);
+}
+.skin-letterpress .lp-number-headline {
+  font-size: 140px;
+  line-height: 0.94;
+  max-width: 640px;
+}
+
+/* ---- 6. breakdown — "The Waterfall" -------------------------------------- */
+.skin-letterpress .lp-wf {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.skin-letterpress .lp-wf-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.skin-letterpress .lp-wf-label {
+  font-size: 32px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.skin-letterpress .lp-wf-value {
+  font-size: 26px;
+  letter-spacing: 0.02em;
+}
+.skin-letterpress .lp-wf-track {
+  height: 58px;
+  border: 2px solid var(--lp-field-fg);
+}
+.skin-letterpress .lp-wf-fill {
+  height: 100%;
+  background: var(--lp-field-fg); /* solid; .lp-hatched overrides to the hatch */
+}
+.skin-letterpress .lp-wf-fill.lp-hatched {
+  background: repeating-linear-gradient(135deg, var(--lp-field-fg) 0 10px, transparent 10px 22px);
+}
+.skin-letterpress .lp-breakdown-headline {
+  margin-top: 70px;
+  font-size: 118px;
+  line-height: 0.94;
+}
+
+/* ---- 7. verdict — "The Rules" -------------------------------------------- */
+.skin-letterpress .lp-verdict-headline {
+  font-size: 150px;
+  line-height: 0.92;
+  margin-bottom: 60px;
+}
+.skin-letterpress .lp-rules {
+  border-top: 3px solid var(--lp-field-fg);
+  padding-top: 28px;
+}
+.skin-letterpress .lp-rule-row {
+  font-size: 36px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px 0;
+}
+.skin-letterpress .lp-verdict-row {
+  display: flex;
+  align-items: center;
+  gap: 44px;
+  margin-top: 56px;
+}
+.skin-letterpress .lp-chip--verdict {
+  font-size: 34px;
+}
+
+/* ---- 8. endCard — no chrome bar / ledger strip; footer slug stays -------- */
+.skin-letterpress .lp-end {
+  position: absolute;
+  top: 220px;
+  bottom: 500px;
+  left: 150px;
+  right: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 56px;
+}
+.skin-letterpress .lp-end-wordmark {
+  font-family: "Inter Tight", sans-serif;
+  font-weight: 600;
+  font-size: 120px;
+  letter-spacing: -0.045em;
+  text-transform: lowercase;
+  color: var(--lp-ink-fg);
+}
+.skin-letterpress .lp-end-headline {
+  font-size: 180px;
+  line-height: 0.92;
+  max-width: 620px;
+}
+.skin-letterpress .lp-end-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+}
+.skin-letterpress .lp-end-stat-value {
+  font-size: 92px;
+  letter-spacing: 0.02em;
+}
+.skin-letterpress .lp-end-stat-label {
+  font-size: 30px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.skin-letterpress .lp-end-cta {
+  background: var(--lp-cream); /* CREAM bg / ink text on the ink field */
+  color: var(--lp-ink);
+  font-size: 32px;
+  letter-spacing: 0.1em;
+  max-width: 640px;
+  white-space: normal;
+  line-height: 1.4;
+}
+.skin-letterpress .lp-ticker {
+  /* furniture — may ride the design position (safe-zone hybrid law) */
+  position: absolute;
+  left: -150px; /* full-bleed out of the padded .lp-end box */
+  right: -150px;
+  bottom: -290px; /* band at ~210px from the frame bottom */
+  border-top: 2px solid var(--lp-ink-fg);
+  border-bottom: 2px solid var(--lp-ink-fg);
+  padding: 18px 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.skin-letterpress .lp-ticker-inner {
+  display: inline-flex;
+}
+.skin-letterpress .lp-ticker-run {
+  font-size: 26px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding-right: 40px;
+}
+.skin-letterpress .lp-end .lp-mascot--rail {
+  /* right rail, cropped by the frame edge — offsets relative to .lp-end */
+  right: -290px;
+  top: 730px;
+  background: repeating-linear-gradient(135deg, var(--lp-ink-hairline) 0 7px, transparent 7px 14px);
+  border-color: var(--lp-ink-hairline);
+}
+
+/* ---- canvas — "The Evolving Canvas" (lp-canvas.v1, EXPERIMENT 2026-07-29,
+   pending RENDER→SEE→LOCK). One persistent diagram across `transition: none`
+   seams; element coords are absolute 1080×1920 frame space (LpCanvasBeat.tsx).
+   Same laws as every lp beat: var(--lp-*) only, radius 0, no CSS animation. */
+.skin-letterpress .lp-cv {
+  position: absolute;
+  inset: 0;
+}
+.skin-letterpress .lp-cv-headline {
+  position: absolute;
+  top: 230px;
+  left: 150px;
+  right: 150px;
+  font-size: 58px;
+  line-height: 1.0;
+  text-align: center;
+}
+.skin-letterpress .lp-cv-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.skin-letterpress .lp-cv-box {
+  position: absolute;
+  background: var(--lp-field); /* opaque: boxes occlude the line fan beneath */
+  border: 3px solid var(--lp-field-fg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transform-origin: 50% 50%;
+}
+.skin-letterpress .lp-cv-box.lp-hatched {
+  background-color: var(--lp-field);
+  background-image: repeating-linear-gradient(135deg, var(--lp-field-hairline) 0 10px, transparent 10px 22px);
+}
+.skin-letterpress .lp-cv-box--frame {
+  background: transparent; /* highlight ring — must not hide what it rings */
+  border-width: 6px;
+}
+.skin-letterpress .lp-cv-box-label {
+  font-size: 30px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.skin-letterpress .lp-cv-box-sub {
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lp-field-muted);
+  text-align: center;
+}
+.skin-letterpress .lp-cv-list {
+  font-size: 24px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  line-height: 1.55;
+}
+.skin-letterpress .lp-cv-tag {
+  /* inverted tag riding the top edge (ENDPOINT / MCP CLIENT / MCP SERVER) */
+  position: absolute;
+  top: -22px;
+  left: 14px;
+  background: var(--lp-field-fg);
+  color: var(--lp-field);
+  font-size: 21px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 10px 14px;
+}
+.skin-letterpress .lp-cv-inner-tag {
+  /* outlined tag inside the bottom edge (THE MODEL) */
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  border: 2px solid var(--lp-field-muted);
+  color: var(--lp-field-muted);
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 7px 10px;
+}
+.skin-letterpress .lp-cv-label {
+  position: absolute;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.05;
+  white-space: pre-line;
+}
+.skin-letterpress .lp-cv-label--display {
+  letter-spacing: 0.005em;
+  background: var(--lp-field); /* counters stay readable over the line fan */
+  padding: 6px 24px;
+}
+.skin-letterpress .lp-cv-tag--free {
+  position: absolute;
+  transform: translateX(-50%);
+}
+.skin-letterpress .lp-cv-tag--outline {
+  background: transparent;
+  border: 2px solid var(--lp-field-muted);
+  color: var(--lp-field-muted);
+}
+.skin-letterpress .lp-cv-muted {
+  color: var(--lp-field-muted);
+  border-color: var(--lp-field-muted);
+}
+.skin-letterpress .lp-cv-caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.08em;
+  vertical-align: -0.12em;
+  background: var(--lp-field-fg);
+}
+.skin-letterpress .lp-cv-chip {
+  position: absolute;
+  align-self: auto;
+}
+
 /* --am-* field/accent custom properties are canon-derived and generated into
    @tokens/tokens.css :root by gen-tokens.mjs (canon/americana-tokens.json). */
 

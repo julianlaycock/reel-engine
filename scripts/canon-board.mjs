@@ -215,6 +215,10 @@ const tmplCountLine = Object.entries(tmplCounts)
 // Wireframe zone summary (a light pointer, not exhaustive).
 const wfKinds = wireframes.kinds ? Object.keys(wireframes.kinds) : [];
 
+// ── MERGED 2026-08-18. develop grew this KT-Remotion section while this branch
+//    grew the letterpress one below, from a common parent that had neither. They
+//    are additive and independent, so BOTH are kept — taking either side alone
+//    would have silently dropped a whole section of the board.
 // ── KT-REMOTION — the active format (additive; rendered only when the machine
 //    files exist). NOT a canon.yml skin: skins dispatch on a video.json and
 //    hand-composed KT films have none, which is exactly why five of them shipped
@@ -321,6 +325,119 @@ ${ktOpenRows}
 `;
 }
 
+// ── CANON 2.0 — letterpress skin section (additive; rendered only when the
+//    skin is declared in canon.yml#skin.tokens and its token file exists) ─────
+const lpPathRel = (canon.skin && canon.skin.tokens && canon.skin.tokens.letterpress) || null;
+const lpTokens = lpPathRel ? readJson(path.join(path.dirname(canonDir), lpPathRel)) : null;
+let letterpressHtml = '';
+if (lpTokens) {
+  const lpFields = (lpTokens.color && lpTokens.color.fields) || {};
+  const lpTextMap = (lpTokens.color && lpTokens.color.fieldText) || {};
+  const lpSwatches = Object.entries(lpFields)
+    .map(([n, v]) => {
+      const t = lpTextMap[n] || {};
+      return fieldSwatch(n, v) + (t.fg ? `<div class="sw"><span class="chip" style="background:${esc(t.fg)}"></span><span class="swname">${esc(n)}.fg</span><span class="swval">${esc(t.fg)}</span></div>` : '');
+    })
+    .join('\n');
+  const lpLaws = ((lpTokens.color && lpTokens.color.laws) || []).map((l) => `<li>${esc(l)}</li>`).join('');
+  const lpTy = lpTokens.type || {};
+  const lpTypeRows = ['display', 'text', 'wordmarkOnly']
+    .filter((r) => lpTy[r])
+    .map((r) => {
+      const t = lpTy[r];
+      const roles = Array.isArray(t.roles) ? t.roles.join(', ') : t.law || t.note || '';
+      return `<tr><td class="rn">${esc(r)}</td><td><b>${esc(t.family || '—')}</b></td><td class="sum">${esc(roles)}</td></tr>`;
+    })
+    .join('\n');
+  const lpRecipeRows = Object.entries((lpTokens.motion && lpTokens.motion.recipes) || {})
+    .map(([n, r]) => `<tr><td class="rn">${esc(n)}</td><td class="sum">${esc(r.frames || '')}</td><td class="sum">${esc(r.law || r.use || '')}</td></tr>`)
+    .join('\n');
+  const lpBlockRows = Object.entries(lpTokens.blocks || {})
+    .filter(([k]) => k !== 'law')
+    .map(([k, v]) => `<tr><td class="rn">${esc(k)}</td><td class="sum">${Array.isArray(v) ? v.map((x) => esc(x)).join(' · ') : esc(v)}</td></tr>`)
+    .join('\n');
+  // Marks + contrast (canon 2.1). Both blocks are optional — older token files
+  // predate them and simply render nothing.
+  const lpMarks = (lpTokens.color && lpTokens.color.marks) || null;
+  const lpContrast = (lpTokens.color && lpTokens.color.contrast) || null;
+  // name → hex across neutrals + marks, so the contrast table can draw real specimens.
+  const inkMap = lpMarks
+    ? {...(lpMarks.neutrals || {}), ...(lpMarks.swatches || {})}
+    : {...lpFields};
+  let lpMarksHtml = '';
+  if (lpMarks) {
+    const exact = new Set((lpMarks.provenance || {}).sourceExact || []);
+    const chips = Object.entries(lpMarks.swatches || {})
+      .map(([n, hex]) => `<div class="sw"><span class="chip" style="background:${esc(hex)}"></span><span class="swname">${esc(n)}</span><span class="swval">${esc(hex)}${exact.has(n) ? '' : ' <b title="measured from reference footage, ±2 levels">≈</b>'}</span></div>`)
+      .join('\n');
+    const prov = lpMarks.provenance || {};
+    lpMarksHtml = `
+    <div class="meta-line">${esc((lpMarks.law || 'The six marks').replace(/^the /, '').replace(/^./, (c) => c.toUpperCase()))}</div>
+    <div class="swatches">${chips}</div>
+    ${prov.note ? `<p class="note"><b>≈</b> ${esc(prov.note)}</p>` : ''}
+    ${lpMarks.usage ? `<p class="note">${esc(lpMarks.usage)}</p>` : ''}`;
+  }
+  let lpContrastHtml = '';
+  if (lpContrast) {
+    // One specimen per legal pair: the foreground actually drawn on the ground.
+    const spec = (ground, fg, ratio, large) =>
+      `<span class="spec${large ? ' spec-lg' : ''}" style="background:${esc(inkMap[ground] || '#fff')};color:${esc(inkMap[fg] || '#000')}">Aa <b>${esc(fg)}</b> ${esc(ratio)}</span>`;
+    const rows = (lpContrast.table || [])
+      .map((r) => {
+        const any = (r.anyText || []).map((p) => spec(r.ground, p.fg, p.ratio, false)).join(' ');
+        const lg = (r.largeOnly || []).map((p) => spec(r.ground, p.fg, p.ratio, true)).join(' ');
+        return `<tr${r.warning ? ' class="blk"' : ''}>
+      <td class="rn"><span class="chip chip-sm" style="background:${esc(r.hex)}"></span> ${esc(r.ground)}</td>
+      <td class="sum">${any || '<i>none</i>'}</td>
+      <td class="sum">${lg || '<i>none</i>'}</td>
+      <td class="src">${r.warning ? `<b class="warnline">${esc(r.warning)}</b>` : ''}</td>
+    </tr>`;
+      })
+      .join('\n');
+    lpContrastHtml = `
+    <div class="meta-line">Contrast — what may sit on what (${esc(lpContrast.minSmallText)}:1 under ${esc(lpContrast.largeTextMinPx)}px · ${esc(Number(lpContrast.minLargeText).toFixed(1))}:1 at or above)</div>
+    <p class="note">${esc(lpContrast.law || '')}</p>
+    <table><thead><tr><th>Ground</th><th>Any size (≥${esc(lpContrast.minSmallText)})</th><th>Display only (≥${esc(Number(lpContrast.minLargeText).toFixed(1))}, ${esc(lpContrast.largeTextMinPx)}px+)</th><th></th></tr></thead><tbody>
+${rows}
+    </tbody></table>
+    <p class="note">${esc(lpContrast.computedFrom || '')}</p>`;
+  }
+  const lpZone = (lpTokens.layout && lpTokens.layout.platformSafeZone) || {};
+  const lpSurfaceRows = Object.entries(lpTokens.surfaces || {})
+    .map(([k, v]) => `<tr><td class="rn">${esc(k)}</td><td class="sum">${esc(v.law || v.value || '')}${v.value && v.law ? ' — ' + esc(v.value) : ''}</td></tr>`)
+    .join('\n');
+  letterpressHtml = `
+  <h2>Canon 2.0 — Letterpress Skin</h2>
+  <section>
+    <p class="lead"><b>${esc(lpTokens.name || 'Letterpress')}</b> v${esc(lpTokens.version || '?')} — ${esc(lpTokens.status || '')}</p>
+    <p class="note">${esc(lpTokens.basis || '')}</p>
+    <p class="note">${esc(lpTokens.coexistsWith || '')}</p>
+    <div class="meta-line">Baseline pair</div>
+    <div class="swatches">${lpSwatches}</div>
+    ${lpMarksHtml}
+    ${lpContrastHtml}
+    ${lpLaws ? `<div class="meta-line">Colour laws</div><ul class="laws">${lpLaws}</ul>` : ''}
+    <div class="meta-line">Type</div>
+    <table><thead><tr><th>Role</th><th>Family</th><th>Used for</th></tr></thead><tbody>
+${lpTypeRows}
+    </tbody></table>
+    <div class="meta-line">Motion recipes (frames @ 30fps — steps() only, every loop rests on its finished frame)</div>
+    <table><thead><tr><th>Recipe</th><th>Frames</th><th>Law / use</th></tr></thead><tbody>
+${lpRecipeRows}
+    </tbody></table>
+    <div class="meta-line">Surfaces</div>
+    <table><thead><tr><th>Surface</th><th>Law</th></tr></thead><tbody>
+${lpSurfaceRows}
+    </tbody></table>
+    <div class="meta-line">The 36-block Library vocabulary (call blocks by name; one name = one implementation)</div>
+    <table><thead><tr><th>Section</th><th>Blocks</th></tr></thead><tbody>
+${lpBlockRows}
+    </tbody></table>
+    <p class="note"><b>Safe zone (hybrid, founder 2026-07-29; furniture axis amended 2026-08-07):</b> content keeps top ${esc(lpZone.topPx)} / bottom ${esc(lpZone.bottomPx)} / sides ${esc(lpZone.sidePx)}px; furniture (${(lpZone.furnitureExempt || []).map((f) => `<code>${esc(f)}</code>`).join(' ')}) may ride the ${esc(lpZone.furnitureRailPx)}px rail${lpZone.furnitureRailAxis === 'horizontal-only' ? ' <b>LEFT AND RIGHT ONLY</b>' : ' / 56px footer line'}${lpZone.furnitureVerticalBand ? `, and must sit inside y${esc(lpZone.furnitureVerticalBand[0])}–${esc(lpZone.furnitureVerticalBand[1])} — Instagram's Reels header and caption strip cover the top and bottom bands regardless of how small the element is` : ''}. Cover rule: hook + figure inside the centre ${esc((lpZone.coverRule || {}).centreCrop || '4:5')} crop, bottom ${esc((lpZone.coverRule || {}).bottomClearPx || 180)}px clear.</p>
+    <p class="note">Master: <code>${esc(lpPathRel)}</code> · letterpress templates enter via founder RENDER→SEE→LOCK (none registered yet).</p>
+  </section>`;
+}
+
 // ── page ─────────────────────────────────────────────────────────────────────
 const html = `<!doctype html>
 <html lang="en">
@@ -388,6 +505,11 @@ const html = `<!doctype html>
   .chip { width: 30px; height: 30px; border-radius: 5px; border: 1px solid rgba(0,0,0,.15); flex: none; }
   .swname { font-weight: 700; }
   .swval { margin-left: auto; color: #8a8577; font-size: 11.5px; }
+  .chip-sm { width: 16px; height: 16px; border-radius: 3px; display: inline-block; vertical-align: -3px; }
+  .spec { display: inline-block; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(0,0,0,.15); font-size: 12px; margin: 2px 3px 2px 0; white-space: nowrap; }
+  .spec-lg { font-size: 15px; font-weight: 700; padding: 5px 9px; }
+  .spec b { font-weight: 700; }
+  .warnline { color: var(--blocker); font-size: 11.5px; }
   .laws { margin: 6px 0 2px; padding-left: 20px; font-size: 12.5px; color: #444; }
   .laws li { margin: 3px 0; }
   .meta-line { color: #6b6455; font-size: 12px; margin: 10px 0 2px; }
@@ -405,7 +527,6 @@ const html = `<!doctype html>
   </header>
   <div class="artifact">⚙ BUILD ARTIFACT — generated by <code>reel-engine/scripts/canon-board.mjs</code> on ${esc(now)}. Do NOT hand-edit. Change the master files in <code>canon/</code> and regenerate (<code>npm run canon:board</code>).</div>
 
-${ktHtml}
   <h2>The Video Model</h2>
   <section>${videoModelHtml}</section>
 
@@ -422,7 +543,7 @@ ${ruleRows}
   <h2>Transition Grammar</h2>
   <section>${transitionsHtml}</section>
 
-  <h2>Color Tokens</h2>
+  <h2>Color Tokens — Americana (skin v1)</h2>
   <section>
     <div class="meta-line">Fields</div>
     <div class="swatches">${fieldSwatches}</div>
@@ -431,7 +552,7 @@ ${ruleRows}
     ${colorLaws ? `<div class="meta-line">Laws</div><ul class="laws">${colorLaws}</ul>` : ''}
   </section>
 
-  <h2>Type Tokens</h2>
+  <h2>Type Tokens — Americana (skin v1)</h2>
   <section>
     <table>
       <thead><tr><th>Role</th><th>Family</th><th>Used for</th></tr></thead>
@@ -440,7 +561,8 @@ ${typeRows}
       </tbody>
     </table>
   </section>
-
+${ktHtml}
+${letterpressHtml}
   <h2>The Template Menu — ${tmplCountLine}</h2>
   <section>
     <table>
@@ -472,4 +594,4 @@ ${tmplRows}
 // ── write ────────────────────────────────────────────────────────────────────
 const outPath = path.join(canonDir, 'BOARD.html');
 fs.writeFileSync(outPath, html, 'utf8');
-console.log(`canon-board: wrote ${outPath} (canon v${canon.version}, ${blockerCount} blockers, ${Object.keys(tmpl).length} templates${ktHtml ? `, KT canon v${ktCanon.version}` : ''})`);
+console.log(`canon-board: wrote ${outPath} (canon v${canon.version}, ${blockerCount} blockers, ${Object.keys(tmpl).length} templates)${ktHtml ? `, KT canon v${ktCanon.version}` : ''}`);

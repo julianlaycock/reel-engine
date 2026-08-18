@@ -84,7 +84,15 @@ const main = async () => {
 
   const canon = YAML.load(fs.readFileSync(path.join('canon', 'canon.yml'), 'utf8'));
   const video = JSON.parse(fs.readFileSync(path.join('data', args.slug, 'video.json'), 'utf8'));
-  const tokens = JSON.parse(fs.readFileSync(path.join('canon', 'americana-tokens.json'), 'utf8'));
+  // canon 2.0: the token SSOT (and with it the safe zone) is dispatched by the
+  // video's declared skin via canon.yml#skin.tokens. An invalid/unset skin falls
+  // back to the default skin's file — the skin membership check below still flags it.
+  const skinName = video.skin ?? canon.skin.default ?? canon.skin.required;
+  const tokensPath =
+    canon.skin.tokens?.[skinName] ??
+    canon.skin.tokens?.[canon.skin.default] ??
+    path.join('canon', 'americana-tokens.json');
+  const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
   const zone = tokens.layout.platformSafeZone;
   let concept = null;
   try { concept = JSON.parse(fs.readFileSync(path.join('data', args.slug, 'concept.json'), 'utf8')); } catch { /* concept.json optional */ }
@@ -122,10 +130,12 @@ const main = async () => {
     }
   }
 
-  // skin
+  // skin — canon 2.0: membership in canon.yml#skin.allowed (backward-compatible
+  // with the pre-2.0 scalar `required` form).
   {
     const s = canon.skin;
-    results.push(R(video.skin === s.required, s.severity, 'skin', `${video.skin ?? '(unset)'} (want ${s.required})`));
+    const allowed = s.allowed ?? [s.required];
+    results.push(R(allowed.includes(video.skin), s.severity, 'skin', `${video.skin ?? '(unset)'} (allowed: ${allowed.join(', ')})`));
   }
 
   // chrome / masthead
