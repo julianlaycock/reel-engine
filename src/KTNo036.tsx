@@ -160,12 +160,12 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
       const frac = o / N;
       intro = frac <= 0.35 ? 1
         : decel(clamp01((ms - ((frac - 0.35) / 0.65) * 1400) / 320));
-      // The hub is the LAST SURVIVOR: it outlives the field and dies with a
-      // decaying pulse just before the cut, so the beat never resolves into
-      // dead canvas (motion judge v1).
-      const at = o === 0 ? 12100
+      // The hub is the LAST SURVIVOR: it holds the frame, pulsing harder as
+      // everything else dies, and is still alive AT the cut — the wipe takes
+      // it (motion judge v2: killing it at 12.8s left dead canvas).
+      const at = o === 0 ? Infinity
         : DISSOLVE_FROM + ((N - 1 - o) / N) * (DISSOLVE_TO - DISSOLVE_FROM - 1400);
-      death = 1 - decel(clamp01((ms - at) / (o === 0 ? 1150 : 1400)));
+      death = 1 - decel(clamp01((ms - at) / 1400));
     }
     const l = Math.min(intro, death);
     const dx = n.x - cx, dy = n.y - cy;
@@ -237,10 +237,10 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
           const {x, y, l, op} = P[i];
           if (op <= 0) return null;
           const isHub = n.o === 0;
-          // The hub PULSES — subtle at rest, urgent as it dies alone at the
-          // end of the dissolve (the last survivor, motion judge v1).
-          const dying = state === 'dissolve' ? 1 - l : 0;
-          const pulse = isHub ? 1 + (0.05 + 0.1 * dying) * Math.sin(frame / 5) : 1;
+          // The hub PULSES — subtle at rest, urgent once it is the last thing
+          // alive (amplitude grows over the dissolve's final 2.4s).
+          const urgency = state === 'dissolve' ? clamp01((ms - 11000) / 2400) : 0;
+          const pulse = isHub ? 1 + (0.05 + 0.12 * urgency) * Math.sin(frame / 5) : 1;
           const nodeDim = PATH_NODE.has(i) ? 1 : 1 - 0.6 * dimP;
           return (
             <circle key={i} cx={x} cy={y}
@@ -291,8 +291,11 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
           // labels out-contrasted the red route (trace pass 2). The dim RAMPS
           // with dimP. During the dissolve a label vanishes the moment its own
           // node starts flying (v1: plates hung over departed nodes).
+          // 1500ms, snapped at 0.15: the 2500ms tail left 20%-opacity ghost
+          // labels smudging the dissolve at pause (stills judge v2).
+          const rawFade = 1 - decel(clamp01((ms - DISSOLVE_FROM) / 1500));
           const labelDim = state === 'dissolve'
-            ? (1 - decel(clamp01((ms - DISSOLVE_FROM) / 2500)))
+            ? (rawFade < 0.15 ? 0 : rawFade)
             : (PATH_NODE.has(i) ? 1 : 1 - 0.75 * dimP);
           const anchored = state === 'dissolve' ? (l > 0.92 ? 1 : 0) : 1;
           return (
@@ -348,22 +351,33 @@ const SHOTS: {from: number; to: number; src: string; imgH: number; scroll: boole
 // load-bearing number was unhighlighted 15px chrome (stills judge v1).
 const STAR_PILL = {x: 932, y: 87, w: 114, h: 29};
 const STAR_RING_AT = 16700;
+// The pill sits at y=87 in the capture — inside IG's top-220 chrome zone. The
+// capture therefore enters PUSHED DOWN 240px (pill lands at y~327, safe band),
+// HOLDS there while the ring draws and the VO lands "107,000 stars", then the
+// scroll runs (stills judge v2: the proof was under platform chrome and had
+// scrolled away by the time the claim landed).
+const STAR_HOLD_MS = 1900;
 const ShotPlate: React.FC<{shot: (typeof SHOTS)[number]}> = ({shot}) => {
   const frame = useCurrentFrame();
-  const t = clamp01((frame - f(shot.from)) / Math.max(1, f(shot.to - shot.from)));
   const shotSec = (shot.to - shot.from) / 1000;
-  const travel = shot.scroll
-    ? Math.min(shot.imgH - 1920, CAPTURE_SCROLL_PX_PER_SEC * shotSec)
+  const drop = shot.scroll ? 240 : 0;
+  const scrollDur = Math.max(1, f(shot.to - shot.from) - f(STAR_HOLD_MS));
+  const t = shot.scroll
+    ? decel(clamp01((frame - f(shot.from) - f(STAR_HOLD_MS)) / scrollDur))
     : 0;
-  const ringP = shot.scroll ? decel(prog(frame, STAR_RING_AT, 280)) : 0;
+  const travel = shot.scroll
+    ? drop + Math.min(shot.imgH - 1920, CAPTURE_SCROLL_PX_PER_SEC * shotSec)
+    : 0;
+  const top = drop - travel * t;
+  const ringP = shot.scroll ? decel(prog(frame, STAR_RING_AT, 400)) : 0;
   const pad = 16;
   return (
     <AbsoluteFill style={{overflow: 'hidden', backgroundColor: INK}}>
       <Img src={staticFile(shot.src)}
-        style={{position: 'absolute', left: 0, top: -travel * t, width: 1080}} />
+        style={{position: 'absolute', left: 0, top, width: 1080}} />
       {ringP > 0 ? (
         <div style={{position: 'absolute',
-          left: STAR_PILL.x - pad, top: STAR_PILL.y - pad - travel * t,
+          left: STAR_PILL.x - pad, top: STAR_PILL.y - pad + top,
           width: STAR_PILL.w + pad * 2, height: STAR_PILL.h + pad * 2,
           border: `6px solid ${RED_DEEP}`, borderRadius: 34,
           opacity: ringP, transform: `scale(${1.25 - 0.25 * ringP})`}} />
@@ -388,10 +402,9 @@ const RunTerminal: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
   const ms = (frame / 30) * 1000;
-  // 240ms wipe, not the house ENTER: at the scene cut the judge caught a
-  // whole blank frame before the panel arrived (motion judge v1). The prompt
-  // and caret are on screen from the first frame of the beat.
-  const p = decel(prog(frame, 30320, 240));
+  // The entrance BEGINS as the matte wipe clears (tail = 6fr / 200ms) — v2
+  // showed the old entrance finishing UNDER the matte, so the panel popped.
+  const p = decel(prog(frame, 30320 + 200, 260));
   const caret = Math.floor(frame / 8) % 2 === 0;
   const live = TERM_LINES.filter((L) => ms >= L.at);
   return (
@@ -432,15 +445,24 @@ const BAR_H = 96;
 const TokenBars: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
-  const growA = decel(prog(frame, BAR_A_AT, DETAIL));
-  const growB = decel(prog(frame, BAR_B_AT, DETAIL));
-  // The row FRAME (eyebrow + empty hairline track) pre-arrives on the clause
-  // that introduces it, so the beat is never an empty plate (motion judge v1
-  // caught 2.8s of nothing at 40.0–42.8s). The NUMBER and the fill still land
-  // together on their spoken word — the arrive-whole law stands for the
-  // quantity itself (design judge, 2026-08-18, and NO. 035's card lesson).
+  // 500ms fill with a 2% overshoot-settle: DETAIL-length fills completed
+  // inside one strip step and read as a pop (motion judge v2). The number
+  // still SNAPS whole on its word — no count-up: ticking through 9,000/18,000
+  // while the voice says 27,000 is the exact defect the arrive-whole law was
+  // written against (design judge, 2026-08-18; NO. 035's card lesson).
+  const fill = (at: number) => {
+    const q = decel(prog(frame, at, 500));
+    return q * (1 + 0.02 * Math.sin(Math.PI * q));
+  };
+  const growA = fill(BAR_A_AT);
+  const growB = fill(BAR_B_AT);
+  // The row FRAME (eyebrow, then its hairline track 250ms later) pre-arrives
+  // on the clause that introduces it, so the beat is never an empty plate
+  // (motion judge v1 caught 2.8s of nothing at 40.0–42.8s).
   const lblA = decel(prog(frame, 40600, ENTER));
+  const trkA = decel(prog(frame, 40850, ENTER));
   const lblB = decel(prog(frame, 44800, ENTER));
+  const trkB = decel(prog(frame, 45050, ENTER));
   const RATIO = 2000 / 27184;
   const row = (top: number, o: number): React.CSSProperties => ({
     position: 'absolute', left: 0, top, width: VIZ_W,
@@ -462,21 +484,23 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W}}>
       <div style={row(0, lblA)}>
-        <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
+        {/* Eyebrows at UI.m: UI.s measured ~18px on the phone, under the 40px
+            floor (stills judge v2). */}
+        <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug,
           color: pal.label, marginBottom: gap('s')}}>
           READ THE FILES
         </div>
-        {bar(growA, growA * 100, pal.accent)}
+        <div style={{opacity: trkA}}>{bar(growA, Math.min(growA, 1) * 100, pal.accent)}</div>
         <div style={num(growA)}>
           <Odometer values={['~27,000']} fromMs={BAR_A_AT} /> tokens
         </div>
       </div>
       <div style={row(BAR_H + 210, lblB)}>
-        <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
+        <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug,
           color: pal.label, marginBottom: gap('s')}}>
           ASK THE GRAPH
         </div>
-        {bar(growB, Math.max(growB * RATIO * 100, growB * 2), pal.text)}
+        <div style={{opacity: trkB}}>{bar(growB, Math.max(Math.min(growB, 1) * RATIO * 100, growB * 2), pal.text)}</div>
         <div style={num(growB)}>
           <Odometer values={['2,000']} fromMs={BAR_B_AT} /> tokens
         </div>
@@ -512,7 +536,7 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
         opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`}}>
         <div style={{height: 2, background: pal.hair}} />
         <div style={{padding: `${gap('m')}px 0`}}>
-          <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
+          <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug,
             color: pal.label, marginBottom: gap('s')}}>
             CLAIMED
           </div>
@@ -527,7 +551,7 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
       </div>
       <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 320, width: VIZ_W,
         opacity: truth, transform: `translateY(${(1 - truth) * TRAVEL}px)`}}>
-        <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
+        <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug,
           color: pal.label, marginBottom: gap('s')}}>
           MEASURED
         </div>
@@ -598,10 +622,21 @@ const MASCOT = {size: 160, xPct: 46.7, yPct: 70.7} as const;
 // NO HOOK MASCOT: the hero graph now fills the whole plate band and the mascot
 // stood inside it as "a third unrelated object" (design judge, 2026-08-18).
 // Which beats fit is a measurement, not a preference — receipt and outro clear.
-const MASCOTS: {from: number; until: number; look: {xPct: number; yPct: number}}[] = [
-  {from: 40000, until: 50560,        look: {xPct: 50, yPct: 52}},  // the receipt
-  {from: 61760, until: NO036_END_MS, look: {xPct: 50, yPct: 44}},  // the outro
+// The receipt mascot drops to yPct 78: at the house 70.7 its walk crossed the
+// display-scale "2,000 tokens" value and occluded it (stills judge v2).
+const MASCOTS: {from: number; until: number; look: {xPct: number; yPct: number}; yPct?: number}[] = [
+  {from: 40000, until: 50560,        look: {xPct: 50, yPct: 52}, yPct: 78},  // the receipt
+  {from: 61760, until: NO036_END_MS, look: {xPct: 50, yPct: 44}},            // the outro
 ];
+
+// THE TYPE HOLE: while the honesty plate holds, the caption layer is hidden —
+// the plate is the only carrier of "70x"/"14x" on screen (stills judges v1+v2
+// both caught the running caption duplicating the plate's stat). The words
+// still live in the beat spec, so take coverage stays whole — the same
+// precedent as words under a full-bleed shot (NO. 035 repo beat).
+const TYPE_HOLES: {from: number; to: number}[] = [{from: 53800, to: 61760}];
+const inTypeHole = (frame: number) =>
+  TYPE_HOLES.some((h) => frame >= f(h.from) && frame < f(h.to));
 
 // ═══ COMPOSITION ═════════════════════════════════════════════════════════════
 export type Layout = 'full' | 'two' | 'caption';
@@ -642,18 +677,22 @@ export const KTNo036: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; st
         ? MASCOTS.filter((m) => frame >= f(m.from) && frame < f(m.until)).map((m) => (
           <AbsoluteFill key={m.from} style={{['--fg' as any]: INK}}>
             <ClaudeMascot frames={KT_NO036_FRAMES}
-              config={{pose: 'walk', xPct: MASCOT.xPct, yPct: MASCOT.yPct,
+              config={{pose: 'walk', xPct: MASCOT.xPct, yPct: m.yPct ?? MASCOT.yPct,
                 size: MASCOT.size, delay: f(m.from) + f(ENTER), bubble: false,
                 lookAt: m.look}} />
           </AbsoluteFill>
         ))
         : null}
 
-      {layer !== 'viz' && layer !== 'furniture' && !wiping && !shot ? (
+      {layer !== 'viz' && layer !== 'furniture' && !wiping && !shot && !inTypeHole(frame) ? (
       <AbsoluteFill style={{alignItems: 'center',
         ...(mode === 'caption' && topNow ? {fontSize: UI.m, opacity: 0.92} : {}),
-        justifyContent: 'center',
-        ...(topNow ? {top: TYPE_BAND_TOP, height: TYPE_BAND_H, bottom: 'auto'} : {}),
+        /* TOP-ANCHORED, never centered: with justify-center every appended row
+           re-centred the block, so row 1 jumped up mid-read — the drift both
+           v2 judges caught. Row 1 now holds its baseline and row 2 fills in
+           beneath it. */
+        justifyContent: topNow ? 'flex-start' : 'center',
+        ...(topNow ? {top: TYPE_BAND_TOP + Math.round(TYPE_BAND_H * 0.18), height: TYPE_BAND_H, bottom: 'auto'} : {}),
         flexDirection: 'column', rowGap: gap('m'),
         padding: `0 ${MARGIN_X}px`,
         textAlign: 'center'}}>
