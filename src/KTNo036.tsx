@@ -26,7 +26,7 @@
 // something: our own run (the receipts they are asked to trust) and the CTA.
 import React from 'react';
 import {AbsoluteFill, Audio, Img, staticFile, useCurrentFrame} from 'remotion';
-import {INK, CREAM, RED, f, Word, RoughStrike} from './KTHook';
+import {INK, CREAM, RED, f, Word} from './KTHook';
 import {NO036_BEATS, NO036_END_MS} from './KTNo036Words';
 import {gap, FAMILY, WORDMARK, ROLES, MARGIN_X, COLUMN_W, SAFE, FIELD, TEXT_ON,
   ENTER_MS, DETAIL_MS, TRAVEL_PX, WIPE, PLATE_TOP,
@@ -143,7 +143,10 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W,
       height: 560, display: 'flex', justifyContent: 'center'}}>
-      <svg viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`} style={{height: '100%'}}>
+      {/* The graph FILLS its band (design judge, 2026-08-18: at 290px wide it
+          read as a speckle, not a hero). meet keeps it inside 860-1420. */}
+      <svg viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`} preserveAspectRatio="xMidYMid meet"
+        style={{width: '100%', height: '100%'}}>
         {G_EDGES.map(([a, b], i) => {
           const l = Math.min(life(G_NODES[a].o), life(G_NODES[b].o));
           if (l <= 0) return null;
@@ -263,13 +266,19 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
   const growA = decel(prog(frame, BAR_A_AT, DETAIL));
   const growB = decel(prog(frame, BAR_B_AT, DETAIL));
   const RATIO = 2000 / 27184;
-  const row = (top: number): React.CSSProperties => ({
+  const row = (top: number, o: number): React.CSSProperties => ({
     position: 'absolute', left: 0, top, width: VIZ_W,
+    opacity: o, transform: `translateY(${(1 - o) * TRAVEL}px)`,
   });
+  // EACH ROW ARRIVES WHOLE, ON ITS WORD. The first cut ticked the number
+  // through 9,000/18,000 while the voice and the type said 27,000 — two
+  // numbers for one quantity in the same frame (design judge, 2026-08-18, and
+  // NO. 035's card lesson). And row B's labels used to arrive with the plate,
+  // 6s before their bar — an orphaned "tokens" with nothing to count.
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W,
-      opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`}}>
-      <div style={row(0)}>
+      opacity: p}}>
+      <div style={row(0, growA)}>
         <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
           color: pal.label, marginBottom: gap('s')}}>
           READ THE FILES
@@ -277,11 +286,10 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
         <div style={{height: BAR_H, width: `${growA * 100}%`, background: pal.accent}} />
         <div style={{fontFamily: FONT_MONO, fontSize: UI.m, color: pal.text,
           marginTop: gap('s')}}>
-          <Odometer values={['9,000', '18,000', '~27,000']} fromMs={BAR_A_AT} tickMs={140} />
-          {' '}tokens
+          <Odometer values={['~27,000']} fromMs={BAR_A_AT} /> tokens
         </div>
       </div>
-      <div style={row(BAR_H + 170)}>
+      <div style={row(BAR_H + 170, growB)}>
         <div style={{fontFamily: FONT_UI, fontSize: UI.s, letterSpacing: TRACK.slug,
           color: pal.label, marginBottom: gap('s')}}>
           ASK THE GRAPH
@@ -290,7 +298,7 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
           background: pal.text}} />
         <div style={{fontFamily: FONT_MONO, fontSize: UI.m, color: pal.text,
           marginTop: gap('s')}}>
-          <Odometer values={['2,000']} fromMs={BAR_B_AT} tickMs={90} /> tokens
+          <Odometer values={['2,000']} fromMs={BAR_B_AT} /> tokens
         </div>
       </div>
     </div>
@@ -308,7 +316,11 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
   const p = decel(prog(frame, CLAIM_AT, ENTER));
-  const struck = frame >= f(STRIKE_AT);
+  // The strike is a HORIZONTAL RULE drawn left-to-right at the optical midline,
+  // fully spanning the glyphs — NO. 035's deprecation treatment. RoughStrike's
+  // shallow V read as a stray check-mark on three glyphs and its -4% inset
+  // crossed the 150px safe margin (design judge, 2026-08-18).
+  const strike = clamp01((frame - f(STRIKE_AT)) / Math.max(1, f(600)));
   const truth = decel(prog(frame, TRUE_AT, DETAIL));
   return (
     <>
@@ -327,7 +339,8 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
           <div style={{fontFamily: FONT, fontSize: ROLES.title.size, color: pal.text,
             position: 'relative', display: 'inline-block'}}>
             70x
-            {struck ? <RoughStrike seed={36} /> : null}
+            <div style={{position: 'absolute', left: '-2%', top: '52%', height: 6,
+              width: `${strike * 104}%`, background: pal.accent}} />
           </div>
         </div>
         <div style={{height: 2, background: pal.hair}} />
@@ -388,7 +401,10 @@ const wipeField = (frame: number): string | null => {
 // ═══ THE PLATES, AS DATA ═════════════════════════════════════════════════════
 // Readable time is 3s + 0.6s per word ON THE PLATE (canon READABLE).
 const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
-  {from: 120,   to: 13360,        Node: GraphDissolve}, // 13.2s  0 words  needs 3.0
+  // from 0, NOT 120: the assembled graph must be on screen at frame 0 (frame-0
+  // law). At from:120 the film's first 4 frames — and the thumbnail — were an
+  // empty ink field (design judge, 2026-08-18).
+  {from: 0,     to: 13360,        Node: GraphDissolve}, // 13.4s  0 words  needs 3.0
   {from: 22000, to: 30320,        Node: GraphRebuild},  //  8.3s  0 words  needs 3.0
   {from: 36320, to: 40000,        Node: QueryTerm},     //  3.7s  0 words  needs 3.0
   {from: 40000, to: 50560,        Node: TokenBars},     // 10.6s  8 words  needs 7.8
@@ -399,8 +415,10 @@ const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
 // ═══ THE MASCOT ══════════════════════════════════════════════════════════════
 // Hook, receipt, outro — NO. 035's placement, same size and zone.
 const MASCOT = {size: 160, xPct: 46.7, yPct: 70.7} as const;
+// NO HOOK MASCOT: the hero graph now fills the whole plate band and the mascot
+// stood inside it as "a third unrelated object" (design judge, 2026-08-18).
+// Which beats fit is a measurement, not a preference — receipt and outro clear.
 const MASCOTS: {from: number; until: number; look: {xPct: number; yPct: number}}[] = [
-  {from: 120,   until: 13360,        look: {xPct: 50, yPct: 50}},  // the hook
   {from: 40000, until: 50560,        look: {xPct: 50, yPct: 52}},  // the receipt
   {from: 61760, until: NO036_END_MS, look: {xPct: 50, yPct: 44}},  // the outro
 ];
