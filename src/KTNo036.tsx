@@ -179,6 +179,27 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
               fill={isHub ? pal.accent : pal.text} opacity={l} />
           );
         })}
+        {/* THE NAMES ARE THE POINT (founder, 2026-08-18): nine real file
+            basenames from the graph data, so the structure reads as THIS
+            codebase and not abstract dots. They die and return with their
+            nodes — losing the names IS losing the knowledge. */}
+        {G_NODES.map((n, i) => {
+          if (!n.label) return null;
+          const l = life(n.o);
+          if (l <= 0) return null;
+          const left = n.x > GRAPH_W * 0.62;
+          return (
+            <text key={`t${i}`} x={n.x + (left ? -(n.r + 14) : n.r + 14)} y={n.y + 10}
+              textAnchor={left ? 'end' : 'start'}
+              stroke={field === RED ? RED_DEEP : field} strokeWidth={10}
+              /* Labels SNAP, never fade: a mid-fade label reads as a defect
+                 on any paused frame (labels pass 3). Visible means crisp. */
+              style={{fontFamily: FONT_MONO, fontSize: 34, fill: pal.text,
+                paintOrder: 'stroke', opacity: l > 0.65 ? 1 : 0}}>
+              {n.label}
+            </text>
+          );
+        })}
       </svg>
     </div>
   );
