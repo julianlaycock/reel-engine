@@ -56,7 +56,7 @@ const WASH_C = 'rgba(16,16,16,0.08)';
 const WASH_I = 'rgba(244,239,223,0.10)';
 const RULE_R = 'rgba(255,255,255,0.5)';
 
-const FOOTER_ON: Record<string, string> = {[CREAM]: LABEL_C, [RED_DEEP]: WHITE, [INK]: LABEL_I};
+const FOOTER_ON: Record<string, string> = {[CREAM]: LABEL_C, [RED_DEEP]: WHITE, [INK]: WHITE};
 const WORDMARK_ON: Record<string, string> = {[CREAM]: INK, [RED_DEEP]: CREAM, [INK]: CREAM};
 
 const asField = (c: string) => (c === RED ? RED_DEEP : c);
@@ -66,7 +66,7 @@ const asField = (c: string) => (c === RED ? RED_DEEP : c);
 type FieldPalette = {text: string; label: string; hair: string; wash: string; accent: string};
 const onField = (bg: string): FieldPalette =>
   bg === CREAM ? {text: INK, label: LABEL_C, hair: HAIR_C, wash: WASH_C, accent: RED_DEEP}
-  : bg === RED_DEEP ? {text: WHITE, label: WHITE, hair: RULE_R, wash: WASH_I, accent: WHITE}
+  : bg === RED_DEEP ? {text: WHITE, label: WHITE, hair: RULE_R, wash: 'rgba(16,16,16,0.10)', accent: WHITE}
   : {text: CREAM, label: LABEL_I, hair: HAIR_I, wash: WASH_I, accent: RED_DEEP};
 
 const UI = {s: ROLES.label.size, m: ROLES.slug.size, l: ROLES.wordmark.size};
@@ -340,8 +340,10 @@ const GraphRebuild: React.FC<{field: string}> = ({field}) =>
 // showing what the animated hero already shows better). Its beat is now the
 // terminal replay below. The repo capture stays: canon requires the
 // recommended repo shown as a real capture.
-const SHOTS: {from: number; to: number; src: string; imgH: number; scroll: boolean}[] = [
-  {from: 16560, to: 22000, src: 'screens/no036-graphify-repo.png', imgH: 3160, scroll: true},
+const SHOTS: {from: number; to: number; imgH: number; scroll: boolean; src: string}[] = [
+  // src stays LAST: check-safe-zone.mjs derives its full-bleed exemption from
+  // the literal shape {from, to, ..., src: '...'} — a field after src unhooks it.
+  {from: 16560, to: 22000, imgH: 3160, scroll: true, src: 'screens/no036-graphify-repo.png'},
 ];
 
 // The star pill on the capture, measured in original 1080x3160 pixel space
@@ -487,7 +489,7 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
         {/* Eyebrows at UI.m: UI.s measured ~18px on the phone, under the 40px
             floor (stills judge v2). */}
         <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
-          color: pal.label, marginBottom: gap('s')}}>
+          color: pal.text, marginBottom: gap('s')}}>
           READ THE FILES
         </div>
         <div style={{opacity: trkA}}>{bar(growA, Math.min(growA, 1) * 100, pal.accent)}</div>
@@ -497,7 +499,7 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
       </div>
       <div style={row(BAR_H + 210, lblB)}>
         <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
-          color: pal.label, marginBottom: gap('s')}}>
+          color: pal.text, marginBottom: gap('s')}}>
           ASK THE GRAPH
         </div>
         <div style={{opacity: trkB}}>{bar(growB, Math.max(Math.min(growB, 1) * RATIO * 100, growB * 2), pal.text)}</div>
@@ -627,8 +629,10 @@ const MASCOT = {size: 160, xPct: 46.7, yPct: 70.7} as const;
 // Which beats fit is a measurement, not a preference — receipt and outro clear.
 // The receipt mascot drops to yPct 78: at the house 70.7 its walk crossed the
 // display-scale "2,000 tokens" value and occluded it (stills judge v2).
+// NO RECEIPT MASCOT: at size 160 the safe zone (bottom 500) and the token
+// number column leave it no legal standing room — the walk either crossed the
+// payoff number (judge v2, yPct 70.7-78) or the crop line (gate, yPct 82).
 const MASCOTS: {from: number; until: number; look: {xPct: number; yPct: number}; yPct?: number}[] = [
-  {from: 40000, until: 50560,        look: {xPct: 50, yPct: 52}, yPct: 82},  // the receipt
   {from: 61760, until: NO036_END_MS, look: {xPct: 50, yPct: 44}},            // the outro
 ];
 
@@ -658,7 +662,17 @@ export const KTNo036: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; st
   const bg = asField(wipeField(frame) ?? beat.bg);
 
   const beatHasPlate = PLATES.some((pl) => pl.from < beat.to && pl.to > beat.from);
-  const topNow = beat.top && beatHasPlate;
+  // The anchor follows what is ACTUALLY on screen (founder, 2026-08-15, held
+  // by check-type-fit): type sits top only while a plate is VISIBLE beneath
+  // it. In the two windows where the frame is type-only — "Graphify fixes
+  // that." before the repo shot, and "the viral versions skip." before the
+  // honesty plate at 53870 — the type centres. Neither seam shows a jump: the
+  // first exits into a full-bleed shot, the second into the plate's type hole.
+  const VIZ_VISIBLE: [number, number][] = [
+    [120, 13360], [16560, 30320], [30320, 40000], [40600, 50560], [53870, 61760],
+  ];
+  const topNow = beat.top && beatHasPlate &&
+    VIZ_VISIBLE.some(([a, b]) => frame >= f(a) && frame < f(b));
   const furn = FOOTER_ON[bg] ?? LABEL_I;
 
   return (
