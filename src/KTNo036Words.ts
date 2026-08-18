@@ -27,15 +27,15 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "Code ", ms: 990, out: 3040},
       ]},
       {size: 44, words: [
-        {t: "actually ", ms: 1400, out: 3920},
-        {t: "knows ", ms: 1770, out: 3920},
-        {t: "your ", ms: 2090, out: 3920},
-        {t: "codebase, ", ms: 2340, out: 3920},
+        {t: "actually ", ms: 1400, out: 3040},
+        {t: "knows ", ms: 1770, out: 3040},
+        {t: "your ", ms: 2090, out: 3040},
+        {t: "codebase, ", ms: 2340, out: 3040},
       ]},
       {size: 86, words: [
-        {t: "it ", ms: 3040, out: 4970},
-        {t: "is ", ms: 3130, out: 4970},
-        {t: "pretending. ", ms: 3260, out: 4970},
+        {t: "it ", ms: 3040, out: 3920},
+        {t: "is ", ms: 3130, out: 3920},
+        {t: "pretending. ", ms: 3260, out: 3920},
       ]},
       {size: 55, words: [
         {t: "Every ", ms: 3920, out: 6140},
@@ -43,15 +43,15 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "session, ", ms: 4410, out: 6140},
       ]},
       {size: 55, words: [
-        {t: "it ", ms: 4970, out: 7200},
-        {t: "rebuilds ", ms: 5120, out: 7200},
-        {t: "its ", ms: 5590, out: 7200},
-        {t: "mental ", ms: 5770, out: 7200},
+        {t: "it ", ms: 4970, out: 6140},
+        {t: "rebuilds ", ms: 5120, out: 6140},
+        {t: "its ", ms: 5590, out: 6140},
+        {t: "mental ", ms: 5770, out: 6140},
       ]},
       {size: 55, words: [
-        {t: "model ", ms: 6140, out: 8160},
-        {t: "from ", ms: 6450, out: 8160},
-        {t: "scratch. ", ms: 6700, out: 8160},
+        {t: "model ", ms: 6140, out: 7200},
+        {t: "from ", ms: 6450, out: 7200},
+        {t: "scratch. ", ms: 6700, out: 7200},
       ]},
       {size: 55, words: [
         {t: "The ", ms: 7200, out: 9520},
@@ -59,10 +59,10 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "greps, ", ms: 7640, out: 9520},
       ]},
       {size: 55, words: [
-        {t: "the ", ms: 8160, out: 10880},
-        {t: "same ", ms: 8410, out: 10880},
-        {t: "file ", ms: 8820, out: 10880},
-        {t: "reads. ", ms: 9090, out: 10880},
+        {t: "the ", ms: 8160, out: 9520},
+        {t: "same ", ms: 8410, out: 9520},
+        {t: "file ", ms: 8820, out: 9520},
+        {t: "reads. ", ms: 9090, out: 9520},
       ]},
       {size: 55, words: [
         {t: "Thousands ", ms: 9520, out: 11970},
@@ -71,9 +71,9 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "spent ", ms: 10540, out: 11970},
       ]},
       {size: 55, words: [
-        {t: "remembering ", ms: 10880, out: 13360},
-        {t: "what ", ms: 11520, out: 13360},
-        {t: "it ", ms: 11830, out: 13360},
+        {t: "remembering ", ms: 10880, out: 11970},
+        {t: "what ", ms: 11520, out: 11970},
+        {t: "it ", ms: 11830, out: 11970},
       ]},
       {size: 55, words: [
         {t: "already ", ms: 11970, out: 13360},
@@ -88,8 +88,8 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "Graphify ", ms: 13360, out: 14800},
       ]},
       {size: 55, words: [
-        {t: "fixes ", ms: 13930, out: 16560},
-        {t: "that. ", ms: 14300, out: 16560},
+        {t: "fixes ", ms: 13930, out: 14800},
+        {t: "that. ", ms: 14300, out: 14800},
       ]},
       {size: 55, words: [
         {t: "It ", ms: 14800, out: 16560},
@@ -99,10 +99,10 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "source, ", ms: 16020, out: 16560},
       ]},
       {size: 55, words: [
-        {t: "107,000 ", ms: 16560, out: 20340},
-        {t: "stars ", ms: 17880, out: 20340},
-        {t: "on ", ms: 18210, out: 20340},
-        {t: "GitHub. ", ms: 18340, out: 20340},
+        {t: "107,000 ", ms: 16560, out: 18960},
+        {t: "stars ", ms: 17880, out: 18960},
+        {t: "on ", ms: 18210, out: 18960},
+        {t: "GitHub. ", ms: 18340, out: 18960},
       ]},
       {size: 55, words: [
         {t: "It ", ms: 18960, out: 22000},
@@ -112,11 +112,11 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "once ", ms: 20100, out: 22000},
       ]},
       {size: 44, words: [
-        {t: "and ", ms: 20340, out: 24150},
-        {t: "builds ", ms: 20540, out: 24150},
-        {t: "a ", ms: 20900, out: 24150},
-        {t: "knowledge ", ms: 20940, out: 24150},
-        {t: "graph. ", ms: 21470, out: 24150},
+        {t: "and ", ms: 20340, out: 22000},
+        {t: "builds ", ms: 20540, out: 22000},
+        {t: "a ", ms: 20900, out: 22000},
+        {t: "knowledge ", ms: 20940, out: 22000},
+        {t: "graph. ", ms: 21470, out: 22000},
       ]},
       {size: 44, words: [
         {t: "Every ", ms: 22000, out: 25760},
@@ -125,9 +125,9 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "connection, ", ms: 23280, out: 25760},
       ]},
       {size: 44, words: [
-        {t: "every ", ms: 24150, out: 26550},
-        {t: "architectural ", ms: 24360, out: 26550},
-        {t: "decision. ", ms: 25120, out: 26550},
+        {t: "every ", ms: 24150, out: 25760},
+        {t: "architectural ", ms: 24360, out: 25760},
+        {t: "decision. ", ms: 25120, out: 25760},
       ]},
       {size: 55, words: [
         {t: "In ", ms: 25760, out: 28450},
@@ -136,11 +136,11 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "that ", ms: 26320, out: 28450},
       ]},
       {size: 44, words: [
-        {t: "every ", ms: 26550, out: 30320},
-        {t: "future ", ms: 26910, out: 30320},
-        {t: "session ", ms: 27300, out: 30320},
-        {t: "can ", ms: 27780, out: 30320},
-        {t: "query, ", ms: 27980, out: 30320},
+        {t: "every ", ms: 26550, out: 28450},
+        {t: "future ", ms: 26910, out: 28450},
+        {t: "session ", ms: 27300, out: 28450},
+        {t: "can ", ms: 27780, out: 28450},
+        {t: "query, ", ms: 27980, out: 28450},
       ]},
       {size: 44, words: [
         {t: "instead ", ms: 28450, out: 30320},
@@ -178,10 +178,10 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "nodes. ", ms: 35580, out: 36320},
       ]},
       {size: 55, words: [
-        {t: "Then ", ms: 36320, out: 38160},
-        {t: "we ", ms: 36550, out: 38160},
-        {t: "asked ", ms: 36660, out: 38160},
-        {t: "it ", ms: 36950, out: 38160},
+        {t: "Then ", ms: 36320, out: 37060},
+        {t: "we ", ms: 36550, out: 37060},
+        {t: "asked ", ms: 36660, out: 37060},
+        {t: "it ", ms: 36950, out: 37060},
       ]},
       {size: 55, words: [
         {t: "how ", ms: 37060, out: 40000},
@@ -206,9 +206,9 @@ export const NO036_BEATS: No036Beat[] = [
         {t: "by ", ms: 40910, out: 42100},
       ]},
       {size: 55, words: [
-        {t: "reading ", ms: 41050, out: 42800},
-        {t: "the ", ms: 41540, out: 42800},
-        {t: "files ", ms: 41750, out: 42800},
+        {t: "reading ", ms: 41050, out: 42100},
+        {t: "the ", ms: 41540, out: 42100},
+        {t: "files ", ms: 41750, out: 42100},
       ]},
       {size: 55, words: [
         {t: "costs ", ms: 42100, out: 44640},
