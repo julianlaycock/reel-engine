@@ -33,7 +33,7 @@ import {gap, FAMILY, WORDMARK, ROLES, MARGIN_X, COLUMN_W, SAFE, FIELD, TEXT_ON,
   CAPTURE_SCROLL_PX_PER_SEC} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer} from './KTEffects';
-import {G_NODES, G_EDGES, G_HUB_EDGE, GRAPH_W, GRAPH_H} from './KTNo036Graph';
+import {G_NODES, G_EDGES, G_HUB_EDGE, G_PATH, GRAPH_VB} from './KTNo036Graph';
 import {ClaudeMascot} from './scenes/ClaudeMascot';
 import './style.css';
 
@@ -120,15 +120,24 @@ const lineWidthSpacer = (w: {t: string; caps?: boolean; size?: number}, base: nu
 const DISSOLVE_FROM = 5120;    // "rebuilds"
 const DISSOLVE_TO = 12430;     // "knew yesterday."
 const ASSEMBLE_FROM = 22000;   // the repo shot ends; "Every function, every connection"
-const ASSEMBLE_TO = 28000;     // whole before "instead of rereading your code."
+const ASSEMBLE_TO = 27500;     // whole just before the trace
 const N = G_NODES.length;
+
+// THE QUERY TRACE (founder, 2026-08-18: the second showing must earn itself).
+// At "can query" the REAL route lights hop by hop: Captions() -> Video.tsx
+// (which is also the graph's hub) -> SceneBody(). render-video.mjs shares no
+// AST edge with src/ — that path truly does not exist, so the film does not
+// draw it (facts.md).
+const TRACE_AT = 27980;        // "query,"
+const TRACE_HOP_MS = 320;
+const PATH_NODE = new Set(G_PATH);
 
 const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
   ({field, state}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
   const ms = (frame / 30) * 1000;
-  const cx = GRAPH_W / 2, cy = GRAPH_H / 2;
+  const cx = GRAPH_VB.x + GRAPH_VB.w / 2, cy = GRAPH_VB.y + GRAPH_VB.h / 2;
 
   // Per-node life in [0,1]: 1 = fully present at rest, 0 = gone/not yet.
   const life = (o: number) => {
@@ -145,7 +154,8 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
       height: 560, display: 'flex', justifyContent: 'center'}}>
       {/* The graph FILLS its band (design judge, 2026-08-18: at 290px wide it
           read as a speckle, not a hero). meet keeps it inside 860-1420. */}
-      <svg viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`} preserveAspectRatio="xMidYMid meet"
+      <svg viewBox={`${GRAPH_VB.x} ${GRAPH_VB.y} ${GRAPH_VB.w} ${GRAPH_VB.h}`}
+        preserveAspectRatio="xMidYMid meet"
         style={{width: '100%', height: '100%'}}>
         {G_EDGES.map(([a, b], i) => {
           const l = Math.min(life(G_NODES[a].o), life(G_NODES[b].o));
@@ -153,11 +163,16 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
           // Hub-incident edges are the SPOKE BURST — heavier and brighter, so
           // the centre reads as the centre at phone scale (design judge pass 5).
           const spoke = G_HUB_EDGE[i];
+          // During the trace everything off-route steps back HARD and the
+          // spoke burst surrenders its red — 40 faint red spokes buried the
+          // lit route (trace pass).
+          const tracing = state === 'assemble' && ms >= TRACE_AT;
+          const dim = tracing ? 0.15 : 1;
           return (
             <line key={i} x1={G_NODES[a].x} y1={G_NODES[a].y}
               x2={G_NODES[b].x} y2={G_NODES[b].y}
-              stroke={spoke ? pal.accent : pal.text}
-              strokeWidth={spoke ? 3 : 2} opacity={(spoke ? 0.6 : 0.45) * l} />
+              stroke={spoke && !tracing ? pal.accent : pal.text}
+              strokeWidth={spoke ? 3 : 2} opacity={(spoke ? 0.6 : 0.45) * l * dim} />
           );
         })}
         {G_NODES.map((n, i) => {
@@ -172,13 +187,41 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
           const d = Math.sqrt(dx * dx + dy * dy) + 1e-3;
           const away = state === 'dissolve' ? (1 - l) * 90 : 0;
           const isHub = n.o === 0;
+          const nodeDim = state === 'assemble' && ms >= TRACE_AT && !PATH_NODE.has(i) ? 0.4 : 1;
           return (
             <circle key={i}
               cx={n.x + bx + (dx / d) * away} cy={n.y + by + (dy / d) * away}
               r={n.r * (0.4 + 0.6 * l)}
-              fill={isHub ? pal.accent : pal.text} opacity={l} />
+              fill={isHub ? pal.accent : pal.text} opacity={l * nodeDim} />
           );
         })}
+        {/* The trace: each hop draws on over TRACE_HOP_MS, in order, then the
+            path nodes ring. Assemble state only. */}
+        {state === 'assemble' ? G_PATH.slice(0, -1).map((a, k) => {
+          const b = G_PATH[k + 1];
+          const tp = decel(clamp01((ms - (TRACE_AT + k * TRACE_HOP_MS)) / TRACE_HOP_MS));
+          if (tp <= 0) return null;
+          const A = G_NODES[a], B = G_NODES[b];
+          return (
+            <g key={`p${k}`}>
+              <line x1={A.x} y1={A.y}
+                x2={A.x + (B.x - A.x) * tp} y2={A.y + (B.y - A.y) * tp}
+                stroke={pal.accent} strokeWidth={20} strokeLinecap="round" opacity={0.22} />
+              <line x1={A.x} y1={A.y}
+                x2={A.x + (B.x - A.x) * tp} y2={A.y + (B.y - A.y) * tp}
+                stroke={pal.accent} strokeWidth={9} strokeLinecap="round" opacity={0.95} />
+            </g>
+          );
+        }) : null}
+        {state === 'assemble' ? G_PATH.map((i, k) => {
+          const lit = decel(clamp01((ms - (TRACE_AT + k * TRACE_HOP_MS - 120)) / 240));
+          if (lit <= 0) return null;
+          const n = G_NODES[i];
+          return (
+            <circle key={`pr${k}`} cx={n.x} cy={n.y} r={n.r + 8 + 4 * lit}
+              fill="none" stroke={pal.accent} strokeWidth={4} opacity={lit} />
+          );
+        }) : null}
         {/* THE NAMES ARE THE POINT (founder, 2026-08-18): nine real file
             basenames from the graph data, so the structure reads as THIS
             codebase and not abstract dots. They die and return with their
@@ -187,17 +230,26 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
           if (!n.label) return null;
           const l = life(n.o);
           if (l <= 0) return null;
-          const left = n.x > GRAPH_W * 0.62;
+          const left = n.x > (GRAPH_VB.x + GRAPH_VB.w * 0.62);
+          const tx = n.x + (left ? -(n.r + 26) : n.r + 26);
+          const bw = n.label.length * 19 + 16;
+          // Off-route labels dim WITH their nodes during the trace — full-black
+          // labels out-contrasted the red route (trace pass 2).
+          const labelDim = state === 'assemble' && ms >= TRACE_AT && !PATH_NODE.has(i) ? 0.25 : 1;
           return (
-            <text key={`t${i}`} x={n.x + (left ? -(n.r + 14) : n.r + 14)} y={n.y + 10}
-              textAnchor={left ? 'end' : 'start'}
-              stroke={field === RED ? RED_DEEP : field} strokeWidth={10}
-              /* Labels SNAP, never fade: a mid-fade label reads as a defect
-                 on any paused frame (labels pass 3). Visible means crisp. */
-              style={{fontFamily: FONT_MONO, fontSize: 34, fill: pal.text,
-                paintOrder: 'stroke', opacity: l > 0.65 ? 1 : 0}}>
-              {n.label}
-            </text>
+            <g key={`t${i}`} opacity={(l > 0.65 ? 1 : 0) * labelDim}>
+              {/* A field-coloured plate under each label: halo alone lost to
+                  edge clutter near the hub (trace pass). */}
+              <rect x={left ? tx - bw : tx - 8} y={n.y - 18} width={bw} height={46}
+                fill={field === RED ? RED_DEEP : field} opacity={0.88} rx={4} />
+              <text x={tx} y={n.y + 10}
+                textAnchor={left ? 'end' : 'start'}
+                /* Labels SNAP, never fade: a mid-fade label reads as a defect
+                   on any paused frame (labels pass 3). Visible means crisp. */
+                style={{fontFamily: FONT_MONO, fontSize: 34, fill: pal.text}}>
+                {n.label}
+              </text>
+            </g>
           );
         })}
       </svg>
