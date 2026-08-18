@@ -27,3 +27,4 @@ Thumbs.db
 
 # whisper.cpp model weights — 147MB of binaries, fetched by install-whisper-cpp
 .whisper/
+graphify-out/
