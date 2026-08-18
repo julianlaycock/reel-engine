@@ -33,7 +33,7 @@ import {gap, FAMILY, WORDMARK, ROLES, MARGIN_X, COLUMN_W, SAFE, FIELD, TEXT_ON,
   CAPTURE_SCROLL_PX_PER_SEC} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer} from './KTEffects';
-import {G_NODES, G_EDGES, GRAPH_W, GRAPH_H} from './KTNo036Graph';
+import {G_NODES, G_EDGES, G_HUB_EDGE, GRAPH_W, GRAPH_H} from './KTNo036Graph';
 import {ClaudeMascot} from './scenes/ClaudeMascot';
 import './style.css';
 
@@ -150,10 +150,14 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
         {G_EDGES.map(([a, b], i) => {
           const l = Math.min(life(G_NODES[a].o), life(G_NODES[b].o));
           if (l <= 0) return null;
+          // Hub-incident edges are the SPOKE BURST — heavier and brighter, so
+          // the centre reads as the centre at phone scale (design judge pass 5).
+          const spoke = G_HUB_EDGE[i];
           return (
             <line key={i} x1={G_NODES[a].x} y1={G_NODES[a].y}
               x2={G_NODES[b].x} y2={G_NODES[b].y}
-              stroke={pal.text} strokeWidth={1.4} opacity={0.22 * l} />
+              stroke={spoke ? pal.accent : pal.text}
+              strokeWidth={spoke ? 3 : 2} opacity={(spoke ? 0.6 : 0.45) * l} />
           );
         })}
         {G_NODES.map((n, i) => {
