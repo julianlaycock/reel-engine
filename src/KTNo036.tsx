@@ -140,14 +140,31 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
   const cx = GRAPH_VB.x + GRAPH_VB.w / 2, cy = GRAPH_VB.y + GRAPH_VB.h / 2;
 
   // Per-node life in [0,1]: 1 = fully present at rest, 0 = gone/not yet.
+  // Hook opens on an ASSEMBLY BURST (founder, 2026-08-18: "way more dynamic"):
+  // ~60% of the graph is up at frame 0 and the last 40% snaps in over the
+  // first 1.1s, completing as the first sentence lands — payoff in motion.
   const life = (o: number) => {
     if (state === 'assemble') {
       const at = ASSEMBLE_FROM + (o / N) * (ASSEMBLE_TO - ASSEMBLE_FROM - 400);
       return decel(clamp01((ms - at) / 400));
     }
-    const at = DISSOLVE_FROM + ((N - 1 - o) / N) * (DISSOLVE_TO - DISSOLVE_FROM - 600);
-    return 1 - decel(clamp01((ms - at) / 600));
+    const frac = o / N;
+    const intro = frac <= 0.6 ? 1
+      : decel(clamp01((ms - ((frac - 0.6) / 0.4) * 1100) / 260));
+    // 1.4s per death, staggered: at any instant a third of the graph is
+    // visibly MID-FLIGHT — 600ms deaths read as a nudge (judge, v14).
+    const at = DISSOLVE_FROM + ((N - 1 - o) / N) * (DISSOLVE_TO - DISSOLVE_FROM - 1400);
+    return Math.min(intro, 1 - decel(clamp01((ms - at) / 1400)));
   };
+
+  // The whole structure LIVES: slow continuous rotation + swell across the
+  // hook, accelerating slightly as it dies. Deterministic, dissolve only —
+  // the assemble state stays still so the query trace reads.
+  const beatT = clamp01(ms / 13360);
+  const rot = state === 'dissolve'
+    ? -2 + 4.5 * beatT + 5 * decel(clamp01((ms - DISSOLVE_FROM) / 7310))
+    : 0;
+  const scl = state === 'dissolve' ? 1 + 0.07 * beatT : 1;
 
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W,
@@ -157,6 +174,7 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
       <svg viewBox={`${GRAPH_VB.x} ${GRAPH_VB.y} ${GRAPH_VB.w} ${GRAPH_VB.h}`}
         preserveAspectRatio="xMidYMid meet"
         style={{width: '100%', height: '100%'}}>
+        <g transform={`translate(${cx},${cy}) scale(${scl}) rotate(${rot}) translate(${-cx},${-cy})`}>
         {G_EDGES.map(([a, b], i) => {
           const l = Math.min(life(G_NODES[a].o), life(G_NODES[b].o));
           if (l <= 0) return null;
@@ -167,7 +185,9 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
           // spoke burst surrenders its red — 40 faint red spokes buried the
           // lit route (trace pass).
           const tracing = state === 'assemble' && ms >= TRACE_AT;
-          const dim = tracing ? 0.15 : 1;
+          const decay = state === 'dissolve'
+            ? 1 - 0.55 * decel(clamp01((ms - DISSOLVE_FROM) / 6000)) : 1;
+          const dim = (tracing ? 0.15 : 1) * decay;
           return (
             <line key={i} x1={G_NODES[a].x} y1={G_NODES[a].y}
               x2={G_NODES[b].x} y2={G_NODES[b].y}
@@ -180,17 +200,20 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
           if (l <= 0) return null;
           // The breath: a slow deterministic drift so the graph reads as alive
           // at frame 0 (frame-0 law: payoff in motion, never a static hold).
-          const bx = Math.sin(frame / 37 + n.o * 1.7) * 2.2;
-          const by = Math.cos(frame / 41 + n.o * 2.3) * 2.2;
-          // Dissolving nodes drift off their edges, away from the hub.
+          const bx = Math.sin(frame / 29 + n.o * 1.7) * (state === 'dissolve' ? 4.5 : 2.2);
+          const by = Math.cos(frame / 33 + n.o * 2.3) * (state === 'dissolve' ? 4.5 : 2.2);
+          // Dissolving nodes are THROWN off their edges — radial plus a
+          // tangential kick, so the death reads as a swirl, not a fade.
           const dx = n.x - cx, dy = n.y - cy;
           const d = Math.sqrt(dx * dx + dy * dy) + 1e-3;
-          const away = state === 'dissolve' ? (1 - l) * 90 : 0;
+          const away = state === 'dissolve' ? (1 - l) * 420 : 0;
+          const swirl = state === 'dissolve' ? (1 - l) * 200 : 0;
           const isHub = n.o === 0;
           const nodeDim = state === 'assemble' && ms >= TRACE_AT && !PATH_NODE.has(i) ? 0.4 : 1;
           return (
             <circle key={i}
-              cx={n.x + bx + (dx / d) * away} cy={n.y + by + (dy / d) * away}
+              cx={n.x + bx + (dx / d) * away + (dy / d) * swirl}
+              cy={n.y + by + (dy / d) * away - (dx / d) * swirl}
               r={n.r * (0.4 + 0.6 * l)}
               fill={isHub ? pal.accent : pal.text} opacity={l * nodeDim} />
           );
@@ -222,6 +245,7 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
               fill="none" stroke={pal.accent} strokeWidth={4} opacity={lit} />
           );
         }) : null}
+        </g>
         {/* THE NAMES ARE THE POINT (founder, 2026-08-18): nine real file
             basenames from the graph data, so the structure reads as THIS
             codebase and not abstract dots. They die and return with their
@@ -235,7 +259,8 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
           const bw = n.label.length * 19 + 16;
           // Off-route labels dim WITH their nodes during the trace — full-black
           // labels out-contrasted the red route (trace pass 2).
-          const labelDim = state === 'assemble' && ms >= TRACE_AT && !PATH_NODE.has(i) ? 0.25 : 1;
+          const labelDim = state === 'assemble' && ms >= TRACE_AT && !PATH_NODE.has(i) ? 0.25
+            : state === 'dissolve' ? 1 - decel(clamp01((ms - DISSOLVE_FROM) / 2500)) : 1;
           return (
             <g key={`t${i}`} opacity={(l > 0.65 ? 1 : 0) * labelDim}>
               {/* A field-coloured plate under each label: halo alone lost to
@@ -271,13 +296,13 @@ const GraphRebuild: React.FC<{field: string}> = ({field}) =>
 // header / 107.7k sidebar) against the voice's "107,000" — the same floor-vs-
 // page rounding NO. 035 shipped, and the page owns the number.
 //
-// Shot 2: OUR graph — graphify-out/graph.html rendered from THIS engine,
-// captured 2026-08-18 and cropped to the graph body (the numbered-community
-// sidebar and empty inspector read as chrome, not evidence). Static: it is a
-// picture being looked at, not a page being read, so it does not scroll.
+// The static capture of our own graph was CUT (founder scrub, 2026-08-18:
+// "makes no sense and looks bad" — a dark screenshot fighting the palette,
+// showing what the animated hero already shows better). Its beat is now the
+// terminal replay below. The repo capture stays: canon requires the
+// recommended repo shown as a real capture.
 const SHOTS: {from: number; to: number; src: string; imgH: number; scroll: boolean}[] = [
   {from: 16560, to: 22000, src: 'screens/no036-graphify-repo.png', imgH: 3160, scroll: true},
-  {from: 32080, to: 36320, src: 'screens/no036-graphify-our-graph.png', imgH: 1920, scroll: false},
 ];
 
 const ShotPlate: React.FC<{shot: (typeof SHOTS)[number]}> = ({shot}) => {
@@ -295,34 +320,45 @@ const ShotPlate: React.FC<{shot: (typeof SHOTS)[number]}> = ({shot}) => {
   );
 };
 
-// ═══ S3 — THE QUERY, TYPED ═══════════════════════════════════════════════════
-// The question we actually asked, typing in a mono chip as the voice asks it.
-// Named QueryTerm, NOT TerminalChip — that name is NO. 030's film-local device
-// and a same-named copy is the look-alike the Approval Protocol forbids.
-const QUERY_FROM = 36320;       // "Then we asked it..."
-const QUERY_TEXT = 'graphify query "how do captions connect to the render pipeline?"';
-const QueryTerm: React.FC<{field: string}> = ({field}) => {
+// ═══ S3 — THE RUN, REPLAYED ══════════════════════════════════════════════════
+// The founder cut the static graph screenshot; this beat is now a REPLAY of
+// the terminal session we actually ran on 2026-08-18 (facts.md) — commands
+// type, real output lines land on the words that speak them. Constant motion,
+// zero decoration: every line is the tool's own stdout.
+const TERM_LINES: {at: number; kind: 'cmd' | 'out'; text: string; typeMs?: number}[] = [
+  {at: 30320, kind: 'cmd', text: 'graphify update .', typeMs: 900},
+  {at: 32080, kind: 'out', text: '196/196 files scanned'},
+  {at: 34530, kind: 'out', text: '1,764 nodes -> graph.json'},
+  {at: 36660, kind: 'cmd', text: 'graphify query "how do captions connect to the render pipeline?"', typeMs: 2100},
+  {at: 39300, kind: 'out', text: 'answered in a ~2,000-token budget'},
+];
+const RunTerminal: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
-  const p = decel(prog(frame, QUERY_FROM, ENTER));
-  // Types over ~2.2s, done before the beat ends; linear — typing is a clock.
-  const typed = Math.round(QUERY_TEXT.length *
-    clamp01((frame - f(QUERY_FROM + 200)) / Math.max(1, f(2200))));
+  const ms = (frame / 30) * 1000;
+  const p = decel(prog(frame, 30320, ENTER));
   const caret = Math.floor(frame / 8) % 2 === 0;
+  const live = TERM_LINES.filter((L) => ms >= L.at);
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W,
       opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`}}>
-      {/* NO LABEL: the type row above is already the sentence ("Then we asked
-          it how..."), and readableTime priced a 3-word label at more seconds
-          than this window has — NO. 034's CodePage ruling, again. */}
       <div style={{background: pal.wash, border: `2px solid ${pal.hair}`,
-        padding: `${gap('m')}px ${gap('m')}px`}}>
-        <div style={{fontFamily: FONT_MONO, fontSize: UI.m, color: pal.text,
-          lineHeight: 1.4, minHeight: '2.8em', overflowWrap: 'break-word'}}>
-          <span style={{color: pal.label}}>$ </span>
-          {QUERY_TEXT.slice(0, typed)}
-          {caret ? <span style={{opacity: 0.8}}>▌</span> : null}
-        </div>
+        padding: `${gap('m')}px ${gap('m')}px`, minHeight: 380}}>
+        {live.map((L, li) => {
+          const isLast = li === live.length - 1;
+          const typed = L.kind === 'cmd'
+            ? Math.round(L.text.length * clamp01((ms - L.at) / (L.typeMs ?? 800)))
+            : L.text.length;
+          return (
+            <div key={L.at} style={{fontFamily: FONT_MONO, fontSize: UI.m,
+              color: L.kind === 'cmd' ? pal.text : pal.label,
+              lineHeight: 1.5, overflowWrap: 'break-word'}}>
+              {L.kind === 'cmd' ? <span style={{color: pal.label}}>$ </span> : null}
+              {L.text.slice(0, typed)}
+              {isLast && caret ? <span style={{opacity: 0.8}}>\u258c</span> : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -483,7 +519,7 @@ const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
   // empty ink field (design judge, 2026-08-18).
   {from: 0,     to: 13360,        Node: GraphDissolve}, // 13.4s  0 words  needs 3.0
   {from: 22000, to: 30320,        Node: GraphRebuild},  //  8.3s  0 words  needs 3.0
-  {from: 36320, to: 40000,        Node: QueryTerm},     //  3.7s  0 words  needs 3.0
+  {from: 30320, to: 40000,        Node: RunTerminal},   //  9.7s  0 words  needs 3.0
   {from: 40000, to: 50560,        Node: TokenBars},     // 10.6s  8 words  needs 7.8
   {from: 50560, to: 61760,        Node: HonestyPlate},  // 11.2s  4 words  needs 5.4
   {from: 61760, to: NO036_END_MS, Node: OutroMarquee},  //  6.6s  0 words  needs 3.0
