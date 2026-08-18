@@ -340,10 +340,13 @@ const GraphRebuild: React.FC<{field: string}> = ({field}) =>
 // showing what the animated hero already shows better). Its beat is now the
 // terminal replay below. The repo capture stays: canon requires the
 // recommended repo shown as a real capture.
-const SHOTS: {from: number; to: number; imgH: number; scroll: boolean; src: string}[] = [
-  // src stays LAST: check-safe-zone.mjs derives its full-bleed exemption from
-  // the literal shape {from, to, ..., src: '...'} — a field after src unhooks it.
-  {from: 16560, to: 22000, imgH: 3160, scroll: true, src: 'screens/no036-graphify-repo.png'},
+// The entry is EXACTLY {from, to, src}: check-safe-zone.mjs derives its
+// full-bleed exemption from that literal shape — any extra field unhooks it.
+// Per-shot config lives beside it as constants.
+const SHOT_IMG_H = 3160;
+const SHOT_SCROLL = true;
+const SHOTS: {from: number; to: number; src: string}[] = [
+  {from: 16560, to: 22000, src: 'screens/no036-graphify-repo.png'},
 ];
 
 // The star pill on the capture, measured in original 1080x3160 pixel space
@@ -362,16 +365,16 @@ const STAR_HOLD_MS = 1900;
 const ShotPlate: React.FC<{shot: (typeof SHOTS)[number]}> = ({shot}) => {
   const frame = useCurrentFrame();
   const shotSec = (shot.to - shot.from) / 1000;
-  const drop = shot.scroll ? 240 : 0;
+  const drop = SHOT_SCROLL ? 240 : 0;
   const scrollDur = Math.max(1, f(shot.to - shot.from) - f(STAR_HOLD_MS));
-  const t = shot.scroll
+  const t = SHOT_SCROLL
     ? decel(clamp01((frame - f(shot.from) - f(STAR_HOLD_MS)) / scrollDur))
     : 0;
-  const travel = shot.scroll
-    ? drop + Math.min(shot.imgH - 1920, CAPTURE_SCROLL_PX_PER_SEC * shotSec)
+  const travel = SHOT_SCROLL
+    ? drop + Math.min(SHOT_IMG_H - 1920, CAPTURE_SCROLL_PX_PER_SEC * shotSec)
     : 0;
   const top = drop - travel * t;
-  const ringP = shot.scroll ? decel(prog(frame, STAR_RING_AT, 400)) : 0;
+  const ringP = SHOT_SCROLL ? decel(prog(frame, STAR_RING_AT, 400)) : 0;
   const pad = 16;
   return (
     <AbsoluteFill style={{overflow: 'hidden', backgroundColor: INK}}>
@@ -669,7 +672,7 @@ export const KTNo036: React.FC<{layer?: 'all' | 'type' | 'viz' | 'furniture'; st
   // honesty plate at 53870 — the type centres. Neither seam shows a jump: the
   // first exits into a full-bleed shot, the second into the plate's type hole.
   const VIZ_VISIBLE: [number, number][] = [
-    [120, 13360], [16560, 30320], [30320, 40000], [40600, 50560], [53870, 61760],
+    [0, 13360], [16560, 30320], [30320, 40000], [40600, 50560], [53870, 61760],
   ];
   const topNow = beat.top && beatHasPlate &&
     VIZ_VISIBLE.some(([a, b]) => frame >= f(a) && frame < f(b));
