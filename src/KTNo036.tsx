@@ -451,7 +451,7 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
   // while the voice says 27,000 is the exact defect the arrive-whole law was
   // written against (design judge, 2026-08-18; NO. 035's card lesson).
   const fill = (at: number) => {
-    const q = decel(prog(frame, at, 500));
+    const q = decel(prog(frame, at, 700));
     return q * (1 + 0.02 * Math.sin(Math.PI * q));
   };
   const growA = fill(BAR_A_AT);
@@ -486,7 +486,7 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
       <div style={row(0, lblA)}>
         {/* Eyebrows at UI.m: UI.s measured ~18px on the phone, under the 40px
             floor (stills judge v2). */}
-        <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug,
+        <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
           color: pal.label, marginBottom: gap('s')}}>
           READ THE FILES
         </div>
@@ -496,7 +496,7 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
         </div>
       </div>
       <div style={row(BAR_H + 210, lblB)}>
-        <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug,
+        <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
           color: pal.label, marginBottom: gap('s')}}>
           ASK THE GRAPH
         </div>
@@ -536,7 +536,7 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
         opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`}}>
         <div style={{height: 2, background: pal.hair}} />
         <div style={{padding: `${gap('m')}px 0`}}>
-          <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug,
+          <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
             color: pal.label, marginBottom: gap('s')}}>
             CLAIMED
           </div>
@@ -551,12 +551,15 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
       </div>
       <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 320, width: VIZ_W,
         opacity: truth, transform: `translateY(${(1 - truth) * TRAVEL}px)`}}>
-        <div style={{fontFamily: FONT_UI, fontSize: UI.m, letterSpacing: TRACK.slug,
+        <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
           color: pal.label, marginBottom: gap('s')}}>
           MEASURED
         </div>
+        {/* <=2% breathe: the plate otherwise holds pixel-identical for 3.8s,
+            the longest dead stretch in the film (judge v3). */}
         <div style={{fontFamily: FONT, fontSize: ROLES.title.size, color: pal.text,
-          lineHeight: 1.14}}>
+          lineHeight: 1.14, display: 'inline-block',
+          transform: `scale(${1 + 0.015 * Math.sin(frame / 9)})`}}>
           14x
         </div>
       </div>
@@ -625,7 +628,7 @@ const MASCOT = {size: 160, xPct: 46.7, yPct: 70.7} as const;
 // The receipt mascot drops to yPct 78: at the house 70.7 its walk crossed the
 // display-scale "2,000 tokens" value and occluded it (stills judge v2).
 const MASCOTS: {from: number; until: number; look: {xPct: number; yPct: number}; yPct?: number}[] = [
-  {from: 40000, until: 50560,        look: {xPct: 50, yPct: 52}, yPct: 78},  // the receipt
+  {from: 40000, until: 50560,        look: {xPct: 50, yPct: 52}, yPct: 82},  // the receipt
   {from: 61760, until: NO036_END_MS, look: {xPct: 50, yPct: 44}},            // the outro
 ];
 
