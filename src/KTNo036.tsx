@@ -33,7 +33,7 @@ import {gap, FAMILY, WORDMARK, ROLES, MARGIN_X, COLUMN_W, SAFE, FIELD, TEXT_ON,
   CAPTURE_SCROLL_PX_PER_SEC} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
 import {Odometer, PumpRect} from './KTEffects';
-import {G_NODES, G_EDGES, G_HUB_EDGE, G_PATH, GRAPH_VB} from './KTNo036Graph';
+import {G_NODES, G_EDGES, GRAPH_VB} from './KTNo036Graph';
 import {ClaudeMascot} from './scenes/ClaudeMascot';
 import './style.css';
 
@@ -115,30 +115,45 @@ const lineWidthSpacer = (w: {t: string; caps?: boolean; size?: number}, base: nu
 //   reverse assembly order and are gone by "knew yesterday". What the viewer
 //   loses is what Claude loses.
 //
-//   S2 `assemble` — the same graph grows back, hub outward in BFS order, while
-//   the voice says "scans your codebase once and builds a knowledge graph".
-//   Edges draw on as their endpoints arrive. It ends whole and stays.
-//
 // The dissolve order is the assembly order REVERSED: leaves vanish first, the
-// hub dies last — knowledge erodes from the edges in. Both states end inside
-// the plate band (860 -> 1420): height is capped at 560 and the SVG scales.
+// hub dies last — knowledge erodes from the edges in. This is the film's ONLY
+// graph showing (the S2 assemble/trace beat was cut, founder 2026-08-19), and
+// it is FULL-BLEED per the approved constellation mock — see the layer
+// transforms below.
 const DISSOLVE_FROM = 5120;    // "rebuilds"
 const DISSOLVE_TO = 12430;     // "knew yesterday."
-const ASSEMBLE_FROM = 22000;   // the repo shot ends; "Every function, every connection"
-const ASSEMBLE_TO = 27500;     // whole just before the trace
 const N = G_NODES.length;
 
-// THE QUERY TRACE (founder, 2026-08-18: the second showing must earn itself).
-// At "can query" the REAL route lights hop by hop: Captions() -> Video.tsx
-// (which is also the graph's hub) -> SceneBody(). render-video.mjs shares no
-// AST edge with src/ — that path truly does not exist, so the film does not
-// draw it (facts.md).
-const TRACE_AT = 27980;        // "query,"
-const TRACE_HOP_MS = 550;      // slow enough to be FOLLOWED (motion judge v1)
-const PATH_NODE = new Set(G_PATH);
+// ONE SHOWING (founder, 2026-08-19): the second graph beat (assemble + query
+// trace) was CUT — "we're showing two graphs, ideally we would show one". The
+// repo shot now runs through that window; the scan/build/query facts live in
+// the terminal replay. The hook is the film's single graph, FULL-BLEED per the
+// approved constellation mock (hook-a.png): the structure is the environment,
+// bleeding off every edge — never a boxed plate.
+//
+// Two layers of the SAME kinematics: a huge dim copy behind (depth), the
+// living graph in front. Transforms map graph space (1000x740) onto the full
+// 1080x1920 frame; values are the approved mock's, verbatim.
+const BG_LAYER = {s: 2.6, tx: -760, ty: -30, rot: 8, op: 0.35};
+const FG_LAYER = {s: 1.9, tx: -410, ty: 330};
+// GRAPH LIGHT (founder 2026-08-19: visualisations are limitless; the palette
+// may gradate for light). The hub is a light SOURCE — a white-hot core cooling
+// through orange into the brand red, built as stacked falloff discs rather
+// than SVG filters: cheap, deterministic, and it survives h264.
+const HOT_CORE = 'rgba(255,222,186,0.95)';
+const HOT_MID = 'rgba(255,128,64,0.8)';
+// Index-hashed pseudo-random — constant per (node, particle), no randomness at
+// render time, so every frame is reproducible (canon determinism law).
+const hash = (a: number, b: number) => {
+  const s = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
+  return s - Math.floor(s);
+};
+// Where the hook may draw outside the safe zone — check-safe-zone.mjs reads
+// this EXACT `{from, to}` shape the way it reads SHOTS (founder-approved
+// full-bleed, 2026-08-19; type and furniture stay inside the zone).
+const FULL_BLEED: {from: number; to: number}[] = [{from: 0, to: 13360}];
 
-const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
-  ({field, state}) => {
+const GraphAssembly: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
   const ms = (frame / 30) * 1000;
@@ -156,180 +171,177 @@ const GraphAssembly: React.FC<{field: string; state: 'dissolve' | 'assemble'}> =
   // the first two thirds of the flight so the throw is SEEN, not inferred.
   const P = G_NODES.map((n) => {
     const o = n.o;
-    let intro = 1;
-    let death = 1;
-    if (state === 'assemble') {
-      const at = ASSEMBLE_FROM + (o / N) * (ASSEMBLE_TO - ASSEMBLE_FROM - 400);
-      intro = decel(clamp01((ms - at) / 400));
-    } else {
-      const frac = o / N;
-      intro = frac <= 0.35 ? 1
-        : decel(clamp01((ms - ((frac - 0.35) / 0.65) * 1400) / 320));
-      // The hub is the LAST SURVIVOR: it holds the frame, pulsing harder as
-      // everything else dies, and is still alive AT the cut — the wipe takes
-      // it (motion judge v2: killing it at 12.8s left dead canvas).
-      const at = o === 0 ? Infinity
-        : DISSOLVE_FROM + ((N - 1 - o) / N) * (DISSOLVE_TO - DISSOLVE_FROM - 1400);
-      death = 1 - decel(clamp01((ms - at) / 1400));
-    }
+    const frac = o / N;
+    const intro = frac <= 0.35 ? 1
+      : decel(clamp01((ms - ((frac - 0.35) / 0.65) * 1400) / 320));
+    // The hub is the LAST SURVIVOR: it holds the frame, pulsing harder as
+    // everything else dies, and is still alive AT the cut — the wipe takes
+    // it (motion judge v2: killing it at 12.8s left dead canvas).
+    const at = o === 0 ? Infinity
+      : DISSOLVE_FROM + ((N - 1 - o) / N) * (DISSOLVE_TO - DISSOLVE_FROM - 1400);
+    const death = 1 - decel(clamp01((ms - at) / 1400));
     const l = Math.min(intro, death);
     const dx = n.x - cx, dy = n.y - cy;
     const d = Math.sqrt(dx * dx + dy * dy) + 1e-3;
-    const bAmp = state === 'dissolve' ? 6 : 2.2;
-    let x = n.x + Math.sin(frame / 29 + o * 1.7) * bAmp;
-    let y = n.y + Math.cos(frame / 33 + o * 2.3) * bAmp;
-    if (state === 'dissolve') {
-      const arr = 1 - intro;   // arrival: in from beyond the rim, curling
-      x += (dx / d) * arr * 420 - (dy / d) * arr * 160;
-      y += (dy / d) * arr * 420 + (dx / d) * arr * 160;
-      const thr = 1 - death;   // death: thrown out with the opposite swirl
-      x += (dx / d) * thr * 420 + (dy / d) * thr * 200;
-      y += (dy / d) * thr * 420 - (dx / d) * thr * 200;
-    }
+    let x = n.x + Math.sin(frame / 29 + o * 1.7) * 6;
+    let y = n.y + Math.cos(frame / 33 + o * 2.3) * 6;
+    const arr = 1 - intro;   // arrival: in from beyond the rim, curling
+    x += (dx / d) * arr * 420 - (dy / d) * arr * 160;
+    y += (dy / d) * arr * 420 + (dx / d) * arr * 160;
+    const thr = 1 - death;   // death: thrown out with the opposite swirl
+    x += (dx / d) * thr * 420 + (dy / d) * thr * 200;
+    y += (dy / d) * thr * 420 - (dx / d) * thr * 200;
     // Visible WHILE flying: full ink until two thirds of the flight is done.
     const op = clamp01(l / 0.35);
-    return {x, y, l, op};
+    return {x, y, l, op, thr};
   });
 
   // The whole structure LIVES: slow continuous rotation + swell across the
-  // hook, accelerating slightly as it dies. Deterministic, dissolve only —
-  // the assemble state stays still so the query trace reads.
+  // hook, accelerating slightly as it dies. Deterministic.
   const beatT = clamp01(ms / 13360);
-  const rot = state === 'dissolve'
-    ? -2 + 6 * beatT + 5 * decel(clamp01((ms - DISSOLVE_FROM) / 7310))
-    : 0;
-  const scl = state === 'dissolve' ? 1 + 0.09 * beatT : 1;
+  const rot = -2 + 6 * beatT + 5 * decel(clamp01((ms - DISSOLVE_FROM) / 7310));
+  const scl = 1 + 0.09 * beatT;
+  const liveT = `translate(${cx},${cy}) scale(${scl}) rotate(${rot}) translate(${-cx},${-cy})`;
 
-  // Trace choreography (motion judge v1: it snapped in whole). The field dims
-  // FIRST over 300ms, then the route draws hop by hop at a pace the eye can
-  // follow, each ring landing as its hop arrives.
-  const dimP = state === 'assemble' ? decel(clamp01((ms - (TRACE_AT - 300)) / 300)) : 0;
-
-  return (
-    <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP - 160, width: VIZ_W,
-      height: 720, display: 'flex', justifyContent: 'center'}}>
-      {/* The graph FILLS its band (design judge, 2026-08-18: at 290px wide it
-          read as a speckle, not a hero). Enlarged 560 -> 720 and raised 160px
-          toward the optical centre: at frame 0 the old band left the top half
-          of the phone empty (stills judge v1) — the hook must own the frame. */}
-      <svg viewBox={`${GRAPH_VB.x} ${GRAPH_VB.y} ${GRAPH_VB.w} ${GRAPH_VB.h}`}
-        preserveAspectRatio="xMidYMid meet"
-        style={{width: '100%', height: '100%'}}>
-        <g transform={`translate(${cx},${cy}) scale(${scl}) rotate(${rot}) translate(${-cx},${-cy})`}>
+  // One SVG spanning the whole frame; each layer maps graph space through its
+  // own static transform, then the shared living rotation/swell. The bg copy
+  // is depth: no glow, no red hub, no labels — a structure behind the structure.
+  const layer = (L: {s: number; tx: number; ty: number; rot?: number}, glow: boolean, hubRed: boolean) => (
+    <g transform={`translate(${L.tx},${L.ty}) scale(${L.s})` + (L.rot ? ` rotate(${L.rot} ${cx} ${cy})` : '')}>
+      <g transform={liveT}>
         {G_EDGES.map(([a, b], i) => {
           const op = Math.min(P[a].op, P[b].op);
           if (op <= 0) return null;
-          // Hub-incident edges are the SPOKE BURST — heavier and brighter, so
-          // the centre reads as the centre at phone scale (design judge pass 5).
-          const spoke = G_HUB_EDGE[i];
-          // During the trace everything off-route steps back HARD and the
-          // spoke burst surrenders its red — 40 faint red spokes buried the
-          // lit route (trace pass). The step-back RAMPS over 300ms (motion
-          // judge v1: a binary dim read as a jump cut inside the beat).
-          const decay = state === 'dissolve'
-            ? 1 - 0.55 * decel(clamp01((ms - DISSOLVE_FROM) / 6000)) : 1;
-          const dim = (1 - 0.85 * dimP) * decay;
-          // Edges follow their DISPLACED endpoints: they stretch with flying
-          // nodes and snap out when an endpoint dies (motion judge v1).
+          // Thin and faint (approved mock): the nodes carry the structure; the
+          // edge web is atmosphere. It decays as the dissolve advances.
+          const decay = 1 - 0.55 * decel(clamp01((ms - DISSOLVE_FROM) / 6000));
           return (
-            <line key={i} x1={P[a].x} y1={P[a].y}
-              x2={P[b].x} y2={P[b].y}
-              stroke={spoke && dimP < 0.5 ? pal.accent : pal.text}
-              strokeWidth={spoke ? 3 : 2} opacity={(spoke ? 0.6 : 0.45) * op * dim} />
+            <line key={i} x1={P[a].x} y1={P[a].y} x2={P[b].x} y2={P[b].y}
+              stroke={pal.text} strokeWidth={glow ? 0.8 : 0.5}
+              opacity={(glow ? 0.16 : 0.05) * op * decay} />
           );
         })}
         {G_NODES.map((n, i) => {
           const {x, y, l, op} = P[i];
           if (op <= 0) return null;
-          const isHub = n.o === 0;
-          // The hub PULSES — subtle at rest, urgent once it is the last thing
-          // alive (amplitude grows over the dissolve's final 2.4s).
-          const urgency = state === 'dissolve' ? clamp01((ms - 11000) / 2400) : 0;
+          // The depth copy skips the hub: its r34 disc at 2.6x lands ~100px
+          // off the front hub and reads as a grey ghost (stills judge, v2 of
+          // this hook — the mock's double-blob, back through the other layer).
+          if (!hubRed && n.o === 0) return null;
+          const isHub = n.o === 0 && hubRed;
+          const urgency = clamp01((ms - 11000) / 2400);
           const pulse = isHub ? 1 + (0.05 + 0.12 * urgency) * Math.sin(frame / 5) : 1;
-          const nodeDim = PATH_NODE.has(i) ? 1 : 1 - 0.6 * dimP;
           return (
-            <circle key={i} cx={x} cy={y}
-              r={n.r * (0.75 + 0.25 * l) * pulse}
-              fill={isHub ? pal.accent : pal.text} opacity={op * nodeDim} />
+            <g key={i}>
+              {glow && isHub ? (<>
+                {/* deep-glow bloom stack: wide red wash -> red -> hot orange ->
+                    white-hot core. The one light source in the frame. */}
+                <circle cx={x} cy={y} r={n.r * 7 * pulse} fill={pal.accent} opacity={0.08 * op} />
+                <circle cx={x} cy={y} r={n.r * 3.6 * pulse} fill={pal.accent} opacity={0.22 * op} />
+                <circle cx={x} cy={y} r={n.r * 1.9 * pulse} fill={HOT_MID} opacity={0.55 * op} />
+              </>) : null}
+              {glow && !isHub ? (<>
+                <circle cx={x} cy={y} r={n.r * 3.2} fill={pal.text} opacity={0.07 * op} />
+                <circle cx={x} cy={y} r={n.r * 1.7} fill={pal.text} opacity={0.16 * op} />
+              </>) : null}
+              <circle cx={x} cy={y} r={n.r * (0.75 + 0.25 * l) * pulse}
+                fill={isHub ? HOT_CORE : pal.text} opacity={op * (isHub ? 1 : 0.95)} />
+            </g>
           );
         })}
-        {/* The trace: each hop draws on over TRACE_HOP_MS, in order, then the
-            path nodes ring. Assemble state only. */}
-        {state === 'assemble' ? G_PATH.slice(0, -1).map((a, k) => {
-          const b = G_PATH[k + 1];
-          const tp = decel(clamp01((ms - (TRACE_AT + k * TRACE_HOP_MS)) / TRACE_HOP_MS));
-          if (tp <= 0) return null;
-          const A = G_NODES[a], B = G_NODES[b];
+        {/* DEATH BURSTS (front layer only): a node that is thrown off the graph
+            shatters into six embers that scatter along its throw and cool out.
+            Fully index-hashed — deterministic at every frame. */}
+        {glow ? G_NODES.map((n, i) => {
+          const {x, y, thr} = P[i];
+          if (thr <= 0 || thr >= 1) return null;
           return (
-            <g key={`p${k}`}>
-              <line x1={A.x} y1={A.y}
-                x2={A.x + (B.x - A.x) * tp} y2={A.y + (B.y - A.y) * tp}
-                stroke={pal.accent} strokeWidth={20} strokeLinecap="round" opacity={0.22} />
-              <line x1={A.x} y1={A.y}
-                x2={A.x + (B.x - A.x) * tp} y2={A.y + (B.y - A.y) * tp}
-                stroke={pal.accent} strokeWidth={9} strokeLinecap="round" opacity={0.95} />
+            <g key={`e${i}`}>
+              {Array.from({length: 6}, (_, k) => {
+                const a = hash(i, k) * Math.PI * 2;
+                const sp = 40 + 140 * hash(i, k + 7);
+                const px = x + Math.cos(a) * thr * sp;
+                const py = y + Math.sin(a) * thr * sp - thr * thr * 30;
+                const r = (1.6 + 2.6 * hash(i, k + 13)) * (1 - thr * 0.5);
+                const ember = hash(i, k + 3) < 0.35;
+                return (
+                  <circle key={k} cx={px} cy={py} r={r}
+                    fill={ember ? HOT_MID : pal.text} opacity={0.85 * (1 - thr)} />
+                );
+              })}
             </g>
           );
         }) : null}
-        {state === 'assemble' ? G_PATH.map((i, k) => {
-          const lit = decel(clamp01((ms - (TRACE_AT + k * TRACE_HOP_MS - 120)) / 240));
-          if (lit <= 0) return null;
-          const n = G_NODES[i];
-          return (
-            <circle key={`pr${k}`} cx={n.x} cy={n.y} r={n.r + 8 + 4 * lit}
-              fill="none" stroke={pal.accent} strokeWidth={4} opacity={lit} />
-          );
-        }) : null}
-        </g>
-        {/* THE NAMES ARE THE POINT (founder, 2026-08-18): nine real file
-            basenames from the graph data, so the structure reads as THIS
-            codebase and not abstract dots. They die and return with their
-            nodes — losing the names IS losing the knowledge. */}
-        {G_NODES.map((n, i) => {
+      </g>
+    </g>
+  );
+
+  // THE NAMES ARE THE POINT (founder, 2026-08-18): real file basenames,
+  // anchored in SCREEN space through the front layer's static transform so
+  // they hold the 40px phone-legibility floor while the structure lives
+  // behind them. Rendered INSIDE the camera group so chips track their nodes
+  // through the push. Suppressed where they cannot live whole: under the
+  // headline band, in the platform's bottom lane, or clipped by an edge.
+  const LABELS = G_NODES.map((n, i) => {
           if (!n.label) return null;
           const {l} = P[i];
           if (l <= 0) return null;
-          const left = n.x > (GRAPH_VB.x + GRAPH_VB.w * 0.62);
-          const tx = n.x + (left ? -(n.r + 26) : n.r + 26);
+          const sx = FG_LAYER.tx + n.x * FG_LAYER.s;
+          const sy = FG_LAYER.ty + n.y * FG_LAYER.s;
+          const left = sx > 1080 * 0.62;
           const bw = n.label.length * 22 + 18;
-          // Off-route labels dim WITH their nodes during the trace — full-black
-          // labels out-contrasted the red route (trace pass 2). The dim RAMPS
-          // with dimP. During the dissolve a label vanishes the moment its own
-          // node starts flying (v1: plates hung over departed nodes).
-          // 1500ms, snapped at 0.15: the 2500ms tail left 20%-opacity ghost
-          // labels smudging the dissolve at pause (stills judge v2).
+          const ax = sx + (left ? -(n.r * FG_LAYER.s + 26) : n.r * FG_LAYER.s + 26);
+          // Whole chips only: both horizontal bounds per anchor direction, and
+          // out of the platform's bottom-500 lane (nodes may bleed; text no).
+          if (!(sy > 700 && sy < 1400 &&
+            (left ? ax - bw > 120 && ax < 1040 : ax > 120 && ax + bw < 1040))) return null;
+          // 1500ms fade snapped at 0.15: ghost labels smudged the dissolve at
+          // pause (stills judge v2). A label vanishes the moment its node flies.
           const rawFade = 1 - decel(clamp01((ms - DISSOLVE_FROM) / 1500));
-          const labelDim = state === 'dissolve'
-            ? (rawFade < 0.15 ? 0 : rawFade)
-            : (PATH_NODE.has(i) ? 1 : 1 - 0.75 * dimP);
-          const anchored = state === 'dissolve' ? (l > 0.92 ? 1 : 0) : 1;
+          const labelDim = rawFade < 0.15 ? 0 : rawFade;
+          const anchored = l > 0.92 ? 1 : 0;
           return (
             <g key={`t${i}`} opacity={(l > 0.65 ? 1 : 0) * labelDim * anchored}>
               {/* A field-coloured plate under each label: halo alone lost to
                   edge clutter near the hub (trace pass). */}
-              <rect x={left ? tx - bw : tx - 8} y={n.y - 22} width={bw} height={54}
+              <rect x={left ? ax - bw : ax - 8} y={sy - 22} width={bw} height={54}
                 fill={field === RED ? RED_DEEP : field} opacity={0.88} rx={4} />
-              <text x={tx} y={n.y + 12}
+              <text x={ax} y={sy + 12}
                 textAnchor={left ? 'end' : 'start'}
-                /* Labels SNAP, never fade: a mid-fade label reads as a defect
-                   on any paused frame (labels pass 3). Visible means crisp.
-                   40px: at the svg's effective scale 34 landed ~25px on the
-                   phone, under the 40px floor (stills judge v1). */
+                /* Labels SNAP, never fade (labels pass 3). 40px SCREEN pixels —
+                   the stills-judge floor, now exact because labels skip the
+                   layer transforms. */
                 style={{fontFamily: FONT_MONO, fontSize: 40, fill: pal.text}}>
                 {n.label}
               </text>
             </g>
           );
-        })}
+        });
+
+  return (
+    <AbsoluteFill>
+      <svg viewBox="0 0 1080 1920" style={{position: 'absolute', inset: 0, width: '100%', height: '100%'}}>
+        {/* CAMERA: a slow push into the structure across the hook — the front
+            layer travels twice the depth layer's rate, so the parallax makes
+            the frame read as 3D space rather than stacked flats. */}
+        <g transform={`translate(540,960) scale(${1 + 0.035 * decel(beatT)}) translate(-540,-960)`}
+          opacity={BG_LAYER.op}>{layer(BG_LAYER, false, false)}</g>
+        <g transform={`translate(540,960) scale(${1 + 0.07 * decel(beatT)}) translate(-540,-960)`}>
+          {layer(FG_LAYER, true, true)}
+          {LABELS}
+        </g>
       </svg>
-    </div>
+      {/* The approved mock's vignette: seats the structure into the frame and
+          keeps the caption band readable over the web. Type is its own layer
+          above; the graph alone is dimmed at the edges. */}
+      <AbsoluteFill style={{background:
+        'radial-gradient(ellipse 80% 60% at 50% 46%, rgba(16,16,16,0) 55%, rgba(16,16,16,0.75) 100%)'}} />
+    </AbsoluteFill>
   );
 };
 
 const GraphDissolve: React.FC<{field: string}> = ({field}) =>
-  <GraphAssembly field={field} state="dissolve" />;
-const GraphRebuild: React.FC<{field: string}> = ({field}) =>
-  <GraphAssembly field={field} state="assemble" />;
+  <GraphAssembly field={field} />;
 
 // ═══ THE CAPTURES ════════════════════════════════════════════════════════════
 // CANON, founder 2026-08-17: a film that RECOMMENDS a repo must show a real
@@ -351,7 +363,11 @@ const GraphRebuild: React.FC<{field: string}> = ({field}) =>
 const SHOT_IMG_H = 3160;
 const SHOT_SCROLL = true;
 const SHOTS: {from: number; to: number; src: string}[] = [
-  {from: 16560, to: 22000, src: 'screens/no036-graphify-repo.png'},
+  // to 30320, not 22000: the second graph beat was cut (founder, 2026-08-19 —
+  // one graph showing), so the repo scroll now carries "builds a knowledge
+  // graph" through to the terminal wipe. 13.8s at the canonical 75px/s uses
+  // ~1,032 of the capture's 1,240 scrollable px — no gap at the bottom.
+  {from: 16560, to: 30320, src: 'screens/no036-graphify-repo.png'},
 ];
 
 // The star pill on the capture, measured in original 1080x3160 pixel space
@@ -429,13 +445,20 @@ const RunTerminal: React.FC<{field: string}> = ({field}) => {
           const typed = L.kind === 'cmd'
             ? Math.round(L.text.length * clamp01((ms - L.at) / (L.typeMs ?? 800)))
             : L.text.length;
+          // Output lines LAND with a kick: slide in from the right with a hot
+          // flash that cools over 300ms (premium pass, founder 2026-08-19) \u2014
+          // stdout as impact, not as appearing text.
+          const landP = L.kind === 'out' ? decel(clamp01((ms - L.at) / 300)) : 1;
           return (
             <div key={L.at} style={{fontFamily: FONT_MONO, fontSize: UI.m,
               color: L.kind === 'cmd' ? pal.text : pal.label,
-              lineHeight: 1.5, overflowWrap: 'break-word'}}>
+              lineHeight: 1.5, overflowWrap: 'break-word',
+              opacity: landP, transform: `translateX(${(1 - landP) * 26}px)`,
+              background: landP < 1 ? `rgba(255,255,255,${(1 - landP) * 0.22})` : 'none'}}>
               {L.kind === 'cmd' ? <span style={{color: pal.label}}>$ </span> : null}
               {L.text.slice(0, typed)}
-              {isLast && caret ? <span style={{opacity: 0.8}}>{'\u258c'}</span> : null}
+              {isLast && caret ? <span style={{opacity: 0.9,
+                textShadow: `0 0 14px ${HOT_MID}`}}>{'\u258c'}</span> : null}
             </div>
           );
         })}
@@ -456,6 +479,7 @@ const BAR_H = 96;
 const TokenBars: React.FC<{field: string}> = ({field}) => {
   const pal = onField(field);
   const frame = useCurrentFrame();
+  const ms = (frame / 30) * 1000;
   // 500ms fill with a 2% overshoot-settle: DETAIL-length fills completed
   // inside one strip step and read as a pop (motion judge v2). The number
   // still SNAPS whole on its word — no count-up: ticking through 9,000/18,000
@@ -479,19 +503,47 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
     position: 'absolute', left: 0, top, width: VIZ_W,
     opacity: o, transform: `translateY(${(1 - o) * TRAVEL}px)`,
   });
-  const bar = (grow: number, widthPct: number, fill: string) => (
-    <div style={{position: 'relative', height: BAR_H, width: '100%',
-      border: `2px solid ${pal.hair}`}}>
-      <div style={{position: 'absolute', inset: 0, width: `${widthPct}%`,
-        background: fill, opacity: grow > 0 ? 1 : 0}} />
-    </div>
-  );
+  // Premium pass (founder 2026-08-19): the fill has a white-hot leading edge
+  // that throws light while it travels and cools out once the bar settles;
+  // embers stream off the front. All hash-deterministic.
+  const bar = (grow: number, widthPct: number, fill: string, at: number) => {
+    const edgeOp = grow > 0 ? 1 - decel(prog(frame, at + 700, 450)) : 0;
+    return (
+      <div style={{position: 'relative', height: BAR_H, width: '100%',
+        border: `2px solid ${pal.hair}`}}>
+        <div style={{position: 'absolute', inset: 0, width: `${widthPct}%`,
+          background: fill, opacity: grow > 0 ? 1 : 0}} />
+        {edgeOp > 0 ? (<>
+          <div style={{position: 'absolute', top: 0, height: '100%', width: 6,
+            left: `calc(${widthPct}% - 3px)`, background: HOT_CORE, opacity: edgeOp,
+            boxShadow: `0 0 28px 9px rgba(255,128,64,${0.5 * edgeOp})`}} />
+          {Array.from({length: 5}, (_, k) => {
+            const t = clamp01((ms - at) / 700);
+            const px = widthPct / 100 * VIZ_W + 8 + t * (30 + 60 * hash(at, k));
+            const py = BAR_H * hash(at, k + 5) - t * 26 * hash(at, k + 9);
+            return (
+              <div key={k} style={{position: 'absolute', left: px, top: py,
+                width: 4 + 3 * hash(at, k + 2), height: 4 + 3 * hash(at, k + 2),
+                borderRadius: '50%', background: HOT_MID, opacity: edgeOp * 0.9}} />
+            );
+          })}
+        </>) : null}
+      </div>
+    );
+  };
   // The payoff figures are THE film (stills judge v1: they were the smallest
   // type on screen). Display-scale mono, snapping in with their bars.
-  const num = (grow: number): React.CSSProperties => ({
-    fontFamily: FONT_MONO, fontSize: 69, color: pal.text, // scale step (was 72, off-ladder)
-    marginTop: gap('s'), opacity: grow > 0 ? 1 : 0,
-  });
+  // The figures PUNCH in whole (arrive-whole law intact: the kick is a
+  // transform, never a count-up) and bloom as they land.
+  const num = (grow: number, at: number): React.CSSProperties => {
+    const punch = 1 - decel(prog(frame, at, 200));
+    return {
+      fontFamily: FONT_MONO, fontSize: 69, color: pal.text, // scale step (was 72, off-ladder)
+      marginTop: gap('s'), opacity: grow > 0 ? 1 : 0,
+      transform: `scale(${1 + 0.2 * punch})`, transformOrigin: 'left bottom',
+      textShadow: `0 0 ${34 * (1 - decel(prog(frame, at, 500)))}px rgba(255,128,64,0.9)`,
+    };
+  };
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W}}>
       <div style={row(0, lblA)}>
@@ -501,8 +553,8 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
           color: pal.text, marginBottom: gap('s')}}>
           READ THE FILES
         </div>
-        <div style={{opacity: trkA}}>{bar(growA, Math.min(growA, 1) * 100, pal.accent)}</div>
-        <div style={num(growA)}>
+        <div style={{opacity: trkA}}>{bar(growA, Math.min(growA, 1) * 100, pal.accent, BAR_A_AT)}</div>
+        <div style={num(growA, BAR_A_AT)}>
           <Odometer values={['~27,000']} fromMs={BAR_A_AT} /> tokens
         </div>
       </div>
@@ -511,8 +563,8 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
           color: pal.text, marginBottom: gap('s')}}>
           ASK THE GRAPH
         </div>
-        <div style={{opacity: trkB}}>{bar(growB, Math.max(Math.min(growB, 1) * RATIO * 100, growB * 2), pal.text)}</div>
-        <div style={num(growB)}>
+        <div style={{opacity: trkB}}>{bar(growB, Math.max(Math.min(growB, 1) * RATIO * 100, growB * 2), pal.text, BAR_B_AT)}</div>
+        <div style={num(growB, BAR_B_AT)}>
           <Odometer values={['2,000']} fromMs={BAR_B_AT} /> tokens
         </div>
       </div>
@@ -555,7 +607,17 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
             position: 'relative', display: 'inline-block'}}>
             70x
             <div style={{position: 'absolute', left: '-2%', top: '52%', height: 6,
-              width: `${strike * 104}%`, background: pal.accent}} />
+              width: `${strike * 104}%`, background: pal.accent,
+              boxShadow: strike > 0 && strike < 1 ? `0 0 18px 4px rgba(255,128,64,0.6)` : 'none'}} />
+            {/* sparks fly off the strike tip while it cuts (premium pass) —
+                per-frame hashed jitter, deterministic. */}
+            {strike > 0 && strike < 1 ? Array.from({length: 4}, (_, k) => (
+              <div key={k} style={{position: 'absolute',
+                left: `calc(${strike * 104 - 2}% + ${10 * hash(Math.floor(frame / 2), k) - 5}px)`,
+                top: `calc(52% + ${16 * hash(Math.floor(frame / 2), k + 4) - 8}px)`,
+                width: 4, height: 4, borderRadius: '50%',
+                background: HOT_MID, opacity: 0.9}} />
+            )) : null}
           </div>
         </div>
         <div style={{height: 2, background: pal.hair}} />
@@ -570,7 +632,12 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
             dead stretch judge v3 flagged is answered by the PumpRect accent below,
             not by boiling the glyphs. */}
         <div style={{fontFamily: FONT, fontSize: ROLES.title.size, color: pal.text,
-          lineHeight: 1.14, display: 'inline-block'}}>
+          lineHeight: 1.14, display: 'inline-block',
+          /* the MEASURED number PUNCHES in whole and its bloom cools —
+             set type then holds frozen (kick is arrival, not boil). */
+          transform: `scale(${1 + 0.25 * (1 - decel(prog(frame, TRUE_AT, 220)))})`,
+          transformOrigin: 'left bottom',
+          textShadow: `0 0 ${40 * (1 - decel(prog(frame, TRUE_AT, 600)))}px rgba(219,52,25,0.8)`}}>
           14x
         </div>
         {/* The MEASURED number gets its hit here: an accent rule pumping on a
@@ -628,7 +695,6 @@ const PLATES: {from: number; to: number; Node: React.FC<{field: string}>}[] = [
   // law). At from:120 the film's first 4 frames — and the thumbnail — were an
   // empty ink field (design judge, 2026-08-18).
   {from: 0,     to: 13360,        Node: GraphDissolve}, // 13.4s  0 words  needs 3.0
-  {from: 22000, to: 30320,        Node: GraphRebuild},  //  8.3s  0 words  needs 3.0
   {from: 30320, to: 40000,        Node: RunTerminal},   //  9.7s  0 words  needs 3.0
   {from: 40000, to: 50560,        Node: TokenBars},     // 10.6s  8 words  needs 7.8
   {from: 50560, to: 61760,        Node: HonestyPlate},  // 11.2s  4 words  needs 5.4
