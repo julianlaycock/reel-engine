@@ -32,7 +32,7 @@ import {gap, FAMILY, WORDMARK, ROLES, MARGIN_X, COLUMN_W, SAFE, FIELD, TEXT_ON,
   ENTER_MS, DETAIL_MS, TRAVEL_PX, WIPE, PLATE_TOP,
   CAPTURE_SCROLL_PX_PER_SEC} from './kt/system';
 import {MatteWipe, ZigzagMarquee} from './KTSeams';
-import {Odometer} from './KTEffects';
+import {Odometer, PumpRect} from './KTEffects';
 import {G_NODES, G_EDGES, G_HUB_EDGE, G_PATH, GRAPH_VB} from './KTNo036Graph';
 import {ClaudeMascot} from './scenes/ClaudeMascot';
 import './style.css';
@@ -55,6 +55,11 @@ const HAIR_I = 'rgba(244,239,223,0.26)';
 const WASH_C = 'rgba(16,16,16,0.08)';
 const WASH_I = 'rgba(244,239,223,0.10)';
 const RULE_R = 'rgba(255,255,255,0.5)';
+// DELIBERATE deviation from canon washOn.redDeep (white 10%): a white wash
+// lightens the panel enough that the white 22px footer drops to 4.09:1 —
+// under the 4.5 contrast floor (check-contrast). The floor outranks the wash
+// token, so the wash on red stays ink-based until the canon reconciles the two.
+const WASH_R = 'rgba(16,16,16,0.10)';
 
 const FOOTER_ON: Record<string, string> = {[CREAM]: LABEL_C, [RED_DEEP]: WHITE, [INK]: WHITE};
 const WORDMARK_ON: Record<string, string> = {[CREAM]: INK, [RED_DEEP]: CREAM, [INK]: CREAM};
@@ -66,7 +71,7 @@ const asField = (c: string) => (c === RED ? RED_DEEP : c);
 type FieldPalette = {text: string; label: string; hair: string; wash: string; accent: string};
 const onField = (bg: string): FieldPalette =>
   bg === CREAM ? {text: INK, label: LABEL_C, hair: HAIR_C, wash: WASH_C, accent: RED_DEEP}
-  : bg === RED_DEEP ? {text: WHITE, label: WHITE, hair: RULE_R, wash: 'rgba(16,16,16,0.10)', accent: WHITE}
+  : bg === RED_DEEP ? {text: WHITE, label: WHITE, hair: RULE_R, wash: WASH_R, accent: WHITE}
   : {text: CREAM, label: LABEL_I, hair: HAIR_I, wash: WASH_I, accent: RED_DEEP};
 
 const UI = {s: ROLES.label.size, m: ROLES.slug.size, l: ROLES.wordmark.size};
@@ -443,7 +448,8 @@ const RunTerminal: React.FC<{field: string}> = ({field}) => {
 // The one drawn quantity in the film, and it is OUR OWN measurement (facts.md,
 // 2026-08-18): ~27,000 tokens to read the six files that answer the question,
 // 2,000 from the graph. Bar lengths are the true ratio (2000/27184 ≈ 7.4%), and
-// the numbers tick up with an Odometer on the words that speak them.
+// the numbers arrive WHOLE on the words that speak them (arrive-whole law —
+// no count-up; design judge 2026-08-18).
 const BAR_A_AT = 42800;   // "27,000"
 const BAR_B_AT = 45950;   // "2,000"
 const BAR_H = 96;
@@ -483,15 +489,15 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
   // The payoff figures are THE film (stills judge v1: they were the smallest
   // type on screen). Display-scale mono, snapping in with their bars.
   const num = (grow: number): React.CSSProperties => ({
-    fontFamily: FONT_MONO, fontSize: 72, color: pal.text,
+    fontFamily: FONT_MONO, fontSize: 69, color: pal.text, // scale step (was 72, off-ladder)
     marginTop: gap('s'), opacity: grow > 0 ? 1 : 0,
   });
   return (
     <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP, width: VIZ_W}}>
       <div style={row(0, lblA)}>
-        {/* Eyebrows at UI.m: UI.s measured ~18px on the phone, under the 40px
-            floor (stills judge v2). */}
-        <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
+        {/* Eyebrows at 44 — the smallest type-scale step that clears the 40px
+            phone-legibility floor (stills judge v2; UI.s measured ~18px). */}
+        <div style={{fontFamily: FONT_UI, fontSize: 44, letterSpacing: TRACK.slug,
           color: pal.text, marginBottom: gap('s')}}>
           READ THE FILES
         </div>
@@ -501,7 +507,7 @@ const TokenBars: React.FC<{field: string}> = ({field}) => {
         </div>
       </div>
       <div style={row(BAR_H + 210, lblB)}>
-        <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
+        <div style={{fontFamily: FONT_UI, fontSize: 44, letterSpacing: TRACK.slug,
           color: pal.text, marginBottom: gap('s')}}>
           ASK THE GRAPH
         </div>
@@ -541,7 +547,7 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
         opacity: p, transform: `translateY(${(1 - p) * TRAVEL}px)`}}>
         <div style={{height: 2, background: pal.hair}} />
         <div style={{padding: `${gap('m')}px 0`}}>
-          <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
+          <div style={{fontFamily: FONT_UI, fontSize: 44, letterSpacing: TRACK.slug,
             color: pal.label, marginBottom: gap('s')}}>
             CLAIMED
           </div>
@@ -556,17 +562,22 @@ const HonestyPlate: React.FC<{field: string}> = ({field}) => {
       </div>
       <div style={{position: 'absolute', left: VIZ_L, top: PLATE_TOP + 320, width: VIZ_W,
         opacity: truth, transform: `translateY(${(1 - truth) * TRAVEL}px)`}}>
-        <div style={{fontFamily: FONT_UI, fontSize: 40, letterSpacing: TRACK.slug,
+        <div style={{fontFamily: FONT_UI, fontSize: 44, letterSpacing: TRACK.slug,
           color: pal.label, marginBottom: gap('s')}}>
           MEASURED
         </div>
-        {/* <=2% breathe: the plate otherwise holds pixel-identical for 3.8s,
-            the longest dead stretch in the film (judge v3). */}
+        {/* Set type stays pixel-frozen (tasteRulings.boilingFurniture). The 3.8s
+            dead stretch judge v3 flagged is answered by the PumpRect accent below,
+            not by boiling the glyphs. */}
         <div style={{fontFamily: FONT, fontSize: ROLES.title.size, color: pal.text,
-          lineHeight: 1.14, display: 'inline-block',
-          transform: `scale(${1 + 0.015 * Math.sin(frame / 9)})`}}>
+          lineHeight: 1.14, display: 'inline-block'}}>
           14x
         </div>
+        {/* The MEASURED number gets its hit here: an accent rule pumping on a
+            decaying beat across the hold (PumpRect, shipped NO. 029), so the
+            plate is never dead while the set type stays frozen. */}
+        <PumpRect fromMs={TRUE_AT} x={0} y={180} w={160} h={8} color={pal.accent}
+          beat={14} pumps={8} ampY={2.2} attack={2} release={7} decay={0.85} anchor="bottom" />
       </div>
     </>
   );
