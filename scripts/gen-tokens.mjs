@@ -134,6 +134,126 @@ const lpFonts = {};
   }
 }
 
+// ── canon 2.0: KT design system (canon/kt-tokens.json) ───────────────────────
+// Additive, mirrors the letterpress block above. Root cause of the
+// 2026-08-20 canon audit's typography finding: --display/--mono in
+// tokens-pending.json#cssRoot predate the KT/Printvetica pivot (2026-08-04)
+// and were never updated, so any consumer of the generic --display/--mono
+// vars (e.g. a fresh HyperFrames build reading tokens.css) silently inherits
+// the OLD pre-KT faces (Inter Tight / system-mono) instead of KT's locked
+// Printvetica display face + IBM Plex Mono evidence face. KT Remotion films
+// never hit this bug because they hardcode kt-tokens.json's font strings
+// directly in .tsx rather than going through this generator. Emitted here as
+// separately-prefixed --kt-* vars (never overwrites the base --display/--mono,
+// which the legacy-frozen americana pipeline still depends on) + real
+// @font-face rules for the licensed/local KT faces (paths match
+// reel-engine/src/style.css's existing @font-face declarations for the same
+// fonts).
+let ktFontFaces = '';
+const ktVars = {};
+{
+  const ktPath = path.join(brand.brandRoot, 'canon', 'kt-tokens.json');
+  if (fs.existsSync(ktPath)) {
+    const kt = JSON.parse(fs.readFileSync(ktPath, 'utf8'));
+    const fam = kt.system?.type?.families ?? kt.type?.family ?? {};
+    if (fam.display) ktVars['--kt-display'] = fam.display;
+    if (fam.ui) ktVars['--kt-ui'] = fam.ui;
+    if (fam.mono) ktVars['--kt-mono'] = fam.mono;
+
+    // Type roles (kt.system.type.roles) — the locked scale steps. 2026-08-20
+    // audit found HF builds hand-approximating these (64px/80px instead of
+    // the real 55/86 steps) because nothing exposed them outside the Remotion
+    // .tsx files. Exposed here so any HyperFrames composition can bind
+    // font-size/tracking/weight/line-height directly instead of guessing.
+    const roles = kt.system?.type?.roles ?? {};
+    for (const [name, r] of Object.entries(roles)) {
+      if (typeof r?.size === 'number') ktVars[`--kt-role-${name}-size`] = `${r.size}px`;
+      if (typeof r?.weight === 'number') ktVars[`--kt-role-${name}-weight`] = String(r.weight);
+      if (typeof r?.tracking === 'number') ktVars[`--kt-role-${name}-tracking`] = `${r.tracking}px`;
+      if (typeof r?.leading === 'number') ktVars[`--kt-role-${name}-leading`] = String(r.leading);
+    }
+
+    // Spacing ladder (kt.system.space.ladder) — "EVERY gap in a film comes
+    // from this list" (kt-tokens.json's own doc). Exposed as indexed vars so
+    // a composition picks a rung instead of typing an ad-hoc pixel value.
+    const ladder = kt.system?.space?.ladder ?? [];
+    ladder.forEach((px, i) => { ktVars[`--kt-space-${i}`] = `${px}px`; });
+
+    // The house outro (kt.outro) — "deliberately the same film to film"
+    // (founder, 2026-08-08). 2026-08-20 audit found the HF build's outro used
+    // 3 SCROLLING text rows spelling the CTA itself ("COMMENT/TOOLS/FULL
+    // BREAKDOWN") — wrong on two counts: the real ZigzagMarquee is a
+    // decorative background wash of the repeated WORDMARK ("vektor  "), and
+    // the actual 3-row CTA (comment/keyword/promise) is a SEPARATE static
+    // overlay at the locked type-scale steps, keyword underlined.
+    const outro = kt.outro ?? {};
+    if (outro.marquee) {
+      const m = outro.marquee;
+      ktVars['--kt-outro-marquee-unit'] = `"${m.unit}"`;
+      if (m.amp != null) ktVars['--kt-outro-marquee-amp'] = String(m.amp);
+      if (m.period != null) ktVars['--kt-outro-marquee-period'] = String(m.period);
+      if (m.rows != null) ktVars['--kt-outro-marquee-rows'] = String(m.rows);
+      if (m.rowH != null) ktVars['--kt-outro-marquee-row-h'] = `${m.rowH}px`;
+      if (m.fontSize != null) ktVars['--kt-outro-marquee-font-size'] = `${m.fontSize}px`;
+      if (m.color) ktVars['--kt-outro-marquee-color'] = m.color;
+    }
+    if (outro.field) ktVars['--kt-outro-field'] = outro.field;
+    for (const row of outro.rows?.spec ?? []) {
+      if (!row.role) continue;
+      ktVars[`--kt-outro-row-${row.role}-size`] = `${row.size}px`;
+      if (row.mark) ktVars[`--kt-outro-row-${row.role}-mark`] = row.mark;
+    }
+
+    // Mascot placement bounds (kt.mascot.placement) — position/size numbers
+    // only, never the sprite itself: the Remotion component is LOCKED ("NEVER
+    // edit... a change to the shared rig changes public work") and out of
+    // scope to reimplement in HyperFrames tonight. A film with no mascot
+    // (like this one, which uses a dot-tracker instead) simply doesn't use
+    // these vars — they exist so a future HF film that DOES need one has the
+    // real bounds instead of guessing.
+    const mp = kt.mascot?.placement;
+    if (mp) {
+      if (Array.isArray(mp.xPct)) ktVars['--kt-mascot-xpct-min'] = String(mp.xPct[0]), ktVars['--kt-mascot-xpct-max'] = String(mp.xPct[1]);
+      if (Array.isArray(mp.yPct)) ktVars['--kt-mascot-ypct-min'] = String(mp.yPct[0]), ktVars['--kt-mascot-ypct-max'] = String(mp.yPct[1]);
+      if (mp.maxSize != null) ktVars['--kt-mascot-max-size'] = `${mp.maxSize}px`;
+    }
+
+    if (Object.keys(ktVars).length) {
+      // RELATIVE paths (not the absolute file:// paths reel-engine/src/style.css
+      // uses) — a HyperFrames composition's assets are copied per-project into
+      // videos/<slug>/assets/, so the font files must travel with tokens.css
+      // rather than point at a fixed machine path. Copied below into
+      // <outDir>/fonts/; the consumer copies that fonts/ dir alongside its own
+      // copy of tokens.css, same as it already does for tokens.css itself.
+      const fontSrcDir = path.join(brand.engineRoot, 'assets', 'fonts');
+      const fontFiles = ['printvetica-400.otf', 'ibm-plex-mono-400.woff2', 'ibm-plex-mono-500.woff2'];
+      const fontOutDir = path.join(outDir, 'fonts');
+      fs.mkdirSync(fontOutDir, {recursive: true});
+      for (const f of fontFiles) {
+        const src = path.join(fontSrcDir, f);
+        if (fs.existsSync(src)) fs.copyFileSync(src, path.join(fontOutDir, f));
+      }
+      ktFontFaces = [
+        '@font-face {',
+        '  font-family: "Printvetica";',
+        '  src: url("fonts/printvetica-400.otf") format("opentype");',
+        '  font-weight: 400;',
+        '}',
+        '@font-face {',
+        '  font-family: "IBM Plex Mono";',
+        '  src: url("fonts/ibm-plex-mono-400.woff2") format("woff2");',
+        '  font-weight: 400;',
+        '}',
+        '@font-face {',
+        '  font-family: "IBM Plex Mono";',
+        '  src: url("fonts/ibm-plex-mono-500.woff2") format("woff2");',
+        '  font-weight: 500;',
+        '}',
+      ].join('\n');
+    }
+  }
+}
+
 // canon-derived :root custom properties (--am-*) for style.css consumption.
 const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 const amVars = {};
@@ -203,6 +323,7 @@ const tokensTs = [
 
 const tokensCss = [
   `/* ${BANNER} */`,
+  ...(ktFontFaces ? [ktFontFaces, ''] : []),
   ':root {',
   ...Object.entries(cssVars).map(([name, v]) => `  ${name}: ${v};`),
   '',
@@ -211,6 +332,10 @@ const tokensCss = [
   ...(Object.keys(lpVars).length
     ? ['', '  /* canon 2.0 letterpress skin (letterpress-tokens.json) */',
        ...Object.entries(lpVars).map(([name, v]) => `  ${name}: ${v};`)]
+    : []),
+  ...(Object.keys(ktVars).length
+    ? ['', '  /* canon 2.0 KT skin (kt-tokens.json) — use these, not --display/--mono, for any KT/HyperFrames build */',
+       ...Object.entries(ktVars).map(([name, v]) => `  ${name}: ${v};`)]
     : []),
   '}',
   '',
