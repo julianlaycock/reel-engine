@@ -198,6 +198,13 @@ const ktVars = {};
       if (m.color) ktVars['--kt-outro-marquee-color'] = m.color;
     }
     if (outro.field) ktVars['--kt-outro-field'] = outro.field;
+    // ONE face for all three rows (kt.outro.rows.family, founder 2026-08-23).
+    // Emitted as a var so a film cannot quietly set comment and promise in the
+    // UI face again — which is what NO. 037 shipped.
+    if (outro.rows?.family) {
+      ktVars['--kt-outro-row-family'] =
+        outro.rows.family === 'ui' ? 'var(--kt-ui)' : 'var(--kt-display)';
+    }
     for (const row of outro.rows?.spec ?? []) {
       if (!row.role) continue;
       ktVars[`--kt-outro-row-${row.role}-size`] = `${row.size}px`;
