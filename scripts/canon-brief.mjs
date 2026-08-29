@@ -1,13 +1,23 @@
 #!/usr/bin/env node
-// canon-brief.mjs — compile the brand's enforced spec into an imperative brief
-// for the build/concept prompt. This is the INJECTION half of the loop: instead
-// of trusting the builder to remember a doc, the CURRENT canon.yml is compiled
-// into context on every run, so recent rule changes always apply. The gate
-// (check-canon.mjs) then verifies the output against the same spec.
+// canon-brief.mjs — compile the CURRENT canon into an imperative brief for the
+// session/build prompt. INJECTION half of the enforcement loop: the live token
+// files are compiled into context on every run, so rule changes always apply.
+//
+// REWRITTEN 2026-08-29 (founder ruling, vektor/DECISIONS.md 2026-08-29):
+//   - Compiles from canon/kt-canon.yml + canon/kt-tokens.json — KT-Remotion is
+//     the ONLY active design system. americana/letterpress are DEAD; this
+//     compiler must never mention them as current.
+//   - HARD ERROR if the KT sources are missing. A broken compiler must ERROR,
+//     never serve stale rules (that exact failure taught sessions dead canon
+//     for weeks — see research/2026-08-29-canon-contradiction-audit.md).
+//   - Emits a provenance stamp (sources + git SHA + compile time).
+//   - No design VALUE is hand-written here: every number is read from the
+//     token file at compile time or the line names the token path instead.
 //
 // Usage: node reel-engine/scripts/canon-brief.mjs --brand vektor
 import fs from 'node:fs';
 import path from 'node:path';
+import {execSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {resolveBrand} from '../lib/brand.mjs';
 
@@ -22,40 +32,65 @@ const brandArg = (() => {
 
 const brand = resolveBrand(brandArg);
 process.chdir(brand.brandRoot);
-const canon = YAML.load(fs.readFileSync(path.join('canon', 'canon.yml'), 'utf8'));
-// canon 2.0: the safe zone shown is the DEFAULT skin's (per-video dispatch happens
-// in check-canon); letterpress mirrors the same content zone + furniture exemptions.
-const briefSkin = canon.skin.default ?? canon.skin.required;
-const briefTokensPath = canon.skin.tokens?.[briefSkin] ?? path.join('canon', 'americana-tokens.json');
-const zone = JSON.parse(fs.readFileSync(briefTokensPath, 'utf8')).layout.platformSafeZone;
 
-const sev = (block) => (block?.severity === 'blocker' ? 'BLOCKER' : 'warn');
-const L = [];
-L.push(`CANON BRIEF · ${brand.name} · spec v${canon.version}  (compiled live from canon/canon.yml)`);
-L.push('Follow every rule below. The canon gate BLOCKS the video on any BLOCKER violation.');
-L.push('');
-L.push(`FORMAT [${sev(canon.format)}]: ${canon.format.width}x${canon.format.height} @ ${canon.format.fps}fps.`);
-L.push(`DURATION [${sev(canon.duration)}]: ${canon.duration.minSec}-${canon.duration.maxSec}s hard; target ${canon.duration.targetMinSec}-${canon.duration.targetMaxSec}s.`);
-if (canon.voice?.wordsPerMinute) L.push(`SCRIPT BUDGET [warn]: the locked voice reads ~${canon.voice.wordsPerMinute} wpm in practice — a script for the ${canon.duration.targetMinSec}-${canon.duration.targetMaxSec}s target budgets ~${(canon.voice.scriptWordBudget || []).join('-')} words (founder calibration 2026-07-14, measured NO.012). Fit by trimming words, never by speeding the read.`);
-if (canon.transcript) L.push(`TRANSCRIPT [${sev(canon.transcript)}]: if the concept is transcript-based (concept.json source_type:"transcript" or transcript_verbatim:true), reproduce the SOURCE's content/structure/hook + human flow but LIGHTLY REWORD into original wording (not a word-for-word copy — minor tweaks, keep the natural flow). EXEMPT from the duration cap. FACTS-POLICY OVERRIDDEN (trust the source, no facts.json/check-facts). ALWAYS adapt the brand layer to Vektor: CTA/keyword+funnel, skin, voice, disclaimer. Footage-rights + safe-zone still apply.`);
-{
-  const allowedSkins = canon.skin.allowed ?? [canon.skin.required];
-  const tokenMap = Object.entries(canon.skin.tokens ?? {}).map(([k, v]) => `${k}: ${v}`).join(' · ');
-  L.push(`SKIN [${sev(canon.skin)}]: one of [${allowedSkins.join(', ')}], declared per video in video.json (default ${briefSkin}).${tokenMap ? ` Token SSOT per skin — ${tokenMap}.` : ''}`);
+const KT_CANON = path.join('canon', 'kt-canon.yml');
+const KT_TOKENS = path.join('canon', 'kt-tokens.json');
+
+const fail = (msg) => {
+  process.stderr.write(`⚠ CANON BRIEF FAILED — ${msg}\n`);
+  process.stderr.write('⚠ DO NOT AUTHOR VISUALS until the compiler is fixed. Stale rules must never be served.\n');
+  process.exit(1);
+};
+
+if (!fs.existsSync(KT_CANON)) fail(`${KT_CANON} not found`);
+if (!fs.existsSync(KT_TOKENS)) fail(`${KT_TOKENS} not found`);
+
+let kt; let tok; let legacy = {};
+try {
+  kt = YAML.load(fs.readFileSync(KT_CANON, 'utf8'));
+  tok = JSON.parse(fs.readFileSync(KT_TOKENS, 'utf8'));
+} catch (e) {
+  fail(`could not parse KT canon sources: ${e.message}`);
 }
-L.push(`CHROME [${sev(canon.chrome)}]: masthead/chrome on every slide; fields ${(canon.chrome.requireFields || []).join('+')}.`);
-L.push(`AUDIO [${sev(canon.audio)}]: voiceover required; NO transition SFX (music bed + VO only, sfx:false). Music bed default ${canon.audio.musicVolume}, must not exceed ${canon.audio.musicVolumeMax}.`);
-L.push(`SAFE ZONE [${sev(canon.safeZone)}]: all on-screen elements inside top ${zone.topPx} / bottom ${zone.bottomPx} / sides ${zone.sidePx} / rail-right ${zone.railRightPx}px (rail band y ${zone.railBandY[0]}-${zone.railBandY[1]}). Mascot: xPct ~20-62, yPct ~25-66, size <= 160.`);
-L.push(`FRAME-0 [${sev(canon.frameZero)}]: scene[0] must have VO copy and instant payoff (no static hold).`);
-if (canon.pacing) L.push(`PACING [${sev(canon.pacing)}]: reading-time floor per scene = max(${canon.pacing.hardFloorSec}s, visibleChars/${canon.pacing.cps}cps + ${canon.pacing.glanceBufferSec}s glance buffer). Fit length by TRIMMING WORDS, never by speeding the read (atempo > 1.1x banned). Shared math: ${canon.pacing.enforcedBy || 'scripts/lib/reading-time.mjs'}.`);
-if (canon.wordmark) L.push(`WORDMARK [${sev(canon.wordmark)}]: endCard.wordmarkMotion MUST be one of [${(canon.wordmark.allowed || []).join(', ')}] — unapproved reveals are gate-blocked. Set the rotation pick at authoring time; log it in the video registry.`);
-if (canon.voice) L.push(`VOICE [${sev(canon.voice)}]: the narrator voice is FINGERPRINT-SEALED (${canon.voice.file}; gate: ${canon.voice.enforcedBy || 'check-goldens.mjs'}). NEVER change voice settings — a founder unlock updates voices.json AND canon.yml#voice.fingerprint together. NO audio tags — the [voTag] system was removed 2026-07-13 (drift source); the gate BLOCKS any [tag] in the composed script. data/<slug>/script.txt is COMPOSED by compose-script.mjs from the scene vo fields (never hand-edit — the gate diffs it); a pronunciation map respells tricky words (e.g. markdown -> mark down). Scripts: spoken connective flow (and-joins, no ellipsis stops); ear-reference ${canon.voice.reference || 'n/a'}.`);
-if (canon.templates) L.push(`TEMPLATES [${sev(canon.templates)}]: THE HARD MENU — every scene in video.json MUST declare template: <id> from ${canon.templates.registry}. Any scene field outside the template's whitelist, a parked/unregistered id, or a binds/constraint violation is GATE-BLOCKED (zero freestyle compositions). New templates enter ONLY via founder RENDER→SEE→LOCK; approved stills: ${canon.templates.stills}.`);
-if (canon.goldens) L.push(`GOLDENS [${sev(canon.goldens)}]: layout is governed by the wireframe contract ${canon.goldens.contract} (master bands + per-kind envelopes; content never behind chrome/footer; caption line REQUIRED on every middle slide). Pixel-stable regions are diffed against ${canon.goldens.goldensDir} by check-goldens.mjs.`);
-if (canon.distinctiveElements) L.push(`DISTINCTIVE ELEMENT [${sev(canon.distinctiveElements)}]: add ONE optional distinctive element by the video's type (screenshot / screen-recording / animation / source-receipt / split-screen), ON by default, offered in the pitch as a one-line opt-out. Rights-clean sources ONLY (own capture / official press / PD-CC0-CC-BY / on-topic ASCII; never others' clips-as-footage, never unverified people/logos from stock, never CC-BY-SA); cite every stat/screenshot on-frame. See canon/DISTINCTIVE-ELEMENTS.md. Base skin canon untouched.`);
-if (canon.videoModel) L.push(`VIDEO MODEL [${sev(canon.videoModel)}]: ${canon.videoModel.shapeDefault} story-arc DEFAULT (${(canon.videoModel.arc || []).join('->')}); a series/part-N must be flagged in concept.json shape:series. See canon/VIDEO-MODEL.md.`);
-if (canon.transitions) L.push(`TRANSITIONS [${sev(canon.transitions)}]: ${canon.transitions.grammar}. Allowed transition values: [${(canon.transitions.allowed || []).join(', ')}] (default ${canon.transitions.default}).`);
+try {
+  // canon.yml survives ONLY for the voice fingerprint block (sole live block).
+  legacy = YAML.load(fs.readFileSync(path.join('canon', 'canon.yml'), 'utf8')) ?? {};
+} catch { /* optional */ }
+
+let sha = 'unknown';
+try { sha = execSync('git rev-parse --short HEAD', {stdio: ['ignore', 'pipe', 'ignore']}).toString().trim(); } catch {}
+
+const fields = tok.color?.fields ?? {};
+const fieldList = Object.entries(fields)
+  .map(([k, v]) => `${k} ${v.hex}`)
+  .join(' · ');
+const steps = tok.type?.scale?.steps?.join(', ');
+const sz = tok.layout?.safeZone?.resolvesTo;
+const rail = tok.layout?.furnitureRail;
+const col = tok.layout?.column?.widthPx;
+
+const L = [];
+L.push(`CANON BRIEF · ${brand.name} · KT-Remotion v${tok.version} (compiled live from ${KT_CANON} + ${KT_TOKENS} @ ${sha}, ${new Date().toISOString()})`);
+L.push('Follow every rule below. scripts/check-kt.mjs BLOCKS the build on any BLOCKER violation.');
 L.push('');
-L.push('After building, run: node ../reel-engine/scripts/check-canon.mjs --brand ' + brand.name + ' --slug <slug>');
+L.push('SYSTEM [BLOCKER]: KT-Remotion is the ONLY active design system (kt-tokens.json + kt-canon.yml + canon/goldens/kt-*).');
+L.push('  americana and letterpress are DEAD (founder ruling 2026-08-29, DECISIONS.md). Never source typography,');
+L.push('  palette, or effects from their token files, old covers, or pre-KT example files. Dead files live in canon/_graveyard/.');
+L.push(`FORMAT [BLOCKER]: ${tok.canvas?.w}x${tok.canvas?.h} @ ${tok.canvas?.fps}fps.`);
+L.push(`PALETTE [BLOCKER]: the UNIFORM uses exactly these fields — ${fieldList}. Drawn red is redDeep.`);
+L.push('  Plates may declare soft accents per film (founder ruling 2026-08-29 B) — declared, never defaulted.');
+L.push(`TYPE [BLOCKER]: display ${tok.type?.family?.display} · ui ${tok.type?.family?.ui}. NO other faces (Unique is letterpress-era: DEAD).`);
+L.push(`  Sizes snap to the scale steps [${steps}] (kt-tokens#type.scale). One declared hero line may exceed (heroExempt).`);
+L.push(`CAPS [BLOCKER]: max ${tok.type?.rowCap?.max} concurrent rows (authoring) · max ${tok.type?.renderedLineCap?.max} rendered lines + 1 hero (post-render backstop).`);
+L.push(`SAFE ZONE [BLOCKER]: content inside x${sz?.x0}-${sz?.x1} / y${sz?.y0}-${sz?.y1} (kt-tokens#layout.safeZone). Furniture rail ${rail?.px}px, ${rail?.axis}. Column ${col}px.`);
+L.push('UNIFORM [BLOCKER]: masthead + house outro (kt-tokens#outro) + canonical seams on every film. NO.038 is a recorded one-film exception, not precedent.');
+L.push('MARKS: commentary marks are hand-drawn (width variance + wobble), declared on a word, red only. Straight rules read as bugs.');
+L.push('PLATES: type over DIMMED captures is legal; fullBleedNoWords applies to undimmed imagery only (founder ruling 2026-08-29 A).');
+if (tok.narration) L.push(`NARRATION: see kt-tokens#narration${tok.duration ? ' · duration kt-tokens#duration' : ''}. Fit by trimming words, never by speeding the read.`);
+if (legacy.voice) L.push(`VOICE [BLOCKER]: fingerprint-sealed (${legacy.voice.file}; canon.yml#voice is the sole surviving canon.yml block). NEVER change settings; no [tags]; 3+ takes, founder's ear picks.`);
+L.push('');
+L.push('GATES: node scripts/check-kt.mjs --film no-0NN [--render] · mocks: node scripts/check-mock.mjs <mock.html> — a visual artifact');
+L.push('  (mock, cover, still, render) may reach the founder ONLY after its gate passes (founder ruling 2026-08-29).');
+L.push('AUTHORING: docs/KT-RUNBOOK.md (register the film in kt-canon.yml#films; generated words file mandatory). Human canon view: canon/CATALOG.html.');
 
 process.stdout.write(L.join('\n') + '\n');
