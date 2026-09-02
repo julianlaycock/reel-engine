@@ -85,7 +85,11 @@ L.push(`CAPS [BLOCKER]: max ${tok.type?.rowCap?.max} concurrent rows (authoring)
 L.push(`SAFE ZONE [BLOCKER]: content inside x${sz?.x0}-${sz?.x1} / y${sz?.y0}-${sz?.y1} (kt-tokens#layout.safeZone). Furniture rail ${rail?.px}px, ${rail?.axis}. Column ${col}px.`);
 L.push('UNIFORM [BLOCKER]: masthead + house outro (kt-tokens#outro) + canonical seams on every film. NO.038 is a recorded one-film exception, not precedent.');
 L.push('MARKS: commentary marks are hand-drawn (width variance + wobble), declared on a word, red only. Straight rules read as bugs.');
-L.push('PLATES: type over DIMMED captures is legal; fullBleedNoWords applies to undimmed imagery only (founder ruling 2026-08-29 A).');
+L.push('CAPTURES [BLOCKER]: every screenshot is FULL BLEED - it fills the frame, dimmed, with type over it.');
+  L.push('  A band, a strip or a boxed crop is NOT full bleed (founder 2026-07-19, re-issued 2026-09-02; kt-canon.yml#captureIsFullBleed,');
+  L.push('  enforced by scripts/check-mock.mjs). CARVE-OUT: a cropped SENTENCE used as an inline citation inside a plate is a');
+  L.push('  QUOTATION and may be inset - declare it file by file in the mock sidecar {"quotations": ["quote.png"]}.');
+  L.push('PLATES: type over DIMMED captures is legal; fullBleedNoWords applies to undimmed imagery only (founder ruling 2026-08-29 A).');
 if (tok.narration) L.push(`NARRATION: see kt-tokens#narration${tok.duration ? ' · duration kt-tokens#duration' : ''}. Fit by trimming words, never by speeding the read.`);
 if (legacy.voice) L.push(`VOICE [BLOCKER]: fingerprint-sealed (${legacy.voice.file}; canon.yml#voice is the sole surviving canon.yml block). NEVER change settings; no [tags]; 3+ takes, founder's ear picks.`);
 L.push('');
