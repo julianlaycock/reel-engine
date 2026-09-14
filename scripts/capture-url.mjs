@@ -31,7 +31,16 @@ const main = async () => {
 
   await execFileP(
     edge,
-    [`--user-data-dir=${fs.mkdtempSync(path.join(os.tmpdir(), 'edgecap-'))}`, '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars', `--force-device-scale-factor=${scale}`, ...(a.includes('--transparent') ? ['--default-background-color=00000000'] : []), '--virtual-time-budget=9000', `--screenshot=${out}`, `--window-size=${w},${h}`, url],
+    [`--user-data-dir=${fs.mkdtempSync(path.join(os.tmpdir(), 'edgecap-'))}`, '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
+      // LCD/subpixel text antialiasing paints warm and cool 1-2px fringes along every
+      // glyph edge. On small body copy those fringes chain into horizontal runs long
+      // enough to survive check-mock's MIN_RUN=3 fringe filter, so the capture path was
+      // manufacturing the palette violations the palette gate then reported (measured
+      // 2026-09-14 on the NO.052 storyboard: 221 'off-palette' px on one card, every one
+      // of them a fringe on 25px text, zero in the artwork; the card passes with this
+      // flag on). Grayscale AA is also display-independent, so two machines now agree.
+      '--disable-lcd-text',
+      `--force-device-scale-factor=${scale}`, ...(a.includes('--transparent') ? ['--default-background-color=00000000'] : []), '--virtual-time-budget=9000', `--screenshot=${out}`, `--window-size=${w},${h}`, url],
     {timeout: 90000},
   );
   // Edge's launcher process can return before the headless child flushes the
