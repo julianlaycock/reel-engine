@@ -44,6 +44,7 @@ import {KTHook, KT_HOOK_FRAMES} from './KTHook';
 import {KTFxLab, KT_FX_LAB_FRAMES} from './KTFxLab';
 import {KTNo035, KT_NO035_FRAMES} from './KTNo035';
 import {KTNo036, KT_NO036_FRAMES} from './KTNo036';
+import {KTNo074, KT_NO074_FRAMES} from './KTNo074';
 import {KTTax, KT_TAX_FRAMES} from './KTTax';
 import {KTState, KT_STATE_FRAMES} from './KTState';
 import {KTFunnel, KT_FUNNEL_FRAMES} from './KTFunnel';
@@ -53,6 +54,17 @@ import {KTTokens, KT_TOKENS_FRAMES} from './KTTokens';
 export const Root: React.FC = () => {
   return (
     <>
+      {/* ── 00 — NO.074 KT TRIAL ARM (ADR 0007, 2026-10-21) ───────────────── */}
+      <Composition
+        id="00-no074-graph-kt-arm"
+        component={KTNo074}
+        defaultProps={{layer: 'all' as const}}
+        durationInFrames={KT_NO074_FRAMES}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+
       {/* ── 01 — THE CURRENT FILM ──────────────────────────────────────────── */}
       <Composition
         id="01-no036-graphify"
