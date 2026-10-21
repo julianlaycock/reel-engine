@@ -2,6 +2,11 @@
 
 Every engine change goes here ONCE; it applies to all three brands (vektor · caelith · caelith-labs) automatically.
 
+## 2026-10-21 — KT-Remotion restored for the KT-vs-OS trial arm (branch feature/kt-trial-restore)
+- Founder 2026-10-21 ~08:12 "Unfreeze KT, test vs OS"; decision record: vektor ADR 0007. develop had dropped the NO.036 composition; `src/KTNo036.tsx`, `KTNo036Graph.ts`, `KTNo036Words.ts` and its `Root.tsx` registration are restored from tag `kt-final-2026-10-09`, so all 8 shipped KT films are registered again. `tsc --noEmit` clean.
+- Render proof (vektor trial worktree, scripts/kt-trial/kt-still.mjs, KT_ENGINE_DIR pointing here): no-034 frame 581 is byte-identical (sha256) to the retirement-time golden.
+- Trial arms only; Vektor OS stays the default. Not restored: `scripts/gen-tokens.mjs`, the pre-develop `scripts/canon-brief.mjs` (not needed to render).
+
 ## 2026-07-09 — canon-board (visual canon as a build artifact)
 - `scripts/canon-board.mjs` renders `canon/BOARD.html` from the canon sources (`americana-tokens.json`, `wireframes/wireframes.json`, `canon.yml`) — the board is now a generated artifact, never hand-edited. Run via `npm run canon:board` from the brand dir (`--brand vektor`).
 - Enforcement wiring (projects-level): Claude Code PostToolUse hook (`.claude/hooks/canon-regen.mjs`) auto-regenerates the board after any canon-file edit; vektor git `pre-commit` hook regenerates + stages BOARD.html in the same commit as a canon change; `/canon-change` skill runs the founder-approval ritual. Law recorded in `projects/CLAUDE.md`.

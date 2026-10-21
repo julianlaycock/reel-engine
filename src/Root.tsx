@@ -43,6 +43,7 @@ import {FPS} from './video-schema';
 import {KTHook, KT_HOOK_FRAMES} from './KTHook';
 import {KTFxLab, KT_FX_LAB_FRAMES} from './KTFxLab';
 import {KTNo035, KT_NO035_FRAMES} from './KTNo035';
+import {KTNo036, KT_NO036_FRAMES} from './KTNo036';
 import {KTTax, KT_TAX_FRAMES} from './KTTax';
 import {KTState, KT_STATE_FRAMES} from './KTState';
 import {KTFunnel, KT_FUNNEL_FRAMES} from './KTFunnel';
@@ -54,6 +55,19 @@ export const Root: React.FC = () => {
     <>
       {/* ── 01 — THE CURRENT FILM ──────────────────────────────────────────── */}
       <Composition
+        id="01-no036-graphify"
+        component={KTNo036}
+        defaultProps={{layer: 'all' as const}}
+        durationInFrames={KT_NO036_FRAMES}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+
+      {/* ── 02+ — SHIPPED FILMS, newest first ──────────────────────────────── */}
+      {/* Still 01- until the step-10 canon registration renumbers the ladder:
+          kt-canon.yml pins this id and check-kt reads it. */}
+      <Composition
         id="01-no035-mcp-not-apis"
         component={KTNo035}
         defaultProps={{layer: 'all' as const}}
@@ -62,8 +76,6 @@ export const Root: React.FC = () => {
         width={1080}
         height={1920}
       />
-
-      {/* ── 02+ — SHIPPED FILMS, newest first ──────────────────────────────── */}
       <Composition
         id="02-no034-token-claims"
         component={KTTokens}
