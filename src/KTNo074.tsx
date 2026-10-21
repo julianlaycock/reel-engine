@@ -215,7 +215,7 @@ const P5: React.FC = () => {
     <Abs x={L} y={600} w={W} h={660} style={{background: t.bg, border: `2px solid ${t.hair}`, borderRadius: 16, padding: '24px 32px'}}>
       <div style={{fontFamily: MONO, fontSize: 24, color: t.label, letterSpacing: 2}}>● ● ●   claude code</div>
       <div style={{fontFamily: MONO, fontSize: 38, color: t.fg, marginTop: 34}}>
-        <span style={{color: t.acc}}>&gt; </span>{typed('ultracode port bun to rust', ms, 26900, 80)}<Cursor color={t.fg} on={ms < 29300} />
+        <span style={{color: t.acc}}>&gt; </span>{typed('port bun to rust', ms, 24300, 80)}<span style={{color: TEXT_ON.redDeep}}>{typed(' ultracode', ms, 27500, 100)}</span><Cursor color={t.fg} on={ms < 29300} />
       </div>
       {ms > 29300 ? <div style={{fontFamily: MONO, fontSize: 36, color: 'rgb(255,122,92)', marginTop: 34, opacity: pop(ms, 29300, 250)}}>
         ● writing workflow.js</div> : null}
@@ -234,12 +234,12 @@ const P5: React.FC = () => {
 const P6: React.FC<{p: Pal}> = ({p}) => {
   const ms = useMs();
   const C = NO074_CUES;
-  const CW = 220, CH = 210, GAP = (W - 3 * CW) / 2, CY = 650;
+  const CW = 220, CH = 170, GAP = (W - 3 * CW) / 2, CY = 620;
   const xs = [L, L + CW + GAP, L + 2 * (CW + GAP)];
   const cards = [['find', C.boxA], ['verify', C.boxB], ['fix', C.boxC]] as const;
   const arrows = [[xs[0] + CW, xs[1], C.arrow1], [xs[1] + CW, xs[2], C.arrow2]] as const;
   const retry = clamp01((ms - C.retry) / 600);
-  const RY = CY + CH + 80;
+  const RY = CY + CH + 290, CB = CY + CH + 232;     // CB = bottom of the agent chips
   return (<>
     {cards.map(([n, at], i) => {
       const q = pop(ms, at, 300);
@@ -250,7 +250,11 @@ const P6: React.FC<{p: Pal}> = ({p}) => {
           padding: '16px 20px', opacity: q, transform: `translateY(${(1 - q) * 20}px)`}}>
           <div style={{fontFamily: MONO, fontSize: 26, color: p.label, letterSpacing: 2}}>STEP {i + 1}</div>
           <div style={{fontFamily: D, fontSize: 68, color: p.fg, marginTop: 14}}>{n}</div>
-          <Abs x={CW - 20 - 54} y={CH - 20 - 54} style={{opacity: 0.9}}><LoopGlyph size={54} color={p.acc} sw={6} /></Abs>
+          <Abs x={CW - 20 - 54} y={14} style={{opacity: 0.9}}><LoopGlyph size={54} color={p.acc} sw={6} /></Abs>
+          {[0, 1, 2].map((k) => { const cq = pop(ms, at + 250 + k * 140, 250); return (
+            <Abs key={k} x={0} y={CH + 36 + k * 66} w={CW} h={54} style={{border: `3px solid ${p.hair}`, borderRadius: 12, background: p.wash, opacity: cq,
+              fontFamily: MONO, fontSize: 26, color: p.fg, padding: '0 14px', lineHeight: '48px', whiteSpace: 'nowrap', transform: `translateY(${(1 - cq) * 12}px)`}}>
+              {['publish', 'producer', 'ops'][k]}</Abs>); })}
         </Abs>
       );
     })}
@@ -273,22 +277,22 @@ const P6: React.FC<{p: Pal}> = ({p}) => {
     </>) : null}
     {retry > 0 ? (<>
       <svg width="1080" height="1920" style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
-        <path d={`M ${xs[2] + CW / 2} ${CY + CH + 6} L ${xs[2] + CW / 2} ${RY} L ${xs[0] + CW / 2} ${RY} L ${xs[0] + CW / 2} ${CY + CH + 14}`}
+        <path d={`M ${xs[2] + CW / 2} ${CB + 8} L ${xs[2] + CW / 2} ${RY} L ${xs[0] + CW / 2} ${RY} L ${xs[0] + CW / 2} ${CB + 16}`}
           fill="none" stroke={p.acc} strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={1}
           strokeDashoffset={1 - retry} />
-        {retry > 0.95 ? <polyline points={`${xs[0] + CW / 2 - 14},${CY + CH + 40} ${xs[0] + CW / 2},${CY + CH + 12} ${xs[0] + CW / 2 + 14},${CY + CH + 40}`}
+        {retry > 0.95 ? <polyline points={`${xs[0] + CW / 2 - 14},${CB + 44} ${xs[0] + CW / 2},${CB + 16} ${xs[0] + CW / 2 + 14},${CB + 44}`}
           fill="none" stroke={p.acc} strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" /> : null}
       </svg>
-      <Abs x={xs[1]} y={RY + 12} w={CW} style={{fontFamily: MONO, fontSize: 38, color: p.fg, textAlign: 'center', opacity: pop(ms, C.retry + 300)}}>retry</Abs>
+      <Abs x={xs[0] + CW / 2 + 30} y={RY + 14} w={CW} style={{fontFamily: MONO, fontSize: 38, color: p.fg, opacity: pop(ms, C.retry + 300)}}>retry</Abs>
     </>) : null}
     {ms >= C.you - 800 ? (<>
       <svg width="1080" height="1920" style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
-        <line x1={xs[1] + CW / 2} y1={RY + 70} x2={xs[1] + CW / 2} y2={RY + 70 + 90 * clamp01((ms - (C.you - 800)) / 300)}
+        <line x1={xs[1] + CW / 2} y1={RY + 46} x2={xs[1] + CW / 2} y2={RY + 46 + 44 * clamp01((ms - (C.you - 800)) / 300)}
           stroke={p.fg} strokeWidth={6} strokeLinecap="round" />
       </svg>
-      <Abs x={xs[1]} y={RY + 170} w={CW} h={120} style={{border: `4px solid ${p.acc}`, borderRadius: 18, background: p.bg, fontFamily: D, fontSize: 56,
-        color: p.fg, textAlign: 'center', lineHeight: '112px', opacity: pop(ms, C.you - 500, 300)}}>you</Abs>
-      <Abs x={xs[1] + CW + 24} y={RY + 205} w={300} style={{fontFamily: MONO, fontSize: 38, color: p.fg, opacity: pop(ms, C.you - 400)}}>hand back</Abs>
+      <Abs x={xs[1]} y={RY + 96} w={CW} h={100} style={{border: `4px solid ${p.acc}`, borderRadius: 18, background: p.bg, fontFamily: D, fontSize: 56,
+        color: p.fg, textAlign: 'center', lineHeight: '92px', opacity: pop(ms, C.you - 500, 300)}}>you</Abs>
+      <Abs x={xs[1] + CW + 24} y={RY + 124} w={300} style={{fontFamily: MONO, fontSize: 38, color: p.fg, opacity: pop(ms, C.you - 400)}}>hand back</Abs>
     </>) : null}
   </>);
 };
